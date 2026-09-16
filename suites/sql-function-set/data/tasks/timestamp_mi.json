@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_mi",
+  "variants": [
+    {
+      "arguments": "timestamp timestamp",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

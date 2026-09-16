@@ -1,0 +1,59 @@
+diff --git a/src/backend/utils/adt/jsonfuncs.c b/src/backend/utils/adt/jsonfuncs.c
+index 4605234..ee7fa1f 100644
+--- a/src/backend/utils/adt/jsonfuncs.c
++++ b/src/backend/utils/adt/jsonfuncs.c
+@@ -4837,52 +4837,11 @@ jsonb_delete_idx(PG_FUNCTION_ARGS)
+ 	PG_RETURN_JSONB_P(JsonbValueToJsonb(res));
+ }
+ 
+-/*
+- * SQL function jsonb_set(jsonb, text[], jsonb, boolean)
+- */
+ Datum
+ jsonb_set(PG_FUNCTION_ARGS)
+ {
+-	Jsonb	   *in = PG_GETARG_JSONB_P(0);
+-	ArrayType  *path = PG_GETARG_ARRAYTYPE_P(1);
+-	Jsonb	   *newjsonb = PG_GETARG_JSONB_P(2);
+-	JsonbValue	newval;
+-	bool		create = PG_GETARG_BOOL(3);
+-	JsonbValue *res = NULL;
+-	Datum	   *path_elems;
+-	bool	   *path_nulls;
+-	int			path_len;
+-	JsonbIterator *it;
+-	JsonbParseState *st = NULL;
+-
+-	JsonbToJsonbValue(newjsonb, &newval);
+-
+-	if (ARR_NDIM(path) > 1)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+-				 errmsg("wrong number of array subscripts")));
+-
+-	if (JB_ROOT_IS_SCALAR(in))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("cannot set path in scalar")));
+-
+-	if (JB_ROOT_COUNT(in) == 0 && !create)
+-		PG_RETURN_JSONB_P(in);
+-
+-	deconstruct_array_builtin(path, TEXTOID, &path_elems, &path_nulls, &path_len);
+-
+-	if (path_len == 0)
+-		PG_RETURN_JSONB_P(in);
+-
+-	it = JsonbIteratorInit(&in->root);
+-
+-	res = setPath(&it, path_elems, path_nulls, path_len, &st,
+-				  0, &newval, create ? JB_PATH_CREATE : JB_PATH_REPLACE);
+-
+-	Assert(res != NULL);
+-
+-	PG_RETURN_JSONB_P(JsonbValueToJsonb(res));
++	elog(ERROR, "jsonb_set is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

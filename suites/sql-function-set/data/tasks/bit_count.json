@@ -1,0 +1,26 @@
+{
+  "func": "bit_count",
+  "variants": [
+    {
+      "arguments": "bytea",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "number of set bits"
+    },
+    {
+      "arguments": "bit",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "number of set bits"
+    }
+  ],
+  "description": "Returns the number of bits set in the binary string (also known as popcount).\nReturns the number of bits set in the bit string (also known as popcount).",
+  "examples": [
+    "bit_count('\\x1234567890'::bytea) -> 15",
+    "bit_count(B'10111') -> 4"
+  ],
+  "mode": "stub",
+  "category": "bit"
+}

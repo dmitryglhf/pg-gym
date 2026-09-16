@@ -1,0 +1,18 @@
+{
+  "func": "date_send",
+  "mode": "stub",
+  "patch": "prep/date_send.patch",
+  "symbols": [
+    "date_send"
+  ],
+  "units": {
+    "date_send": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/*\n *\t\tdate_send\t\t\t- converts date to binary format\n */\nDatum\ndate_send(PG_FUNCTION_ARGS)\n{\n\tDateADT\t\tdate = PG_GETARG_DATEADT(0);\n\tStringInfoData buf;\n\n\tpq_begintypsend(&buf);\n\tpq_sendint32(&buf, date);\n\tPG_RETURN_BYTEA_P(pq_endtypsend(&buf));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

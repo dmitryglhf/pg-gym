@@ -1,0 +1,18 @@
+{
+  "func": "array_to_tsvector",
+  "variants": [
+    {
+      "arguments": "_text",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "build tsvector from array of lexemes"
+    }
+  ],
+  "description": "Converts an array of text strings to a tsvector. The given strings are used as lexemes as-is, without further processing. Array elements must not be empty strings or NULL.",
+  "examples": [
+    "array_to_tsvector('{fat,cat,rat}'::text[]) -> 'cat' 'fat' 'rat'"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

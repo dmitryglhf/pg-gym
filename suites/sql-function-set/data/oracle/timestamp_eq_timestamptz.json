@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_eq_timestamptz",
+  "mode": "stub",
+  "patch": "prep/timestamp_eq_timestamptz.patch",
+  "symbols": [
+    "timestamp_eq_timestamptz"
+  ],
+  "units": {
+    "timestamp_eq_timestamptz": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_eq_timestamptz(PG_FUNCTION_ARGS)\n{\n\tTimestamp\ttimestampVal = PG_GETARG_TIMESTAMP(0);\n\tTimestampTz dt2 = PG_GETARG_TIMESTAMPTZ(1);\n\n\tPG_RETURN_BOOL(timestamp_cmp_timestamptz_internal(timestampVal, dt2) == 0);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

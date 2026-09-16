@@ -1,0 +1,29 @@
+diff --git a/src/backend/utils/adt/formatting.c b/src/backend/utils/adt/formatting.c
+index a101771d..d9183509 100644
+--- a/src/backend/utils/adt/formatting.c
++++ b/src/backend/utils/adt/formatting.c
+@@ -6717,17 +6717,15 @@ int4_to_char(PG_FUNCTION_ARGS)
+ 
+ 		if (IS_MULTI(&Num))
+ 		{
+-			double		multi = pow((double) 10, (double) Num.multi);
+-
+-			value = DatumGetInt32(DirectFunctionCall2(int4mul,
+-													  Int32GetDatum(value),
+-													  DirectFunctionCall1(dtoi4,
+-																		  Float8GetDatum(multi))));
++			orgnum = DatumGetCString(DirectFunctionCall1(int4out,
++														 Int32GetDatum(value * ((int32) pow((double) 10, (double) Num.multi)))));
+ 			Num.pre += Num.multi;
+ 		}
+-
+-		orgnum = DatumGetCString(DirectFunctionCall1(int4out,
+-													 Int32GetDatum(value)));
++		else
++		{
++			orgnum = DatumGetCString(DirectFunctionCall1(int4out,
++														 Int32GetDatum(value)));
++		}
+ 
+ 		if (*orgnum == '-')
+ 		{

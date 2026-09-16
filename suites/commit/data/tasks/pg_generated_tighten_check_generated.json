@@ -1,0 +1,10 @@
+{
+  "name": "pg_generated_tighten_check_generated",
+  "area": "generated columns, partition keys",
+  "goal": "A generated column is forbidden as a partition key, but expression syntax can bypass the check. Parenthesizing the generated column or referring to the table's whole row can create a partition key that depends on generated data.\n\nReject partition keys written as the direct generated column, `(generated_column)`, a whole-row reference, or an expression such as `(table_name IS NOT NULL)` that reads the whole row. The commands must fail consistently before leaving catalog objects behind. Valid expression partition keys over ordinary columns and all existing legal generated columns must remain supported.",
+  "func": "pg_generated_tighten_check_generated",
+  "graded_by": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ]
+}

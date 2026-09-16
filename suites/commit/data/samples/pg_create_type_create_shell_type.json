@@ -1,0 +1,36 @@
+{
+  "name": "pg_create_type_create_shell_type",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "b62206043be298dfdf493d5dc4bcac9e573a99ce",
+  "parent": "92c0182141cf6355f5ca38b282531aca64068d4e",
+  "date": "2026-08-27",
+  "subject": "Don't create a shell type for function returning an array",
+  "area": "CREATE FUNCTION, shell types",
+  "licence": "PostgreSQL",
+  "goal": "CREATE FUNCTION may create a shell type automatically when a bare, unqualified argument or result type name does not yet exist. More complex type syntax is being treated as though it named such a type, leaving unwanted shell types behind after a failing command.\n\nExercise nonexistent return types written as an array, with a typmod, through `%TYPE` for a nonexistent column, and in a nonexistent schema. Each command must fail without creating a shell type. A bare eligible name must retain its existing shell-type behavior. Once a real type exists, normal validation of arrays and typmods must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/functioncmds.c",
+      "added": 35,
+      "deleted": 23
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/create_type.sql",
+    "src/test/regress/expected/create_type.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "create_type"
+    ],
+    "command": "make -C src/test/regress check TESTS=create_type"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,31 @@
+{
+  "func": "make_timestamptz",
+  "mode": "stub",
+  "patch": "prep/make_timestamptz.patch",
+  "symbols": [
+    "make_timestamptz",
+    "make_timestamptz_at_timezone"
+  ],
+  "units": {
+    "make_timestamptz": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * make_timestamptz() - timestamp with time zone constructor\n */\nDatum\nmake_timestamptz(PG_FUNCTION_ARGS)\n{\n\tint32\t\tyear = PG_GETARG_INT32(0);\n\tint32\t\tmonth = PG_GETARG_INT32(1);\n\tint32\t\tmday = PG_GETARG_INT32(2);\n\tint32\t\thour = PG_GETARG_INT32(3);\n\tint32\t\tmin = PG_GETARG_INT32(4);\n\tfloat8\t\tsec = PG_GETARG_FLOAT8(5);\n\tTimestamp\tresult;\n\n\tresult = make_timestamp_internal(year, month, mday,\n\t\t\t\t\t\t\t\t\t hour, min, sec);\n\n\tPG_RETURN_TIMESTAMPTZ(timestamp2timestamptz(result));\n}\n\n"
+    },
+    "make_timestamptz_at_timezone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * Construct a timestamp with time zone.\n *\t\tAs above, but the time zone is specified as seventh argument.\n */\nDatum\nmake_timestamptz_at_timezone(PG_FUNCTION_ARGS)\n{\n\tint32\t\tyear = PG_GETARG_INT32(0);\n\tint32\t\tmonth = PG_GETARG_INT32(1);\n\tint32\t\tmday = PG_GETARG_INT32(2);\n\tint32\t\thour = PG_GETARG_INT32(3);\n\tint32\t\tmin = PG_GETARG_INT32(4);\n\tfloat8\t\tsec = PG_GETARG_FLOAT8(5);\n\ttext\t   *zone = PG_GETARG_TEXT_PP(6);\n\tTimestampTz result;\n\tTimestamp\ttimestamp;\n\tstruct pg_tm tt;\n\tint\t\t\ttz;\n\tfsec_t\t\tfsec;\n\n\ttimestamp = make_timestamp_internal(year, month, mday,\n\t\t\t\t\t\t\t\t\t\thour, min, sec);\n\n\tif (timestamp2tm(timestamp, NULL, &tt, &fsec, NULL, NULL) != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\ttz = parse_sane_timezone(&tt, zone);\n\n\tresult = dt2local(timestamp, -tz);\n\n\tif (!IS_VALID_TIMESTAMP(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "timestamptz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 103,
+  "oracle_diff_by_file": {
+    "timestamptz": 103
+  }
+}

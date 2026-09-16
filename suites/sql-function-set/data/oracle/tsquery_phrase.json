@@ -1,0 +1,34 @@
+{
+  "func": "tsquery_phrase",
+  "mode": "stub",
+  "patch": "prep/tsquery_phrase.patch",
+  "symbols": [
+    "tsquery_phrase",
+    "tsquery_phrase_distance"
+  ],
+  "units": {
+    "tsquery_phrase": {
+      "file": "src/backend/utils/adt/tsquery_op.c",
+      "code": "Datum\ntsquery_phrase(PG_FUNCTION_ARGS)\n{\n\tPG_RETURN_DATUM(DirectFunctionCall3(tsquery_phrase_distance,\n\t\t\t\t\t\t\t\t\t\tPG_GETARG_DATUM(0),\n\t\t\t\t\t\t\t\t\t\tPG_GETARG_DATUM(1),\n\t\t\t\t\t\t\t\t\t\tInt32GetDatum(1)));\n}\n\n"
+    },
+    "tsquery_phrase_distance": {
+      "file": "src/backend/utils/adt/tsquery_op.c",
+      "code": "Datum\ntsquery_phrase_distance(PG_FUNCTION_ARGS)\n{\n\tTSQuery\t\ta = PG_GETARG_TSQUERY_COPY(0);\n\tTSQuery\t\tb = PG_GETARG_TSQUERY_COPY(1);\n\tQTNode\t   *res;\n\tTSQuery\t\tquery;\n\tint32\t\tdistance = PG_GETARG_INT32(2);\n\n\tif (distance < 0 || distance > MAXENTRYPOS)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"distance in phrase operator must be an integer value between zero and %d inclusive\",\n\t\t\t\t\t\tMAXENTRYPOS)));\n\tif (a->size == 0)\n\t{\n\t\tPG_FREE_IF_COPY(a, 1);\n\t\tPG_RETURN_POINTER(b);\n\t}\n\telse if (b->size == 0)\n\t{\n\t\tPG_FREE_IF_COPY(b, 1);\n\t\tPG_RETURN_POINTER(a);\n\t}\n\n\tres = join_tsqueries(a, b, OP_PHRASE, (uint16) distance);\n\n\tquery = QTN2QT(res);\n\n\tQTNFree(res);\n\tPG_FREE_IF_COPY(a, 0);\n\tPG_FREE_IF_COPY(b, 1);\n\n\tPG_RETURN_TSQUERY(query);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "tsearch",
+    "tstypes"
+  ],
+  "category": "textsearch",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 40,
+  "oracle_diff_by_file": {
+    "tstypes": 25,
+    "tsearch": 15
+  }
+}

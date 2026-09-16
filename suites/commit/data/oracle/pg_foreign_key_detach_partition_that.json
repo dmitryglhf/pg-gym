@@ -1,0 +1,27 @@
+{
+  "func": "pg_foreign_key_detach_partition_that",
+  "sha": "2f30847d1d04bafa51a17886e132892e38df093f",
+  "parent": "e292ba3334ee1eccfaa5577da62a433788f2826b",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_foreign_key_detach_partition_that.patch",
+  "test_files": [
+    "src/test/regress/sql/foreign_key.sql",
+    "src/test/regress/expected/foreign_key.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c\nindex 36717ffc..3f508760 100644\n--- a/src/backend/commands/tablecmds.c\n+++ b/src/backend/commands/tablecmds.c\n@@ -19258,6 +19258,7 @@ DetachPartitionFinalize(Relation rel, Relation partRel, bool concurrent,\n \tHeapTuple\ttuple,\n \t\t\t\tnewtuple;\n \tRelation\ttrigrel = NULL;\n+\tList\t   *fkoids = NIL;\n \n \tif (concurrent)\n \t{\n@@ -19278,6 +19279,23 @@ DetachPartitionFinalize(Relation rel, Relation partRel, bool concurrent,\n \tfks = copyObject(RelationGetFKeyList(partRel));\n \tif (fks != NIL)\n \t\ttrigrel = table_open(TriggerRelationId, RowExclusiveLock);\n+\n+\t/*\n+\t * It's possible that the partition being detached has a foreign key that\n+\t * references a partitioned table.  When that happens, there are multiple\n+\t * pg_constraint rows for the partition: one points to the partitioned\n+\t * table itself, while the others point to each of its partitions.  Only\n+\t * the topmost one is to be considered here; the child constraints must be\n+\t * left alone, because conceptually those aren't coming from our parent\n+\t * partitioned table, but from this partition itself.\n+\t *\n+\t * We implement this by collecting all the constraint OIDs in a first scan\n+\t * of the FK array, and skipping in the loop below those constraints whose\n+\t * parents are listed here.\n+\t */\n+\tforeach_node(ForeignKeyCacheInfo, fk, fks)\n+\t\tfkoids = lappend_oid(fkoids, fk->conoid);\n+\n \tforeach(cell, fks)\n \t{\n \t\tForeignKeyCacheInfo *fk = lfirst(cell);\n@@ -19291,9 +19309,13 @@ DetachPartitionFinalize(Relation rel, Relation partRel, bool concurrent,\n \t\t\telog(ERROR, \"cache lookup failed for constraint %u\", fk->conoid);\n \t\tconform = (Form_pg_constraint) GETSTRUCT(contup);\n \n-\t\t/* consider only the inherited foreign keys */\n+\t\t/*\n+\t\t * Consider only inherited foreign keys, and only if their parents\n+\t\t * aren't in the list.\n+\t\t */\n \t\tif (conform->contype != CONSTRAINT_FOREIGN ||\n-\t\t\t!OidIsValid(conform->conparentid))\n+\t\t\t!OidIsValid(conform->conparentid) ||\n+\t\t\tlist_member_oid(fkoids, conform->conparentid))\n \t\t{\n \t\t\tReleaseSysCache(contup);\n \t\t\tcontinue;\n",
+  "test": "diff --git a/src/test/regress/expected/foreign_key.out b/src/test/regress/expected/foreign_key.out\nindex 69994c98..fe6a1015 100644\n--- a/src/test/regress/expected/foreign_key.out\n+++ b/src/test/regress/expected/foreign_key.out\n@@ -2339,6 +2339,13 @@ UPDATE pk SET a = 4002 WHERE a = 4000;\n DELETE FROM pk WHERE a = 4002;\n UPDATE pk SET a = 4502 WHERE a = 4500;\n DELETE FROM pk WHERE a = 4502;\n+-- Also, detaching a partition that has the FK itself should work\n+-- https://postgr.es/m/CAAJ_b97GuPh6wQPbxQS-Zpy16Oh+0aMv-w64QcGrLhCOZZ6p+g@mail.gmail.com\n+CREATE TABLE ffk (a int, b int REFERENCES pk) PARTITION BY list (a);\n+CREATE TABLE ffk1 PARTITION OF ffk FOR VALUES IN (1);\n+ALTER TABLE ffk1 ADD FOREIGN KEY (a) REFERENCES pk;\n+ALTER TABLE ffk DETACH PARTITION ffk1;\n+DROP TABLE ffk, ffk1;\n CREATE SCHEMA fkpart4;\n SET search_path TO fkpart4;\n -- dropping/detaching PARTITIONs is prevented if that would break\ndiff --git a/src/test/regress/sql/foreign_key.sql b/src/test/regress/sql/foreign_key.sql\nindex 2e710e41..8c4e4c7c 100644\n--- a/src/test/regress/sql/foreign_key.sql\n+++ b/src/test/regress/sql/foreign_key.sql\n@@ -1672,6 +1672,14 @@ DELETE FROM pk WHERE a = 4002;\n UPDATE pk SET a = 4502 WHERE a = 4500;\n DELETE FROM pk WHERE a = 4502;\n \n+-- Also, detaching a partition that has the FK itself should work\n+-- https://postgr.es/m/CAAJ_b97GuPh6wQPbxQS-Zpy16Oh+0aMv-w64QcGrLhCOZZ6p+g@mail.gmail.com\n+CREATE TABLE ffk (a int, b int REFERENCES pk) PARTITION BY list (a);\n+CREATE TABLE ffk1 PARTITION OF ffk FOR VALUES IN (1);\n+ALTER TABLE ffk1 ADD FOREIGN KEY (a) REFERENCES pk;\n+ALTER TABLE ffk DETACH PARTITION ffk1;\n+DROP TABLE ffk, ffk1;\n+\n CREATE SCHEMA fkpart4;\n SET search_path TO fkpart4;\n -- dropping/detaching PARTITIONs is prevented if that would break\n",
+  "oracle_command": "make -C src/test/regress check TESTS=foreign_key",
+  "expected_tests": [
+    "foreign_key"
+  ],
+  "failing_tests": [
+    "foreign_key"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 1,
+  "oracle_diff_by_file": {
+    "foreign_key": 1
+  }
+}

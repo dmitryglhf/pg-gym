@@ -1,0 +1,36 @@
+{
+  "name": "pg_window_integer_overflow_nodewindowagg",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "f8736f8bc5315fe94cba961825acc3552f8064b0",
+  "parent": "586f4266fb4945f6ea3564b9c1bab093eb74bee4",
+  "date": "2026-04-09",
+  "subject": "Fix integer overflow in nodeWindowAgg.c",
+  "area": "window functions, frame offsets",
+  "licence": "PostgreSQL",
+  "goal": "Window frame boundary calculations can overflow signed integers when ROWS or GROUPS uses an offset near 9223372036854775807. This can select wrong rows or invoke undefined behavior.\n\nExercise frames from CURRENT ROW to that many FOLLOWING, from that many FOLLOWING to a smaller boundary, and the corresponding GROUPS cases, with and without EXCLUDE CURRENT ROW. sum() and last_value() must return the mathematically bounded frame results: an overlarge following boundary reaches the partition end, while a frame starting beyond it is empty. Normal offsets, RANGE frames and exclusion behavior must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/executor/nodeWindowAgg.c",
+      "added": 55,
+      "deleted": 7
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/window.sql",
+    "src/test/regress/expected/window.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "window"
+    ],
+    "command": "make -C src/test/regress check TESTS=window"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

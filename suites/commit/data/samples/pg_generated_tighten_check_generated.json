@@ -1,0 +1,36 @@
+{
+  "name": "pg_generated_tighten_check_generated",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "0b44f2443f699b54d8036ac64a048dd6f59adb3a",
+  "parent": "f4b68b0336bd3ff91f2ee131519b1efe1cb6fc39",
+  "date": "2025-11-04",
+  "subject": "Tighten check for generated column in partition key expression",
+  "area": "generated columns, partition keys",
+  "licence": "PostgreSQL",
+  "goal": "A generated column is forbidden as a partition key, but expression syntax can bypass the check. Parenthesizing the generated column or referring to the table's whole row can create a partition key that depends on generated data.\n\nReject partition keys written as the direct generated column, `(generated_column)`, a whole-row reference, or an expression such as `(table_name IS NOT NULL)` that reads the whole row. The commands must fail consistently before leaving catalog objects behind. Valid expression partition keys over ordinary columns and all existing legal generated columns must remain supported.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 48,
+      "deleted": 38
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "generated"
+    ],
+    "command": "make -C src/test/regress check TESTS=generated"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

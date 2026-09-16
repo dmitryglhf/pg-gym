@@ -1,0 +1,32 @@
+{
+  "func": "justify_days",
+  "mode": "stub",
+  "patch": "prep/justify_days.patch",
+  "symbols": [
+    "interval_justify_days"
+  ],
+  "units": {
+    "interval_justify_days": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n *\tinterval_justify_days()\n *\n *\tAdjust interval so 'day' contains less than 30 days, adding\n *\tthe excess to 'month'.\n */\nDatum\ninterval_justify_days(PG_FUNCTION_ARGS)\n{\n\tInterval   *span = PG_GETARG_INTERVAL_P(0);\n\tInterval   *result;\n\tint32\t\twholemonth;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\tresult->month = span->month;\n\tresult->day = span->day;\n\tresult->time = span->time;\n\n\t/* do nothing for infinite intervals */\n\tif (INTERVAL_NOT_FINITE(result))\n\t\tPG_RETURN_INTERVAL_P(result);\n\n\twholemonth = result->day / DAYS_PER_MONTH;\n\tresult->day -= wholemonth * DAYS_PER_MONTH;\n\tif (pg_add_s32_overflow(result->month, wholemonth, &result->month))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tif (result->month > 0 && result->day < 0)\n\t{\n\t\tresult->day += DAYS_PER_MONTH;\n\t\tresult->month--;\n\t}\n\telse if (result->month < 0 && result->day > 0)\n\t{\n\t\tresult->day -= DAYS_PER_MONTH;\n\t\tresult->month++;\n\t}\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "interval"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 43,
+  "oracle_diff_by_file": {
+    "interval": 13,
+    "brin": 18,
+    "brin_bloom": 2,
+    "brin_multi": 10
+  }
+}

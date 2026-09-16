@@ -1,0 +1,10 @@
+{
+  "name": "pg_hash_index_allow_indexscans_partial",
+  "area": "planner, partial hash indexes",
+  "goal": "The planner can fail to generate an index scan for a usable partial hash index when the query condition is also what proves the index predicate. After implication processing, the remaining search-key bookkeeping makes the index look as though it has no usable first-key condition.\n\nCreate a partial hash index such as `ON t USING hash(seqno) WHERE seqno = 9999` and query with `WHERE seqno = 9999`. The query must return the correct row and remain eligible for an Index Scan on that index. Queries that do not imply the predicate must not use it, and partial indexes for other access methods must retain their existing planning behavior.",
+  "func": "pg_hash_index_allow_indexscans_partial",
+  "graded_by": [
+    "src/test/regress/sql/hash_index.sql",
+    "src/test/regress/expected/hash_index.out"
+  ]
+}

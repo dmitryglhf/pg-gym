@@ -1,0 +1,15 @@
+{
+  "func": "date_recv",
+  "variants": [
+    {
+      "arguments": "internal",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

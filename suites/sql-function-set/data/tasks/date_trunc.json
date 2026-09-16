@@ -1,0 +1,45 @@
+{
+  "func": "date_trunc",
+  "variants": [
+    {
+      "arguments": "text timestamptz",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "truncate timestamp with time zone to specified units"
+    },
+    {
+      "arguments": "text timestamptz text",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "truncate timestamp with time zone to specified units in specified time zone"
+    },
+    {
+      "arguments": "text interval",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "truncate interval to specified units"
+    },
+    {
+      "arguments": "text timestamp",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "truncate timestamp to specified units"
+    }
+  ],
+  "description": "Truncate to specified precision\nTruncate to specified precision in the specified time zone\nThe function date_trunc is conceptually similar to the trunc function for numbers.\nsource is a value expression of type timestamp, timestamp with time zone, or interval. (Values of type date and time are cast automatically to timestamp or interval, respectively.) field selects to which precision to truncate the input value. The return value is likewise of type timestamp, timestamp with time zone, or interval, and it has all fields that are less significant than the selected one set to zero (or one, for day and month).\nValid values for field are: microseconds milliseconds second minute hour day week month quarter year decade century millennium\nWhen the input value is of type timestamp with time zone, the truncation is performed with respect to a particular time zone; for example, truncation to day produces a value that is midnight in that zone. By default, truncation is done with respect to the current setting, but the optional time_zone argument can be provided to specify a different time zone. The time zone name can be specified in any of the ways described in .\nA time zone cannot be specified when processing timestamp without time zone or interval inputs. These are always taken at face value.\nExamples (assuming the local time zone is America/New_York):",
+  "examples": [
+    "date_trunc('hour', timestamp '2001-02-16 20:38:40') -> 2001-02-16 20:00:00",
+    "date_trunc('day', timestamptz '2001-02-16 20:38:40+00', 'Australia/Sydney') -> 2001-02-16 13:00:00+00",
+    "date_trunc('hour', interval '2 days 3 hours 40 minutes') -> 2 days 03:00:00",
+    "SELECT date_trunc('hour', TIMESTAMP '2001-02-16 20:38:40') -> 2001-02-16 20:00:00",
+    "SELECT date_trunc('year', TIMESTAMP '2001-02-16 20:38:40') -> 2001-01-01 00:00:00",
+    "SELECT date_trunc('day', TIMESTAMP WITH TIME ZONE '2001-02-16 20:38:40+00') -> 2001-02-16 00:00:00-05",
+    "SELECT date_trunc('day', TIMESTAMP WITH TIME ZONE '2001-02-16 20:38:40+00', 'Australia/Sydney') -> 2001-02-16 08:00:00-05",
+    "SELECT date_trunc('hour', INTERVAL '3 days 02:47:33') -> 3 days 02:00:00"
+  ],
+  "mode": "stub"
+}

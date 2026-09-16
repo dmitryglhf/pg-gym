@@ -1,0 +1,15 @@
+{
+  "func": "date_ge",
+  "variants": [
+    {
+      "arguments": "date date",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

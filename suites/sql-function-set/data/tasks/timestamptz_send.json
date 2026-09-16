@@ -1,0 +1,15 @@
+{
+  "func": "timestamptz_send",
+  "variants": [
+    {
+      "arguments": "timestamptz",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

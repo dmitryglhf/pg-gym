@@ -1,0 +1,32 @@
+{
+  "func": "json_build_object",
+  "mode": "stub",
+  "patch": "prep/json_build_object.patch",
+  "symbols": [
+    "json_build_object",
+    "json_build_object_noargs"
+  ],
+  "units": {
+    "json_build_object": {
+      "file": "src/backend/utils/adt/json.c",
+      "code": "/*\n * SQL function json_build_object(variadic \"any\")\n */\nDatum\njson_build_object(PG_FUNCTION_ARGS)\n{\n\tDatum\t   *args;\n\tbool\t   *nulls;\n\tOid\t\t   *types;\n\n\t/* build argument values to build the object */\n\tint\t\t\tnargs = extract_variadic_args(fcinfo, 0, true,\n\t\t\t\t\t\t\t\t\t\t\t  &args, &types, &nulls);\n\n\tif (nargs < 0)\n\t\tPG_RETURN_NULL();\n\n\tPG_RETURN_DATUM(json_build_object_worker(nargs, args, nulls, types, false, false));\n}\n\n"
+    },
+    "json_build_object_noargs": {
+      "file": "src/backend/utils/adt/json.c",
+      "code": "/*\n * degenerate case of json_build_object where it gets 0 arguments.\n */\nDatum\njson_build_object_noargs(PG_FUNCTION_ARGS)\n{\n\tPG_RETURN_TEXT_P(cstring_to_text_with_len(\"{}\", 2));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "json"
+  ],
+  "category": "json",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 83,
+  "oracle_diff_by_file": {
+    "json": 83
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "func": "to_number",
+  "mode": "stub",
+  "patch": "prep/to_number.patch",
+  "symbols": [
+    "numeric_to_number"
+  ],
+  "units": {
+    "numeric_to_number": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* -------------------\n * NUMERIC to_number() (convert string to numeric)\n * -------------------\n */\nDatum\nnumeric_to_number(PG_FUNCTION_ARGS)\n{\n\ttext\t   *value = PG_GETARG_TEXT_PP(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tNUMDesc\t\tNum;\n\tDatum\t\tresult;\n\tFormatNode *format;\n\tchar\t   *numstr;\n\tbool\t\tshouldFree;\n\tint\t\t\tlen = 0;\n\tint\t\t\tscale,\n\t\t\t\tprecision;\n\n\tlen = VARSIZE_ANY_EXHDR(fmt);\n\n\tif (len <= 0 || len >= INT_MAX / NUM_MAX_ITEM_SIZ)\n\t\tPG_RETURN_NULL();\n\n\tformat = NUM_cache(len, &Num, fmt, &shouldFree);\n\n\tnumstr = (char *) palloc((len * NUM_MAX_ITEM_SIZ) + 1);\n\n\tNUM_processor(format, &Num, VARDATA_ANY(value), numstr,\n\t\t\t\t  VARSIZE_ANY_EXHDR(value), 0, 0, false, PG_GET_COLLATION());\n\n\tscale = Num.post;\n\tprecision = Num.pre + Num.multi + scale;\n\n\tif (shouldFree)\n\t\tpfree(format);\n\n\tresult = DirectFunctionCall3(numeric_in,\n\t\t\t\t\t\t\t\t CStringGetDatum(numstr),\n\t\t\t\t\t\t\t\t ObjectIdGetDatum(InvalidOid),\n\t\t\t\t\t\t\t\t Int32GetDatum(((precision << 16) | scale) + VARHDRSZ));\n\n\tif (IS_MULTI(&Num))\n\t{\n\t\tNumeric\t\tx;\n\t\tNumeric\t\ta = int64_to_numeric(10);\n\t\tNumeric\t\tb = int64_to_numeric(-Num.multi);\n\n\t\tx = DatumGetNumeric(DirectFunctionCall2(numeric_power,\n\t\t\t\t\t\t\t\t\t\t\t\tNumericGetDatum(a),\n\t\t\t\t\t\t\t\t\t\t\t\tNumericGetDatum(b)));\n\t\tresult = DirectFunctionCall2(numeric_mul,\n\t\t\t\t\t\t\t\t\t result,\n\t\t\t\t\t\t\t\t\t NumericGetDatum(x));\n\t}\n\n\tpfree(numstr);\n\treturn result;\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "numeric"
+  ],
+  "category": "formatting",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 110,
+  "oracle_diff_by_file": {
+    "numeric": 110
+  }
+}

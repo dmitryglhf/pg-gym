@@ -1,0 +1,29 @@
+{
+  "func": "pclose",
+  "mode": "stub",
+  "patch": "prep/pclose.patch",
+  "symbols": [
+    "path_close"
+  ],
+  "units": {
+    "path_close": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "Datum\npath_close(PG_FUNCTION_ARGS)\n{\n\tPATH\t   *path = PG_GETARG_PATH_P_COPY(0);\n\n\tpath->closed = true;\n\n\tPG_RETURN_PATH_P(path);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "geometry",
+    "path"
+  ],
+  "category": "geometric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 21,
+  "oracle_diff_by_file": {
+    "path": 13,
+    "geometry": 8
+  }
+}

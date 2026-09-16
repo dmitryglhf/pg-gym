@@ -1,0 +1,27 @@
+{
+  "func": "parse_ident",
+  "mode": "stub",
+  "patch": "prep/parse_ident.patch",
+  "symbols": [
+    "parse_ident"
+  ],
+  "units": {
+    "parse_ident": {
+      "file": "src/backend/utils/adt/misc.c",
+      "code": "/*\n * parse_ident - parse a SQL qualified identifier into separate identifiers.\n * When strict mode is active (second parameter), then any chars after\n * the last identifier are disallowed.\n */\nDatum\nparse_ident(PG_FUNCTION_ARGS)\n{\n\ttext\t   *qualname = PG_GETARG_TEXT_PP(0);\n\tbool\t\tstrict = PG_GETARG_BOOL(1);\n\tchar\t   *qualname_str = text_to_cstring(qualname);\n\tArrayBuildState *astate = NULL;\n\tchar\t   *nextp;\n\tbool\t\tafter_dot = false;\n\n\t/*\n\t * The code below scribbles on qualname_str in some cases, so we should\n\t * reconvert qualname if we need to show the original string in error\n\t * messages.\n\t */\n\tnextp = qualname_str;\n\n\t/* skip leading whitespace */\n\twhile (scanner_isspace(*nextp))\n\t\tnextp++;\n\n\tfor (;;)\n\t{\n\t\tchar\t   *curname;\n\t\tbool\t\tmissing_ident = true;\n\n\t\tif (*nextp == '\"')\n\t\t{\n\t\t\tchar\t   *endp;\n\n\t\t\tcurname = nextp + 1;\n\t\t\tfor (;;)\n\t\t\t{\n\t\t\t\tendp = strchr(nextp + 1, '\"');\n\t\t\t\tif (endp == NULL)\n\t\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t\t errmsg(\"string is not a valid identifier: \\\"%s\\\"\",\n\t\t\t\t\t\t\t\t\ttext_to_cstring(qualname)),\n\t\t\t\t\t\t\t errdetail(\"String has unclosed double quotes.\")));\n\t\t\t\tif (endp[1] != '\"')\n\t\t\t\t\tbreak;\n\t\t\t\tmemmove(endp, endp + 1, strlen(endp));\n\t\t\t\tnextp = endp;\n\t\t\t}\n\t\t\tnextp = endp + 1;\n\t\t\t*endp = '\\0';\n\n\t\t\tif (endp - curname == 0)\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"string is not a valid identifier: \\\"%s\\\"\",\n\t\t\t\t\t\t\t\ttext_to_cstring(qualname)),\n\t\t\t\t\t\t errdetail(\"Quoted identifier must not be empty.\")));\n\n\t\t\tastate = accumArrayResult(astate, CStringGetTextDatum(curname),\n\t\t\t\t\t\t\t\t\t  false, TEXTOID, CurrentMemoryContext);\n\t\t\tmissing_ident = false;\n\t\t}\n\t\telse if (is_ident_start((unsigned char) *nextp))\n\t\t{\n\t\t\tchar\t   *downname;\n\t\t\tint\t\t\tlen;\n\t\t\ttext\t   *part;\n\n\t\t\tcurname = nextp++;\n\t\t\twhile (is_ident_cont((unsigned char) *nextp))\n\t\t\t\tnextp++;\n\n\t\t\tlen = nextp - curname;\n\n\t\t\t/*\n\t\t\t * We don't implicitly truncate identifiers. This is useful for\n\t\t\t * allowing the user to check for specific parts of the identifier\n\t\t\t * being too long. It's easy enough for the user to get the\n\t\t\t * truncated names by casting our output to name[].\n\t\t\t */\n\t\t\tdownname = downcase_identifier(curname, len, false, false);\n\t\t\tpart = cstring_to_text_with_len(downname, len);\n\t\t\tastate = accumArrayResult(astate, PointerGetDatum(part), false,\n\t\t\t\t\t\t\t\t\t  TEXTOID, CurrentMemoryContext);\n\t\t\tmissing_ident = false;\n\t\t}\n\n\t\tif (missing_ident)\n\t\t{\n\t\t\t/* Different error messages based on where we failed. */\n\t\t\tif (*nextp == '.')\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"string is not a valid identifier: \\\"%s\\\"\",\n\t\t\t\t\t\t\t\ttext_to_cstring(qualname)),\n\t\t\t\t\t\t errdetail(\"No valid identifier before \\\".\\\".\")));\n\t\t\telse if (after_dot)\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"string is not a valid identifier: \\\"%s\\\"\",\n\t\t\t\t\t\t\t\ttext_to_cstring(qualname)),\n\t\t\t\t\t\t errdetail(\"No valid identifier after \\\".\\\".\")));\n\t\t\telse\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"string is not a valid identifier: \\\"%s\\\"\",\n\t\t\t\t\t\t\t\ttext_to_cstring(qualname))));\n\t\t}\n\n\t\twhile (scanner_isspace(*nextp))\n\t\t\tnextp++;\n\n\t\tif (*nextp == '.')\n\t\t{\n\t\t\tafter_dot = true;\n\t\t\tnextp++;\n\t\t\twhile (scanner_isspace(*nextp))\n\t\t\t\tnextp++;\n\t\t}\n\t\telse if (*nextp == '\\0')\n\t\t{\n\t\t\tbreak;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tif (strict)\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"string is not a valid identifier: \\\"%s\\\"\",\n\t\t\t\t\t\t\t\ttext_to_cstring(qualname))));\n\t\t\tbreak;\n\t\t}\n\t}\n\n\tPG_RETURN_DATUM(makeArrayResult(astate, CurrentMemoryContext));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "name"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 59,
+  "oracle_diff_by_file": {
+    "name": 59
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "func": "date_trunc",
+  "mode": "stub",
+  "patch": "prep/date_trunc.patch",
+  "symbols": [
+    "interval_trunc",
+    "timestamp_trunc",
+    "timestamptz_trunc",
+    "timestamptz_trunc_zone"
+  ],
+  "units": {
+    "interval_trunc": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* interval_trunc()\n * Extract specified field from interval.\n */\nDatum\ninterval_trunc(PG_FUNCTION_ARGS)\n{\n\ttext\t   *units = PG_GETARG_TEXT_PP(0);\n\tInterval   *interval = PG_GETARG_INTERVAL_P(1);\n\tInterval   *result;\n\tint\t\t\ttype,\n\t\t\t\tval;\n\tchar\t   *lowunits;\n\tstruct pg_itm tt,\n\t\t\t   *tm = &tt;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\tif (INTERVAL_NOT_FINITE(interval))\n\t{\n\t\tmemcpy(result, interval, sizeof(Interval));\n\t\tPG_RETURN_INTERVAL_P(result);\n\t}\n\n\tlowunits = downcase_truncate_identifier(VARDATA_ANY(units),\n\t\t\t\t\t\t\t\t\t\t\tVARSIZE_ANY_EXHDR(units),\n\t\t\t\t\t\t\t\t\t\t\tfalse);\n\n\ttype = DecodeUnits(0, lowunits, &val);\n\n\tif (type == UNITS)\n\t{\n\t\tinterval2itm(*interval, tm);\n\t\tswitch (val)\n\t\t{\n\t\t\tcase DTK_MILLENNIUM:\n\t\t\t\t/* caution: C division may have negative remainder */\n\t\t\t\ttm->tm_year = (tm->tm_year / 1000) * 1000;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_CENTURY:\n\t\t\t\t/* caution: C division may have negative remainder */\n\t\t\t\ttm->tm_year = (tm->tm_year / 100) * 100;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_DECADE:\n\t\t\t\t/* caution: C division may have negative remainder */\n\t\t\t\ttm->tm_year = (tm->tm_year / 10) * 10;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_YEAR:\n\t\t\t\ttm->tm_mon = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_QUARTER:\n\t\t\t\ttm->tm_mon = 3 * (tm->tm_mon / 3);\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_MONTH:\n\t\t\t\ttm->tm_mday = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_DAY:\n\t\t\t\ttm->tm_hour = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_HOUR:\n\t\t\t\ttm->tm_min = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_MINUTE:\n\t\t\t\ttm->tm_sec = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_SECOND:\n\t\t\t\ttm->tm_usec = 0;\n\t\t\t\tbreak;\n\t\t\tcase DTK_MILLISEC:\n\t\t\t\ttm->tm_usec = (tm->tm_usec / 1000) * 1000;\n\t\t\t\tbreak;\n\t\t\tcase DTK_MICROSEC:\n\t\t\t\tbreak;\n\n\t\t\tdefault:\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t\t\t errmsg(\"unit \\\"%s\\\" not supported for type %s\",\n\t\t\t\t\t\t\t\tlowunits, format_type_be(INTERVALOID)),\n\t\t\t\t\t\t (val == DTK_WEEK) ? errdetail(\"Months usually have fractional weeks.\") : 0));\n\t\t}\n\n\t\tif (itm2interval(tm, result) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"interval out of range\")));\n\t}\n\telse\n\t{\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"unit \\\"%s\\\" not recognized for type %s\",\n\t\t\t\t\t\tlowunits, format_type_be(INTERVALOID))));\n\t}\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    },
+    "timestamp_trunc": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamp_trunc()\n * Truncate timestamp to specified units.\n */\nDatum\ntimestamp_trunc(PG_FUNCTION_ARGS)\n{\n\ttext\t   *units = PG_GETARG_TEXT_PP(0);\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(1);\n\tTimestamp\tresult;\n\tint\t\t\ttype,\n\t\t\t\tval;\n\tchar\t   *lowunits;\n\tfsec_t\t\tfsec;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMP(timestamp);\n\n\tlowunits = downcase_truncate_identifier(VARDATA_ANY(units),\n\t\t\t\t\t\t\t\t\t\t\tVARSIZE_ANY_EXHDR(units),\n\t\t\t\t\t\t\t\t\t\t\tfalse);\n\n\ttype = DecodeUnits(0, lowunits, &val);\n\n\tif (type == UNITS)\n\t{\n\t\tif (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\t\tswitch (val)\n\t\t{\n\t\t\tcase DTK_WEEK:\n\t\t\t\t{\n\t\t\t\t\tint\t\t\twoy;\n\n\t\t\t\t\twoy = date2isoweek(tm->tm_year, tm->tm_mon, tm->tm_mday);\n\n\t\t\t\t\t/*\n\t\t\t\t\t * If it is week 52/53 and the month is January, then the\n\t\t\t\t\t * week must belong to the previous year. Also, some\n\t\t\t\t\t * December dates belong to the next year.\n\t\t\t\t\t */\n\t\t\t\t\tif (woy >= 52 && tm->tm_mon == 1)\n\t\t\t\t\t\t--tm->tm_year;\n\t\t\t\t\tif (woy <= 1 && tm->tm_mon == MONTHS_PER_YEAR)\n\t\t\t\t\t\t++tm->tm_year;\n\t\t\t\t\tisoweek2date(woy, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));\n\t\t\t\t\ttm->tm_hour = 0;\n\t\t\t\t\ttm->tm_min = 0;\n\t\t\t\t\ttm->tm_sec = 0;\n\t\t\t\t\tfsec = 0;\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\tcase DTK_MILLENNIUM:\n\t\t\t\t/* see comments in timestamptz_trunc */\n\t\t\t\tif (tm->tm_year > 0)\n\t\t\t\t\ttm->tm_year = ((tm->tm_year + 999) / 1000) * 1000 - 999;\n\t\t\t\telse\n\t\t\t\t\ttm->tm_year = -((999 - (tm->tm_year - 1)) / 1000) * 1000 + 1;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_CENTURY:\n\t\t\t\t/* see comments in timestamptz_trunc */\n\t\t\t\tif (tm->tm_year > 0)\n\t\t\t\t\ttm->tm_year = ((tm->tm_year + 99) / 100) * 100 - 99;\n\t\t\t\telse\n\t\t\t\t\ttm->tm_year = -((99 - (tm->tm_year - 1)) / 100) * 100 + 1;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_DECADE:\n\t\t\t\t/* see comments in timestamptz_trunc */\n\t\t\t\tif (val != DTK_MILLENNIUM && val != DTK_CENTURY)\n\t\t\t\t{\n\t\t\t\t\tif (tm->tm_year > 0)\n\t\t\t\t\t\ttm->tm_year = (tm->tm_year / 10) * 10;\n\t\t\t\t\telse\n\t\t\t\t\t\ttm->tm_year = -((8 - (tm->tm_year - 1)) / 10) * 10;\n\t\t\t\t}\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_YEAR:\n\t\t\t\ttm->tm_mon = 1;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_QUARTER:\n\t\t\t\ttm->tm_mon = (3 * ((tm->tm_mon - 1) / 3)) + 1;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_MONTH:\n\t\t\t\ttm->tm_mday = 1;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_DAY:\n\t\t\t\ttm->tm_hour = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_HOUR:\n\t\t\t\ttm->tm_min = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_MINUTE:\n\t\t\t\ttm->tm_sec = 0;\n\t\t\t\t/* FALL THRU */\n\t\t\tcase DTK_SECOND:\n\t\t\t\tfsec = 0;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_MILLISEC:\n\t\t\t\tfsec = (fsec / 1000) * 1000;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_MICROSEC:\n\t\t\t\tbreak;\n\n\t\t\tdefault:\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t\t\t errmsg(\"unit \\\"%s\\\" not supported for type %s\",\n\t\t\t\t\t\t\t\tlowunits, format_type_be(TIMESTAMPOID))));\n\t\t\t\tresult = 0;\n\t\t}\n\n\t\tif (tm2timestamp(tm, fsec, NULL, &result) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\telse\n\t{\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"unit \\\"%s\\\" not recognized for type %s\",\n\t\t\t\t\t\tlowunits, format_type_be(TIMESTAMPOID))));\n\t\tresult = 0;\n\t}\n\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    },
+    "timestamptz_trunc": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_trunc()\n * Truncate timestamptz to specified units in session timezone.\n */\nDatum\ntimestamptz_trunc(PG_FUNCTION_ARGS)\n{\n\ttext\t   *units = PG_GETARG_TEXT_PP(0);\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);\n\tTimestampTz result;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMPTZ(timestamp);\n\n\tresult = timestamptz_trunc_internal(units, timestamp, session_timezone);\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\n\n"
+    },
+    "timestamptz_trunc_zone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_trunc_zone()\n * Truncate timestamptz to specified units in specified timezone.\n */\nDatum\ntimestamptz_trunc_zone(PG_FUNCTION_ARGS)\n{\n\ttext\t   *units = PG_GETARG_TEXT_PP(0);\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);\n\ttext\t   *zone = PG_GETARG_TEXT_PP(2);\n\tTimestampTz result;\n\tpg_tz\t   *tzp;\n\n\t/*\n\t * timestamptz_zone() doesn't look up the zone for infinite inputs, so we\n\t * don't do so here either.\n\t */\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMP(timestamp);\n\n\t/*\n\t * Look up the requested timezone.\n\t */\n\ttzp = lookup_timezone(zone);\n\n\tresult = timestamptz_trunc_internal(units, timestamp, tzp);\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "date",
+    "interval",
+    "stats_ext",
+    "timestamp",
+    "timestamptz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 138,
+  "oracle_diff_by_file": {
+    "date": 50,
+    "timestamp": 49,
+    "timestamptz": 30,
+    "interval": 6,
+    "stats_ext": 3
+  }
+}

@@ -1,0 +1,21 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..d2889c6 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1733,14 +1733,8 @@ time_ge(PG_FUNCTION_ARGS)
+ Datum
+ time_cmp(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time1 = PG_GETARG_TIMEADT(0);
+-	TimeADT		time2 = PG_GETARG_TIMEADT(1);
+-
+-	if (time1 < time2)
+-		PG_RETURN_INT32(-1);
+-	if (time1 > time2)
+-		PG_RETURN_INT32(1);
+-	PG_RETURN_INT32(0);
++	elog(ERROR, "time_cmp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

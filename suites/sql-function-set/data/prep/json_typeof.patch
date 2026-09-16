@@ -1,0 +1,64 @@
+diff --git a/src/backend/utils/adt/json.c b/src/backend/utils/adt/json.c
+index 30ea4c4..97e0bf9 100644
+--- a/src/backend/utils/adt/json.c
++++ b/src/backend/utils/adt/json.c
+@@ -1710,56 +1710,10 @@ json_validate(text *json, bool check_unique_keys, bool throw_error)
+ 	return true;				/* ok */
+ }
+ 
+-/*
+- * SQL function json_typeof(json) -> text
+- *
+- * Returns the type of the outermost JSON value as TEXT.  Possible types are
+- * "object", "array", "string", "number", "boolean", and "null".
+- *
+- * Performs a single call to json_lex() to get the first token of the supplied
+- * value.  This initial token uniquely determines the value's type.  As our
+- * input must already have been validated by json_in() or json_recv(), the
+- * initial token should never be JSON_TOKEN_OBJECT_END, JSON_TOKEN_ARRAY_END,
+- * JSON_TOKEN_COLON, JSON_TOKEN_COMMA, or JSON_TOKEN_END.
+- */
+ Datum
+ json_typeof(PG_FUNCTION_ARGS)
+ {
+-	text	   *json = PG_GETARG_TEXT_PP(0);
+-	JsonLexContext lex;
+-	char	   *type;
+-	JsonParseErrorType result;
+-
+-	/* Lex exactly one token from the input and check its type. */
+-	makeJsonLexContext(&lex, json, false);
+-	result = json_lex(&lex);
+-	if (result != JSON_SUCCESS)
+-		json_errsave_error(result, &lex, NULL);
+-
+-	switch (lex.token_type)
+-	{
+-		case JSON_TOKEN_OBJECT_START:
+-			type = "object";
+-			break;
+-		case JSON_TOKEN_ARRAY_START:
+-			type = "array";
+-			break;
+-		case JSON_TOKEN_STRING:
+-			type = "string";
+-			break;
+-		case JSON_TOKEN_NUMBER:
+-			type = "number";
+-			break;
+-		case JSON_TOKEN_TRUE:
+-		case JSON_TOKEN_FALSE:
+-			type = "boolean";
+-			break;
+-		case JSON_TOKEN_NULL:
+-			type = "null";
+-			break;
+-		default:
+-			elog(ERROR, "unexpected json token: %d", lex.token_type);
+-	}
+-
+-	PG_RETURN_TEXT_P(cstring_to_text(type));
++	elog(ERROR, "json_typeof is not implemented");
++	PG_RETURN_NULL();
+ }
++

@@ -1,0 +1,10 @@
+{
+  "name": "pg_partition_join_freeing_child_join",
+  "area": "partitionwise joins, planner lifetime",
+  "goal": "Planning a partitionwise join can access invalid planner state after constructing child joins, leading to a crash or assertion failure on queries that reuse a partitioned relation and contain a subquery predicate.\n\nUse three references to the same partitioned table in a joined query with an IN or equivalent subquery, enable partitionwise joins, and run EXPLAIN. Planning must complete without a crash and the plan must preserve the query's join and subquery semantics. Simpler two-way partitionwise joins and plans with partitionwise joins disabled must remain unchanged.",
+  "func": "pg_partition_join_freeing_child_join",
+  "graded_by": [
+    "src/test/regress/sql/partition_join.sql",
+    "src/test/regress/expected/partition_join.out"
+  ]
+}

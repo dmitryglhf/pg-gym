@@ -1,0 +1,301 @@
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index 15d2cab..62e99c8 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -5679,274 +5679,11 @@ text_reverse(PG_FUNCTION_ARGS)
+ 					 errhint("For a single \"%%\" use \"%%%%\"."))); \
+ 	} while (0)
+ 
+-/*
+- * Returns a formatted string
+- */
+ Datum
+ text_format(PG_FUNCTION_ARGS)
+ {
+-	text	   *fmt;
+-	StringInfoData str;
+-	const char *cp;
+-	const char *start_ptr;
+-	const char *end_ptr;
+-	text	   *result;
+-	int			arg;
+-	bool		funcvariadic;
+-	int			nargs;
+-	Datum	   *elements = NULL;
+-	bool	   *nulls = NULL;
+-	Oid			element_type = InvalidOid;
+-	Oid			prev_type = InvalidOid;
+-	Oid			prev_width_type = InvalidOid;
+-	FmgrInfo	typoutputfinfo;
+-	FmgrInfo	typoutputinfo_width;
+-
+-	/* When format string is null, immediately return null */
+-	if (PG_ARGISNULL(0))
+-		PG_RETURN_NULL();
+-
+-	/* If argument is marked VARIADIC, expand array into elements */
+-	if (get_fn_expr_variadic(fcinfo->flinfo))
+-	{
+-		ArrayType  *arr;
+-		int16		elmlen;
+-		bool		elmbyval;
+-		char		elmalign;
+-		int			nitems;
+-
+-		/* Should have just the one argument */
+-		Assert(PG_NARGS() == 2);
+-
+-		/* If argument is NULL, we treat it as zero-length array */
+-		if (PG_ARGISNULL(1))
+-			nitems = 0;
+-		else
+-		{
+-			/*
+-			 * Non-null argument had better be an array.  We assume that any
+-			 * call context that could let get_fn_expr_variadic return true
+-			 * will have checked that a VARIADIC-labeled parameter actually is
+-			 * an array.  So it should be okay to just Assert that it's an
+-			 * array rather than doing a full-fledged error check.
+-			 */
+-			Assert(OidIsValid(get_base_element_type(get_fn_expr_argtype(fcinfo->flinfo, 1))));
+-
+-			/* OK, safe to fetch the array value */
+-			arr = PG_GETARG_ARRAYTYPE_P(1);
+-
+-			/* Get info about array element type */
+-			element_type = ARR_ELEMTYPE(arr);
+-			get_typlenbyvalalign(element_type,
+-								 &elmlen, &elmbyval, &elmalign);
+-
+-			/* Extract all array elements */
+-			deconstruct_array(arr, element_type, elmlen, elmbyval, elmalign,
+-							  &elements, &nulls, &nitems);
+-		}
+-
+-		nargs = nitems + 1;
+-		funcvariadic = true;
+-	}
+-	else
+-	{
+-		/* Non-variadic case, we'll process the arguments individually */
+-		nargs = PG_NARGS();
+-		funcvariadic = false;
+-	}
+-
+-	/* Setup for main loop. */
+-	fmt = PG_GETARG_TEXT_PP(0);
+-	start_ptr = VARDATA_ANY(fmt);
+-	end_ptr = start_ptr + VARSIZE_ANY_EXHDR(fmt);
+-	initStringInfo(&str);
+-	arg = 1;					/* next argument position to print */
+-
+-	/* Scan format string, looking for conversion specifiers. */
+-	for (cp = start_ptr; cp < end_ptr; cp++)
+-	{
+-		int			argpos;
+-		int			widthpos;
+-		int			flags;
+-		int			width;
+-		Datum		value;
+-		bool		isNull;
+-		Oid			typid;
+-
+-		/*
+-		 * If it's not the start of a conversion specifier, just copy it to
+-		 * the output buffer.
+-		 */
+-		if (*cp != '%')
+-		{
+-			appendStringInfoCharMacro(&str, *cp);
+-			continue;
+-		}
+-
+-		ADVANCE_PARSE_POINTER(cp, end_ptr);
+-
+-		/* Easy case: %% outputs a single % */
+-		if (*cp == '%')
+-		{
+-			appendStringInfoCharMacro(&str, *cp);
+-			continue;
+-		}
+-
+-		/* Parse the optional portions of the format specifier */
+-		cp = text_format_parse_format(cp, end_ptr,
+-									  &argpos, &widthpos,
+-									  &flags, &width);
+-
+-		/*
+-		 * Next we should see the main conversion specifier.  Whether or not
+-		 * an argument position was present, it's known that at least one
+-		 * character remains in the string at this point.  Experience suggests
+-		 * that it's worth checking that that character is one of the expected
+-		 * ones before we try to fetch arguments, so as to produce the least
+-		 * confusing response to a mis-formatted specifier.
+-		 */
+-		if (strchr("sIL", *cp) == NULL)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("unrecognized format() type specifier \"%.*s\"",
+-							pg_mblen_range(cp, end_ptr), cp),
+-					 errhint("For a single \"%%\" use \"%%%%\".")));
+-
+-		/* If indirect width was specified, get its value */
+-		if (widthpos >= 0)
+-		{
+-			/* Collect the specified or next argument position */
+-			if (widthpos > 0)
+-				arg = widthpos;
+-			if (arg >= nargs)
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("too few arguments for format()")));
+-
+-			/* Get the value and type of the selected argument */
+-			if (!funcvariadic)
+-			{
+-				value = PG_GETARG_DATUM(arg);
+-				isNull = PG_ARGISNULL(arg);
+-				typid = get_fn_expr_argtype(fcinfo->flinfo, arg);
+-			}
+-			else
+-			{
+-				value = elements[arg - 1];
+-				isNull = nulls[arg - 1];
+-				typid = element_type;
+-			}
+-			if (!OidIsValid(typid))
+-				elog(ERROR, "could not determine data type of format() input");
+-
+-			arg++;
+-
+-			/* We can treat NULL width the same as zero */
+-			if (isNull)
+-				width = 0;
+-			else if (typid == INT4OID)
+-				width = DatumGetInt32(value);
+-			else if (typid == INT2OID)
+-				width = DatumGetInt16(value);
+-			else
+-			{
+-				/* For less-usual datatypes, convert to text then to int */
+-				char	   *str;
+-
+-				if (typid != prev_width_type)
+-				{
+-					Oid			typoutputfunc;
+-					bool		typIsVarlena;
+-
+-					getTypeOutputInfo(typid, &typoutputfunc, &typIsVarlena);
+-					fmgr_info(typoutputfunc, &typoutputinfo_width);
+-					prev_width_type = typid;
+-				}
+-
+-				str = OutputFunctionCall(&typoutputinfo_width, value);
+-
+-				/* pg_strtoint32 will complain about bad data or overflow */
+-				width = pg_strtoint32(str);
+-
+-				pfree(str);
+-			}
+-		}
+-
+-		/* Collect the specified or next argument position */
+-		if (argpos > 0)
+-			arg = argpos;
+-		if (arg >= nargs)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("too few arguments for format()")));
+-
+-		/* Get the value and type of the selected argument */
+-		if (!funcvariadic)
+-		{
+-			value = PG_GETARG_DATUM(arg);
+-			isNull = PG_ARGISNULL(arg);
+-			typid = get_fn_expr_argtype(fcinfo->flinfo, arg);
+-		}
+-		else
+-		{
+-			value = elements[arg - 1];
+-			isNull = nulls[arg - 1];
+-			typid = element_type;
+-		}
+-		if (!OidIsValid(typid))
+-			elog(ERROR, "could not determine data type of format() input");
+-
+-		arg++;
+-
+-		/*
+-		 * Get the appropriate typOutput function, reusing previous one if
+-		 * same type as previous argument.  That's particularly useful in the
+-		 * variadic-array case, but often saves work even for ordinary calls.
+-		 */
+-		if (typid != prev_type)
+-		{
+-			Oid			typoutputfunc;
+-			bool		typIsVarlena;
+-
+-			getTypeOutputInfo(typid, &typoutputfunc, &typIsVarlena);
+-			fmgr_info(typoutputfunc, &typoutputfinfo);
+-			prev_type = typid;
+-		}
+-
+-		/*
+-		 * And now we can format the value.
+-		 */
+-		switch (*cp)
+-		{
+-			case 's':
+-			case 'I':
+-			case 'L':
+-				text_format_string_conversion(&str, *cp, &typoutputfinfo,
+-											  value, isNull,
+-											  flags, width);
+-				break;
+-			default:
+-				/* should not get here, because of previous check */
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("unrecognized format() type specifier \"%.*s\"",
+-								pg_mblen_range(cp, end_ptr), cp),
+-						 errhint("For a single \"%%\" use \"%%%%\".")));
+-				break;
+-		}
+-	}
+-
+-	/* Don't need deconstruct_array results anymore. */
+-	if (elements != NULL)
+-		pfree(elements);
+-	if (nulls != NULL)
+-		pfree(nulls);
+-
+-	/* Generate results. */
+-	result = cstring_to_text_with_len(str.data, str.len);
+-	pfree(str.data);
+-
+-	PG_RETURN_TEXT_P(result);
++	elog(ERROR, "text_format is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+@@ -6179,17 +5916,11 @@ text_format_append_string(StringInfo buf, const char *str,
+ 	}
+ }
+ 
+-/*
+- * text_format_nv - nonvariadic wrapper for text_format function.
+- *
+- * note: this wrapper is necessary to pass the sanity check in opr_sanity,
+- * which checks that all built-in functions that share the implementing C
+- * function take the same number of arguments.
+- */
+ Datum
+ text_format_nv(PG_FUNCTION_ARGS)
+ {
+-	return text_format(fcinfo);
++	elog(ERROR, "text_format_nv is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

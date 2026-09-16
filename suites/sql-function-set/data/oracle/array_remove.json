@@ -1,0 +1,33 @@
+{
+  "func": "array_remove",
+  "mode": "stub",
+  "patch": "prep/array_remove.patch",
+  "symbols": [
+    "array_remove"
+  ],
+  "units": {
+    "array_remove": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * Remove any occurrences of an element from an array\n *\n * If used on a multi-dimensional array this will raise an error.\n */\nDatum\narray_remove(PG_FUNCTION_ARGS)\n{\n\tArrayType  *array;\n\tDatum\t\tsearch = PG_GETARG_DATUM(1);\n\tbool\t\tsearch_isnull = PG_ARGISNULL(1);\n\n\tif (PG_ARGISNULL(0))\n\t\tPG_RETURN_NULL();\n\tarray = PG_GETARG_ARRAYTYPE_P(0);\n\n\tarray = array_replace_internal(array,\n\t\t\t\t\t\t\t\t   search, search_isnull,\n\t\t\t\t\t\t\t\t   (Datum) 0, true,\n\t\t\t\t\t\t\t\t   true, PG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t   fcinfo);\n\tPG_RETURN_ARRAYTYPE_P(array);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "arrays",
+    "sqljson",
+    "sqljson_jsontable",
+    "subselect"
+  ],
+  "category": "array",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 296,
+  "oracle_diff_by_file": {
+    "subselect": 23,
+    "arrays": 32,
+    "sqljson": 26,
+    "sqljson_jsontable": 215
+  }
+}

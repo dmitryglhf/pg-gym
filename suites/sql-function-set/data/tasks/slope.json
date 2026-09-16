@@ -1,0 +1,18 @@
+{
+  "func": "slope",
+  "variants": [
+    {
+      "arguments": "point point",
+      "returns": "float8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "slope between points"
+    }
+  ],
+  "description": "Computes slope of a line drawn through the two points.",
+  "examples": [
+    "slope(point '(0,0)', point '(2,1)') -> 0.5"
+  ],
+  "mode": "stub",
+  "category": "geometric"
+}

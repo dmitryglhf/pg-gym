@@ -1,0 +1,79 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..1bee58b 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1261,72 +1261,11 @@ intervaltypmodleastfield(int32 typmod)
+ }
+ 
+ 
+-/*
+- * interval_support()
+- *
+- * Planner support function for interval_scale().
+- *
+- * Flatten superfluous calls to interval_scale().  The interval typmod is
+- * complex to permit accepting and regurgitating all SQL standard variations.
+- * For truncation purposes, it boils down to a single, simple granularity.
+- */
+ Datum
+ interval_support(PG_FUNCTION_ARGS)
+ {
+-	Node	   *rawreq = (Node *) PG_GETARG_POINTER(0);
+-	Node	   *ret = NULL;
+-
+-	if (IsA(rawreq, SupportRequestSimplify))
+-	{
+-		SupportRequestSimplify *req = (SupportRequestSimplify *) rawreq;
+-		FuncExpr   *expr = req->fcall;
+-		Node	   *typmod;
+-
+-		Assert(list_length(expr->args) >= 2);
+-
+-		typmod = (Node *) lsecond(expr->args);
+-
+-		if (IsA(typmod, Const) && !((Const *) typmod)->constisnull)
+-		{
+-			Node	   *source = (Node *) linitial(expr->args);
+-			int32		new_typmod = DatumGetInt32(((Const *) typmod)->constvalue);
+-			bool		noop;
+-
+-			if (new_typmod < 0)
+-				noop = true;
+-			else
+-			{
+-				int32		old_typmod = exprTypmod(source);
+-				int			old_least_field;
+-				int			new_least_field;
+-				int			old_precis;
+-				int			new_precis;
+-
+-				old_least_field = intervaltypmodleastfield(old_typmod);
+-				new_least_field = intervaltypmodleastfield(new_typmod);
+-				if (old_typmod < 0)
+-					old_precis = INTERVAL_FULL_PRECISION;
+-				else
+-					old_precis = INTERVAL_PRECISION(old_typmod);
+-				new_precis = INTERVAL_PRECISION(new_typmod);
+-
+-				/*
+-				 * Cast is a no-op if least field stays the same or decreases
+-				 * while precision stays the same or increases.  But
+-				 * precision, which is to say, sub-second precision, only
+-				 * affects ranges that include SECOND.
+-				 */
+-				noop = (new_least_field <= old_least_field) &&
+-					(old_least_field > 0 /* SECOND */ ||
+-					 new_precis >= MAX_INTERVAL_PRECISION ||
+-					 new_precis >= old_precis);
+-			}
+-			if (noop)
+-				ret = relabel_to_typmod(source, new_typmod);
+-		}
+-	}
+-
+-	PG_RETURN_POINTER(ret);
++	elog(ERROR, "interval_support is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* interval_scale()

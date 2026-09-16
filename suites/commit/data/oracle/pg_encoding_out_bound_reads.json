@@ -1,0 +1,41 @@
+{
+  "func": "pg_encoding_out_bound_reads",
+  "sha": "849da82105395fa4d06f877db8edc62158167941",
+  "parent": "46fa1f6f373865fae7553043790cd17944893ac3",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_encoding_out_bound_reads.patch",
+  "test_files": [
+    "src/test/regress/sql/encoding.sql",
+    "src/test/regress/expected/encoding.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/oracle_compat.c b/src/backend/utils/adt/oracle_compat.c\nindex 423fde005..f93077aeb 100644\n--- a/src/backend/utils/adt/oracle_compat.c\n+++ b/src/backend/utils/adt/oracle_compat.c\n@@ -936,8 +936,10 @@ ascii(PG_FUNCTION_ARGS)\n \ttext\t   *string = PG_GETARG_TEXT_PP(0);\n \tint\t\t\tencoding = GetDatabaseEncoding();\n \tunsigned char *data;\n+\tint\t\t\tlen;\n \n-\tif (VARSIZE_ANY_EXHDR(string) <= 0)\n+\tlen = VARSIZE_ANY_EXHDR(string);\n+\tif (len <= 0)\n \t\tPG_RETURN_INT32(0);\n \n \tdata = (unsigned char *) VARDATA_ANY(string);\n@@ -960,18 +962,31 @@ ascii(PG_FUNCTION_ARGS)\n \t\t\tresult = *data & 0x0F;\n \t\t\ttbytes = 2;\n \t\t}\n-\t\telse\n+\t\telse if (*data > 0xC0)\n \t\t{\n-\t\t\tAssert(*data > 0xC0);\n \t\t\tresult = *data & 0x1f;\n \t\t\ttbytes = 1;\n \t\t}\n+\t\telse\n+\t\t\tereport(ERROR,\n+\t\t\t\t\t(errcode(ERRCODE_CHARACTER_NOT_IN_REPERTOIRE),\n+\t\t\t\t\t errmsg(\"invalid byte sequence for encoding \\\"%s\\\"\",\n+\t\t\t\t\t\t\tGetDatabaseEncodingName())));\n \n-\t\tAssert(tbytes > 0);\n+\t\t/* All continuation bytes are present in the input */\n+\t\tif (tbytes >= len)\n+\t\t\tereport(ERROR,\n+\t\t\t\t\t(errcode(ERRCODE_CHARACTER_NOT_IN_REPERTOIRE),\n+\t\t\t\t\t errmsg(\"invalid byte sequence for encoding \\\"%s\\\"\",\n+\t\t\t\t\t\t\tGetDatabaseEncodingName())));\n \n \t\tfor (i = 1; i <= tbytes; i++)\n \t\t{\n-\t\t\tAssert((data[i] & 0xC0) == 0x80);\n+\t\t\tif (unlikely((data[i] & 0xC0) != 0x80))\n+\t\t\t\tereport(ERROR,\n+\t\t\t\t\t\t(errcode(ERRCODE_CHARACTER_NOT_IN_REPERTOIRE),\n+\t\t\t\t\t\t errmsg(\"invalid byte sequence for encoding \\\"%s\\\"\",\n+\t\t\t\t\t\t\t\tGetDatabaseEncodingName())));\n \t\t\tresult = (result << 6) + (data[i] & 0x3f);\n \t\t}\n \n",
+  "test": "diff --git a/src/test/regress/expected/encoding.out b/src/test/regress/expected/encoding.out\nindex b3655527b..7e00c25b9 100644\n--- a/src/test/regress/expected/encoding.out\n+++ b/src/test/regress/expected/encoding.out\n@@ -416,6 +416,25 @@ SELECT SUBSTRING(c FROM 3000 FOR 1) FROM toast_4b_utf8;\n  🚀\n (1 row)\n \n+-- ascii() and multibyte characters\n+SELECT ascii(test_bytea_to_text('\\xc3'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+SELECT ascii(test_bytea_to_text('\\xe2'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+SELECT ascii(test_bytea_to_text('\\xe282'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+SELECT ascii(test_bytea_to_text('\\xf0'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+SELECT ascii(test_bytea_to_text('\\xf09f'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+SELECT ascii(test_bytea_to_text('\\xf09f98'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+-- invalid continuation byte\n+SELECT ascii(test_bytea_to_text('\\xc3ff'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n+-- invalid leading byte\n+SELECT ascii(test_bytea_to_text('\\x80'));\n+ERROR:  invalid byte sequence for encoding \"UTF8\"\n DROP TABLE encoding_tests;\n DROP TABLE toast_4b_utf8;\n DROP FUNCTION test_encoding;\ndiff --git a/src/test/regress/sql/encoding.sql b/src/test/regress/sql/encoding.sql\nindex d591818c3..0c1bf17a2 100644\n--- a/src/test/regress/sql/encoding.sql\n+++ b/src/test/regress/sql/encoding.sql\n@@ -228,6 +228,18 @@ ALTER TABLE toast_3b_utf8 RENAME TO toast_4b_utf8;\n UPDATE toast_4b_utf8 SET c = repeat(U&'\\+01F680', 3000);\n SELECT SUBSTRING(c FROM 3000 FOR 1) FROM toast_4b_utf8;\n \n+-- ascii() and multibyte characters\n+SELECT ascii(test_bytea_to_text('\\xc3'));\n+SELECT ascii(test_bytea_to_text('\\xe2'));\n+SELECT ascii(test_bytea_to_text('\\xe282'));\n+SELECT ascii(test_bytea_to_text('\\xf0'));\n+SELECT ascii(test_bytea_to_text('\\xf09f'));\n+SELECT ascii(test_bytea_to_text('\\xf09f98'));\n+-- invalid continuation byte\n+SELECT ascii(test_bytea_to_text('\\xc3ff'));\n+-- invalid leading byte\n+SELECT ascii(test_bytea_to_text('\\x80'));\n+\n DROP TABLE encoding_tests;\n DROP TABLE toast_4b_utf8;\n DROP FUNCTION test_encoding;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=encoding",
+  "expected_tests": [
+    "encoding"
+  ],
+  "failing_tests": [
+    "copy",
+    "copydml",
+    "copyselect",
+    "database",
+    "encoding",
+    "insert",
+    "insert_conflict",
+    "regex"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2272,
+  "oracle_diff_by_file": {
+    "regex": 146,
+    "database": 22,
+    "encoding": 42,
+    "copy": 232,
+    "copyselect": 108,
+    "copydml": 106,
+    "insert": 940,
+    "insert_conflict": 676
+  }
+}

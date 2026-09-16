@@ -1,0 +1,26 @@
+{
+  "func": "isempty",
+  "variants": [
+    {
+      "arguments": "anyrange",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "is the range empty?"
+    },
+    {
+      "arguments": "anymultirange",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "is the multirange empty?"
+    }
+  ],
+  "description": "Is the range empty?\nIs the multirange empty?",
+  "examples": [
+    "isempty(numrange(1.1,2.2)) -> f",
+    "isempty('{[1.1,2.2)}'::nummultirange) -> f"
+  ],
+  "mode": "stub",
+  "category": "range"
+}

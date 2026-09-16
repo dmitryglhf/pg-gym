@@ -1,0 +1,45 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..f0877d2 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -806,38 +806,11 @@ timestamptz_out(PG_FUNCTION_ARGS)
+ 	PG_RETURN_CSTRING(result);
+ }
+ 
+-/*
+- *		timestamptz_recv			- converts external binary format to timestamptz
+- */
+ Datum
+ timestamptz_recv(PG_FUNCTION_ARGS)
+ {
+-	StringInfo	buf = (StringInfo) PG_GETARG_POINTER(0);
+-
+-#ifdef NOT_USED
+-	Oid			typelem = PG_GETARG_OID(1);
+-#endif
+-	int32		typmod = PG_GETARG_INT32(2);
+-	TimestampTz timestamp;
+-	int			tz;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-
+-	timestamp = (TimestampTz) pq_getmsgint64(buf);
+-
+-	/* range check: see if timestamptz_out would like it */
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		 /* ok */ ;
+-	else if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0 ||
+-			 !IS_VALID_TIMESTAMP(timestamp))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("timestamp out of range")));
+-
+-	AdjustTimestampForTypmod(&timestamp, typmod, NULL);
+-
+-	PG_RETURN_TIMESTAMPTZ(timestamp);
++	elog(ERROR, "timestamptz_recv is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

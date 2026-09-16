@@ -1,0 +1,20 @@
+{
+  "func": "json_typeof",
+  "variants": [
+    {
+      "arguments": "json",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "get the type of a json value"
+    }
+  ],
+  "description": "Returns the type of the top-level JSON value as a text string. Possible types are object, array, string, number, boolean, and null. (The null result should not be confused with an SQL NULL; see the examples.)",
+  "examples": [
+    "json_typeof('-123.4') -> number",
+    "json_typeof('null'::json) -> null",
+    "json_typeof(NULL::json) IS NULL -> t"
+  ],
+  "mode": "stub",
+  "category": "json"
+}

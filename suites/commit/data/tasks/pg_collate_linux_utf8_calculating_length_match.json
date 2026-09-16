@@ -1,0 +1,10 @@
+{
+  "name": "pg_collate_linux_utf8_calculating_length_match",
+  "area": "date parsing, localized names",
+  "goal": "to_date and to_timestamp can consume the wrong number of bytes after matching a localized month or weekday name case-insensitively. In locales where changing case changes the encoded length, the parser advances through the original input by the length of the case-folded text and misreads the fields that follow.\n\nUnder a suitable UTF-8 locale, parse Turkish month names in inputs such as `01 Aralık 2010` with `DD TMMONTH YYYY`, including lowercase and reordered variants. Localized names must consume exactly their original input span and produce the intended date. English names, exact-case localized names and unrelated format patterns must remain unchanged.",
+  "func": "pg_collate_linux_utf8_calculating_length_match",
+  "graded_by": [
+    "src/test/regress/sql/collate.linux.utf8.sql",
+    "src/test/regress/expected/collate.linux.utf8.out"
+  ]
+}

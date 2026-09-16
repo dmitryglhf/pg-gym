@@ -1,0 +1,41 @@
+{
+  "func": "area",
+  "mode": "stub",
+  "patch": "prep/area.patch",
+  "symbols": [
+    "box_area",
+    "circle_area",
+    "path_area"
+  ],
+  "units": {
+    "box_area": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/*\t\tbox_area\t\t-\t\treturns the area of the box.\n */\nDatum\nbox_area(PG_FUNCTION_ARGS)\n{\n\tBOX\t\t   *box = PG_GETARG_BOX_P(0);\n\n\tPG_RETURN_FLOAT8(box_ar(box));\n}\n\n"
+    },
+    "circle_area": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/*\t\tcircle_area\t\t-\t\treturns the area of the circle.\n */\nDatum\ncircle_area(PG_FUNCTION_ARGS)\n{\n\tCIRCLE\t   *circle = PG_GETARG_CIRCLE_P(0);\n\n\tPG_RETURN_FLOAT8(circle_ar(circle));\n}\n\n"
+    },
+    "path_area": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/*----------------------------------------------------------\n *\tString to path / path to string conversion.\n *\t\tExternal format:\n *\t\t\t\t\"((xcoord, ycoord),... )\"\n *\t\t\t\t\"[(xcoord, ycoord),... ]\"\n *\t\t\t\t\"(xcoord, ycoord),... \"\n *\t\t\t\t\"[xcoord, ycoord,... ]\"\n *\t\tAlso support older format:\n *\t\t\t\t\"(closed, npts, xcoord, ycoord,... )\"\n *---------------------------------------------------------*/\n\nDatum\npath_area(PG_FUNCTION_ARGS)\n{\n\tPATH\t   *path = PG_GETARG_PATH_P(0);\n\tfloat8\t\tarea = 0.0;\n\tint\t\t\ti,\n\t\t\t\tj;\n\n\tif (!path->closed)\n\t\tPG_RETURN_NULL();\n\n\tfor (i = 0; i < path->npts; i++)\n\t{\n\t\tj = (i + 1) % path->npts;\n\t\tarea = float8_pl(area, float8_mul(path->p[i].x, path->p[j].y));\n\t\tarea = float8_mi(area, float8_mul(path->p[i].y, path->p[j].x));\n\t}\n\n\tPG_RETURN_FLOAT8(float8_div(fabs(area), 2.0));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "box",
+    "circle",
+    "geometry"
+  ],
+  "category": "geometric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 115,
+  "oracle_diff_by_file": {
+    "box": 9,
+    "circle": 12,
+    "geometry": 94
+  }
+}

@@ -1,0 +1,95 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..190eb98 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2868,88 +2868,11 @@ timestamp_mi(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(result);
+ }
+ 
+-/*
+- *	interval_justify_interval()
+- *
+- *	Adjust interval so 'month', 'day', and 'time' portions are within
+- *	customary bounds.  Specifically:
+- *
+- *		0 <= abs(time) < 24 hours
+- *		0 <= abs(day)  < 30 days
+- *
+- *	Also, the sign bit on all three fields is made equal, so either
+- *	all three fields are negative or all are positive.
+- */
+ Datum
+ interval_justify_interval(PG_FUNCTION_ARGS)
+ {
+-	Interval   *span = PG_GETARG_INTERVAL_P(0);
+-	Interval   *result;
+-	TimeOffset	wholeday;
+-	int32		wholemonth;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-	result->month = span->month;
+-	result->day = span->day;
+-	result->time = span->time;
+-
+-	/* do nothing for infinite intervals */
+-	if (INTERVAL_NOT_FINITE(result))
+-		PG_RETURN_INTERVAL_P(result);
+-
+-	/* pre-justify days if it might prevent overflow */
+-	if ((result->day > 0 && result->time > 0) ||
+-		(result->day < 0 && result->time < 0))
+-	{
+-		wholemonth = result->day / DAYS_PER_MONTH;
+-		result->day -= wholemonth * DAYS_PER_MONTH;
+-		if (pg_add_s32_overflow(result->month, wholemonth, &result->month))
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("interval out of range")));
+-	}
+-
+-	/*
+-	 * Since TimeOffset is int64, abs(wholeday) can't exceed about 1.07e8.  If
+-	 * we pre-justified then abs(result->day) is less than DAYS_PER_MONTH, so
+-	 * this addition can't overflow.  If we didn't pre-justify, then day and
+-	 * time are of different signs, so it still can't overflow.
+-	 */
+-	TMODULO(result->time, wholeday, USECS_PER_DAY);
+-	result->day += wholeday;
+-
+-	wholemonth = result->day / DAYS_PER_MONTH;
+-	result->day -= wholemonth * DAYS_PER_MONTH;
+-	if (pg_add_s32_overflow(result->month, wholemonth, &result->month))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("interval out of range")));
+-
+-	if (result->month > 0 &&
+-		(result->day < 0 || (result->day == 0 && result->time < 0)))
+-	{
+-		result->day += DAYS_PER_MONTH;
+-		result->month--;
+-	}
+-	else if (result->month < 0 &&
+-			 (result->day > 0 || (result->day == 0 && result->time > 0)))
+-	{
+-		result->day -= DAYS_PER_MONTH;
+-		result->month++;
+-	}
+-
+-	if (result->day > 0 && result->time < 0)
+-	{
+-		result->time += USECS_PER_DAY;
+-		result->day--;
+-	}
+-	else if (result->day < 0 && result->time > 0)
+-	{
+-		result->time -= USECS_PER_DAY;
+-		result->day++;
+-	}
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_justify_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

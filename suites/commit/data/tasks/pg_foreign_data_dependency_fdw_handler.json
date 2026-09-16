@@ -1,0 +1,10 @@
+{
+  "name": "pg_foreign_data_dependency_fdw_handler",
+  "area": "foreign-data wrappers, dependencies",
+  "goal": "ALTER FOREIGN DATA WRAPPER can lose the dependency on an existing handler when only another support function, such as the validator, is changed.\n\nCreate an FDW with both a handler and validator, alter just the validator, then attempt to drop the handler function. The drop must still be blocked because the FDW depends on it. Changing or removing one support function must preserve dependencies for every support function that remains configured, while intentional replacement and DROP ... CASCADE behavior stay unchanged.",
+  "func": "pg_foreign_data_dependency_fdw_handler",
+  "graded_by": [
+    "src/test/regress/sql/foreign_data.sql",
+    "src/test/regress/expected/foreign_data.out"
+  ]
+}

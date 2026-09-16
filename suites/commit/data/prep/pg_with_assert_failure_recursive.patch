@@ -1,0 +1,15 @@
+diff --git a/src/backend/executor/execGrouping.c b/src/backend/executor/execGrouping.c
+index 7f6d7703..7233f1e3 100644
+--- a/src/backend/executor/execGrouping.c
++++ b/src/backend/executor/execGrouping.c
+@@ -224,8 +224,9 @@ BuildTupleHashTableExt(PlanState *parent,
+ 	allow_jit = metacxt != tablecxt;
+ 
+ 	/* build comparator for all columns */
++	/* XXX: should we support non-minimal tuples for the inputslot? */
+ 	hashtable->tab_eq_func = ExecBuildGroupingEqual(inputDesc, inputDesc,
+-													NULL, &TTSOpsMinimalTuple,
++													&TTSOpsMinimalTuple, &TTSOpsMinimalTuple,
+ 													numCols,
+ 													keyColIdx, eqfuncoids, collations,
+ 													allow_jit ? parent : NULL);

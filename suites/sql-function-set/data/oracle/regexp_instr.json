@@ -1,0 +1,52 @@
+{
+  "func": "regexp_instr",
+  "mode": "stub",
+  "patch": "prep/regexp_instr.patch",
+  "symbols": [
+    "regexp_instr",
+    "regexp_instr_no_endoption",
+    "regexp_instr_no_flags",
+    "regexp_instr_no_n",
+    "regexp_instr_no_start",
+    "regexp_instr_no_subexpr"
+  ],
+  "units": {
+    "regexp_instr": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/*\n * regexp_instr()\n *\t\tReturn the match's position within the string\n */\nDatum\nregexp_instr(PG_FUNCTION_ARGS)\n{\n\ttext\t   *str = PG_GETARG_TEXT_PP(0);\n\ttext\t   *pattern = PG_GETARG_TEXT_PP(1);\n\tint\t\t\tstart = 1;\n\tint\t\t\tn = 1;\n\tint\t\t\tendoption = 0;\n\ttext\t   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(5);\n\tint\t\t\tsubexpr = 0;\n\tint\t\t\tpos;\n\tpg_re_flags re_flags;\n\tregexp_matches_ctx *matchctx;\n\n\t/* Collect optional parameters */\n\tif (PG_NARGS() > 2)\n\t{\n\t\tstart = PG_GETARG_INT32(2);\n\t\tif (start <= 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"start\", start)));\n\t}\n\tif (PG_NARGS() > 3)\n\t{\n\t\tn = PG_GETARG_INT32(3);\n\t\tif (n <= 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"n\", n)));\n\t}\n\tif (PG_NARGS() > 4)\n\t{\n\t\tendoption = PG_GETARG_INT32(4);\n\t\tif (endoption != 0 && endoption != 1)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"endoption\", endoption)));\n\t}\n\tif (PG_NARGS() > 6)\n\t{\n\t\tsubexpr = PG_GETARG_INT32(6);\n\t\tif (subexpr < 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"subexpr\", subexpr)));\n\t}\n\n\t/* Determine options */\n\tparse_re_flags(&re_flags, flags);\n\t/* User mustn't specify 'g' */\n\tif (re_flags.glob)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t/* translator: %s is a SQL function name */\n\t\t\t\t errmsg(\"%s does not support the \\\"global\\\" option\",\n\t\t\t\t\t\t\"regexp_instr()\")));\n\t/* But we find all the matches anyway */\n\tre_flags.glob = true;\n\n\t/* Do the matching */\n\tmatchctx = setup_regexp_matches(str, pattern, &re_flags, start - 1,\n\t\t\t\t\t\t\t\t\tPG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t\t(subexpr > 0),\t/* need submatches? */\n\t\t\t\t\t\t\t\t\tfalse, false);\n\n\t/* When n exceeds matches return 0 (includes case of no matches) */\n\tif (n > matchctx->nmatches)\n\t\tPG_RETURN_INT32(0);\n\n\t/* When subexpr exceeds number of subexpressions return 0 */\n\tif (subexpr > matchctx->npatterns)\n\t\tPG_RETURN_INT32(0);\n\n\t/* Select the appropriate match position to return */\n\tpos = (n - 1) * matchctx->npatterns;\n\tif (subexpr > 0)\n\t\tpos += subexpr - 1;\n\tpos *= 2;\n\tif (endoption == 1)\n\t\tpos += 1;\n\n\tif (matchctx->match_locs[pos] >= 0)\n\t\tPG_RETURN_INT32(matchctx->match_locs[pos] + 1);\n\telse\n\t\tPG_RETURN_INT32(0);\t\t/* position not identifiable */\n}\n\n"
+    },
+    "regexp_instr_no_endoption": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_instr_no_endoption(PG_FUNCTION_ARGS)\n{\n\treturn regexp_instr(fcinfo);\n}\n\n"
+    },
+    "regexp_instr_no_flags": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_instr_no_flags(PG_FUNCTION_ARGS)\n{\n\treturn regexp_instr(fcinfo);\n}\n\n"
+    },
+    "regexp_instr_no_n": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_instr_no_n(PG_FUNCTION_ARGS)\n{\n\treturn regexp_instr(fcinfo);\n}\n\n"
+    },
+    "regexp_instr_no_start": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_instr_no_start(PG_FUNCTION_ARGS)\n{\n\treturn regexp_instr(fcinfo);\n}\n\n"
+    },
+    "regexp_instr_no_subexpr": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_instr_no_subexpr(PG_FUNCTION_ARGS)\n{\n\treturn regexp_instr(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "pattern",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 112,
+  "oracle_diff_by_file": {
+    "strings": 112
+  }
+}

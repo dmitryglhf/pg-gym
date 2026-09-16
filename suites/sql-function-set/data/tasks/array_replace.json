@@ -1,0 +1,18 @@
+{
+  "func": "array_replace",
+  "variants": [
+    {
+      "arguments": "anycompatiblearray anycompatible anycompatible",
+      "returns": "anycompatiblearray",
+      "kind": "f",
+      "volatile": "i",
+      "description": "replace any occurrences of an element in an array"
+    }
+  ],
+  "description": "Replaces each array element equal to the second argument with the third argument.",
+  "examples": [
+    "array_replace(ARRAY[1,2,5,4], 5, 3) -> {1,2,3,4}"
+  ],
+  "mode": "stub",
+  "category": "array"
+}

@@ -1,0 +1,40 @@
+{
+  "func": "justify_hours",
+  "mode": "stub",
+  "patch": "prep/justify_hours.patch",
+  "symbols": [
+    "interval_justify_hours"
+  ],
+  "units": {
+    "interval_justify_hours": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n *\tinterval_justify_hours()\n *\n *\tAdjust interval so 'time' contains less than a whole day, adding\n *\tthe excess to 'day'.  This is useful for\n *\tsituations (such as non-TZ) where '1 day' = '24 hours' is valid,\n *\te.g. interval subtraction and division.\n */\nDatum\ninterval_justify_hours(PG_FUNCTION_ARGS)\n{\n\tInterval   *span = PG_GETARG_INTERVAL_P(0);\n\tInterval   *result;\n\tTimeOffset\twholeday;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\tresult->month = span->month;\n\tresult->day = span->day;\n\tresult->time = span->time;\n\n\t/* do nothing for infinite intervals */\n\tif (INTERVAL_NOT_FINITE(result))\n\t\tPG_RETURN_INTERVAL_P(result);\n\n\tTMODULO(result->time, wholeday, USECS_PER_DAY);\n\tif (pg_add_s32_overflow(result->day, wholeday, &result->day))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tif (result->day > 0 && result->time < 0)\n\t{\n\t\tresult->time += USECS_PER_DAY;\n\t\tresult->day--;\n\t}\n\telse if (result->day < 0 && result->time > 0)\n\t{\n\t\tresult->time -= USECS_PER_DAY;\n\t\tresult->day++;\n\t}\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "horology",
+    "interval",
+    "stats",
+    "timestamp",
+    "timestamptz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 582,
+  "oracle_diff_by_file": {
+    "timestamp": 123,
+    "timestamptz": 125,
+    "interval": 13,
+    "horology": 285,
+    "brin": 18,
+    "brin_bloom": 2,
+    "brin_multi": 10,
+    "stats": 6
+  }
+}

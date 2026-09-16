@@ -1,0 +1,36 @@
+{
+  "name": "pg_generated_alter_column_drop",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "18006c1bd664e9d6b2f202131ba3b50c90600629",
+  "parent": "1416f304d2c9514fe65f112514accc9b653902ad",
+  "date": "2026-08-04",
+  "subject": "Fix ALTER COLUMN ... DROP EXPRESSION with subpartitions",
+  "area": "generated columns, partition hierarchies",
+  "licence": "PostgreSQL",
+  "goal": "ALTER TABLE ... ALTER COLUMN ... DROP EXPRESSION, issued without ONLY on the root of a partition tree, is wrongly rejected when the tree is more than two levels deep.\n\nCreate a root partitioned table with a generated column, a partition that is itself partitioned, and a leaf below it. Dropping the expression from the root must succeed and turn the column into an ordinary column at every level. The same must work through ordinary inheritance. Applying the command to an intermediate node or with ONLY where descendants would remain generated must continue to be rejected.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 6,
+      "deleted": 11
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "generated"
+    ],
+    "command": "make -C src/test/regress check TESTS=generated"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

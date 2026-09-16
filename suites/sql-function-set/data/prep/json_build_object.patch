@@ -1,0 +1,42 @@
+diff --git a/src/backend/utils/adt/json.c b/src/backend/utils/adt/json.c
+index 30ea4c4..37bcbc9 100644
+--- a/src/backend/utils/adt/json.c
++++ b/src/backend/utils/adt/json.c
+@@ -1302,33 +1302,18 @@ json_build_object_worker(int nargs, const Datum *args, const bool *nulls, const
+ 	return PointerGetDatum(cstring_to_text_with_len(result->data, result->len));
+ }
+ 
+-/*
+- * SQL function json_build_object(variadic "any")
+- */
+ Datum
+ json_build_object(PG_FUNCTION_ARGS)
+ {
+-	Datum	   *args;
+-	bool	   *nulls;
+-	Oid		   *types;
+-
+-	/* build argument values to build the object */
+-	int			nargs = extract_variadic_args(fcinfo, 0, true,
+-											  &args, &types, &nulls);
+-
+-	if (nargs < 0)
+-		PG_RETURN_NULL();
+-
+-	PG_RETURN_DATUM(json_build_object_worker(nargs, args, nulls, types, false, false));
++	elog(ERROR, "json_build_object is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * degenerate case of json_build_object where it gets 0 arguments.
+- */
+ Datum
+ json_build_object_noargs(PG_FUNCTION_ARGS)
+ {
+-	PG_RETURN_TEXT_P(cstring_to_text_with_len("{}", 2));
++	elog(ERROR, "json_build_object_noargs is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

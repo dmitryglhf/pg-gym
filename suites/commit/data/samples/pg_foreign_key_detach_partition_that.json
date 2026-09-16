@@ -1,0 +1,36 @@
+{
+  "name": "pg_foreign_key_detach_partition_that",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "2f30847d1d04bafa51a17886e132892e38df093f",
+  "parent": "e292ba3334ee1eccfaa5577da62a433788f2826b",
+  "date": "2025-01-21",
+  "subject": "Fix detach of a partition that has a toplevel FK to a partitioned table",
+  "area": "foreign keys, DETACH PARTITION",
+  "licence": "PostgreSQL",
+  "goal": "DETACH PARTITION can fail when the partition has its own foreign key referencing a partitioned table. The command reports that it cannot find an ON INSERT check trigger even though the constraint is valid before detaching.\n\nCreate the referenced partitioned table, give one of its partitions an independent foreign key, and detach that partition. Detach must succeed and leave the now-standalone table with the appropriate enforceable foreign-key constraint and triggers. Parent-level foreign keys, partitions without their own foreign keys, and normal attach behavior must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 24,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/foreign_key.sql",
+    "src/test/regress/expected/foreign_key.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "foreign_key"
+    ],
+    "command": "make -C src/test/regress check TESTS=foreign_key"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

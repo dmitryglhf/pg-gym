@@ -1,0 +1,10 @@
+{
+  "name": "pg_privileges_sort_do_default",
+  "area": "pg_dump, object sort order",
+  "goal": "Two ALTER DEFAULT PRIVILEGES entries for different roles but the same schema and object type can become indistinguishable to pg_dump's object ordering. An assert-enabled build may fail, and otherwise dump order can depend on database OIDs, producing spurious differences between equivalent databases.\n\n    ALTER DEFAULT PRIVILEGES FOR ROLE pg_signal_backend\n        REVOKE INSERT ON TABLES FROM pg_signal_backend;\n    ALTER DEFAULT PRIVILEGES FOR ROLE pg_read_all_settings\n        REVOKE INSERT ON TABLES FROM pg_read_all_settings;\n\nTwo such entries have to come out in a deterministic order based only on database contents, never on OIDs. Their order must remain stable through the dump/restore checks, while the relative order of every other kind of dumpable object stays unchanged.",
+  "func": "pg_privileges_sort_do_default",
+  "graded_by": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ]
+}

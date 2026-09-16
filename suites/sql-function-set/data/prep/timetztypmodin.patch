@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..1a75ecb 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2382,9 +2382,8 @@ timetz_send(PG_FUNCTION_ARGS)
+ Datum
+ timetztypmodin(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);
+-
+-	PG_RETURN_INT32(anytime_typmodin(true, ta));
++	elog(ERROR, "timetztypmodin is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

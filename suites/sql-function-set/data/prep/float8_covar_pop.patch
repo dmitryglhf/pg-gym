@@ -1,0 +1,27 @@
+diff --git a/src/backend/utils/adt/float.c b/src/backend/utils/adt/float.c
+index 22421cb..0959355 100644
+--- a/src/backend/utils/adt/float.c
++++ b/src/backend/utils/adt/float.c
+@@ -3605,20 +3605,8 @@ float8_regr_avgy(PG_FUNCTION_ARGS)
+ Datum
+ float8_covar_pop(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *transarray = PG_GETARG_ARRAYTYPE_P(0);
+-	float8	   *transvalues;
+-	float8		N,
+-				Sxy;
+-
+-	transvalues = check_float8_array(transarray, "float8_covar_pop", 6);
+-	N = transvalues[0];
+-	Sxy = transvalues[5];
+-
+-	/* if N is 0 we should return NULL */
+-	if (N < 1.0)
+-		PG_RETURN_NULL();
+-
+-	PG_RETURN_FLOAT8(Sxy / N);
++	elog(ERROR, "float8_covar_pop is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

@@ -1,0 +1,27 @@
+{
+  "func": "ts_filter",
+  "mode": "stub",
+  "patch": "prep/ts_filter.patch",
+  "symbols": [
+    "tsvector_filter"
+  ],
+  "units": {
+    "tsvector_filter": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "/*\n * ts_filter(): keep only lexemes with given weights in tsvector.\n */\nDatum\ntsvector_filter(PG_FUNCTION_ARGS)\n{\n\tTSVector\ttsin = PG_GETARG_TSVECTOR(0),\n\t\t\t\ttsout;\n\tArrayType  *weights = PG_GETARG_ARRAYTYPE_P(1);\n\tWordEntry  *arrin = ARRPTR(tsin),\n\t\t\t   *arrout;\n\tchar\t   *datain = STRPTR(tsin),\n\t\t\t   *dataout;\n\tDatum\t   *dweights;\n\tbool\t   *nulls;\n\tint\t\t\tnweights;\n\tint\t\t\ti,\n\t\t\t\tj;\n\tint\t\t\tcur_pos = 0;\n\tchar\t\tmask = 0;\n\n\tdeconstruct_array_builtin(weights, CHAROID, &dweights, &nulls, &nweights);\n\n\tfor (i = 0; i < nweights; i++)\n\t{\n\t\tchar\t\tchar_weight;\n\n\t\tif (nulls[i])\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),\n\t\t\t\t\t errmsg(\"weight array may not contain nulls\")));\n\n\t\tchar_weight = DatumGetChar(dweights[i]);\n\t\tmask |= 1 << parse_weight(char_weight);\n\t}\n\n\t/*\n\t * The output tsvector might be smaller than the input, but it can't be\n\t * bigger, so VARSIZE(tsin) is surely enough space.  Also, we don't need\n\t * to worry about overflows below.\n\t */\n\ttsout = (TSVector) palloc0(VARSIZE(tsin));\n\ttsout->size = tsin->size;\n\tarrout = ARRPTR(tsout);\n\t/* worst-case location of output's lexemes; we may need to adjust below */\n\tdataout = STRPTR(tsout);\n\n\tfor (i = j = 0; i < tsin->size; i++)\n\t{\n\t\tWordEntryPosVector *posvin,\n\t\t\t\t   *posvout;\n\t\tint\t\t\tnpos = 0;\n\t\tint\t\t\tk;\n\n\t\tif (!arrin[i].haspos)\n\t\t\tcontinue;\n\n\t\tposvin = _POSVECPTR(tsin, arrin + i);\n\t\tposvout = (WordEntryPosVector *)\n\t\t\t(dataout + SHORTALIGN(cur_pos + arrin[i].len));\n\n\t\tfor (k = 0; k < posvin->npos; k++)\n\t\t{\n\t\t\tif (mask & (1 << WEP_GETWEIGHT(posvin->pos[k])))\n\t\t\t\tposvout->pos[npos++] = posvin->pos[k];\n\t\t}\n\n\t\t/* if no satisfactory positions found, skip lexeme */\n\t\tif (!npos)\n\t\t\tcontinue;\n\n\t\tarrout[j].haspos = true;\n\t\tarrout[j].len = arrin[i].len;\n\t\tarrout[j].pos = cur_pos;\n\n\t\tmemcpy(dataout + cur_pos, datain + arrin[i].pos, arrin[i].len);\n\t\tposvout->npos = npos;\n\t\tcur_pos += SHORTALIGN(arrin[i].len);\n\t\tcur_pos += POSDATALEN(tsout, arrout + j) * sizeof(WordEntryPos) +\n\t\t\tsizeof(uint16);\n\t\tj++;\n\t}\n\n\ttsout->size = j;\n\tif (dataout != STRPTR(tsout))\n\t\tmemmove(STRPTR(tsout), dataout, cur_pos);\n\n\tSET_VARSIZE(tsout, CALCDATASIZE(tsout->size, cur_pos));\n\n\tPG_FREE_IF_COPY(tsin, 0);\n\tPG_RETURN_POINTER(tsout);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "tstypes"
+  ],
+  "category": "textsearch",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 12,
+  "oracle_diff_by_file": {
+    "tstypes": 12
+  }
+}

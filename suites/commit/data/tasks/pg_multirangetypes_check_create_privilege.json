@@ -1,0 +1,10 @@
+{
+  "name": "pg_multirangetypes_check_create_privilege",
+  "area": "range types, schema privileges",
+  "goal": "CREATE TYPE ... AS RANGE checks schema CREATE privilege for the range type but can omit the check for an explicitly named multirange type placed in another schema.\n\nAs a role lacking CREATE on a target schema, create a range while specifying `MULTIRANGE_TYPE_NAME` in that schema. The command must be rejected without leaving either type behind. After granting CREATE it must succeed. Automatically named multiranges in the already-authorized range schema, and explicit names in authorized schemas, must remain supported.",
+  "func": "pg_multirangetypes_check_create_privilege",
+  "graded_by": [
+    "src/test/regress/sql/multirangetypes.sql",
+    "src/test/regress/expected/multirangetypes.out"
+  ]
+}

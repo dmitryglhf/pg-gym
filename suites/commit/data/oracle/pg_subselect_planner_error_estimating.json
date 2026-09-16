@@ -1,0 +1,27 @@
+{
+  "func": "pg_subselect_planner_error_estimating",
+  "sha": "f34202f51867534fbbb6196fc9e77be25e5e5b23",
+  "parent": "0fedb3a27d24c5dd977c5eca3b009c8f4ec09f33",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_subselect_planner_error_estimating.patch",
+  "test_files": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/path/costsize.c b/src/backend/optimizer/path/costsize.c\nindex 52ebdd90..5a0ecd80 100644\n--- a/src/backend/optimizer/path/costsize.c\n+++ b/src/backend/optimizer/path/costsize.c\n@@ -4436,10 +4436,24 @@ cost_subplan(PlannerInfo *root, SubPlan *subplan, Plan *plan)\n {\n \tQualCost\tsp_cost;\n \n-\t/* Figure any cost for evaluating the testexpr */\n+\t/*\n+\t * Figure any cost for evaluating the testexpr.\n+\t *\n+\t * Usually, SubPlan nodes are built very early, before we have constructed\n+\t * any RelOptInfos for the parent query level, which means the parent root\n+\t * does not yet contain enough information to safely consult statistics.\n+\t * Therefore, we pass root as NULL here.  cost_qual_eval() is already\n+\t * well-equipped to handle a NULL root.\n+\t *\n+\t * One exception is SubPlan nodes built for the initplans of MIN/MAX\n+\t * aggregates from indexes (cf. SS_make_initplan_from_plan).  In this\n+\t * case, having a NULL root is safe because testexpr will be NULL.\n+\t * Besides, an initplan will by definition not consult anything from the\n+\t * parent plan.\n+\t */\n \tcost_qual_eval(&sp_cost,\n \t\t\t\t   make_ands_implicit((Expr *) subplan->testexpr),\n-\t\t\t\t   root);\n+\t\t\t\t   NULL);\n \n \tif (subplan->useHashTable)\n \t{\n",
+  "test": "diff --git a/src/test/regress/expected/subselect.out b/src/test/regress/expected/subselect.out\nindex 6c1fb2bf..e41d31b3 100644\n--- a/src/test/regress/expected/subselect.out\n+++ b/src/test/regress/expected/subselect.out\n@@ -773,6 +773,25 @@ select (select (a.*)::text) from view_a a;\n  (42)\n (1 row)\n \n+--\n+-- Test case for bug #19037: no relation entry for relid N\n+--\n+explain (costs off)\n+select (1 = any(array_agg(f1))) = any (select false) from int4_tbl;\n+         QUERY PLAN         \n+----------------------------\n+ Aggregate\n+   ->  Seq Scan on int4_tbl\n+   SubPlan 1\n+     ->  Result\n+(4 rows)\n+\n+select (1 = any(array_agg(f1))) = any (select false) from int4_tbl;\n+ ?column? \n+----------\n+ t\n+(1 row)\n+\n --\n -- Check that whole-row Vars reading the result of a subselect don't include\n -- any junk columns therein\ndiff --git a/src/test/regress/sql/subselect.sql b/src/test/regress/sql/subselect.sql\nindex e5a562c3..fb0a901a 100644\n--- a/src/test/regress/sql/subselect.sql\n+++ b/src/test/regress/sql/subselect.sql\n@@ -412,6 +412,15 @@ select (select view_a) from view_a;\n select (select (select view_a)) from view_a;\n select (select (a.*)::text) from view_a a;\n \n+--\n+-- Test case for bug #19037: no relation entry for relid N\n+--\n+\n+explain (costs off)\n+select (1 = any(array_agg(f1))) = any (select false) from int4_tbl;\n+\n+select (1 = any(array_agg(f1))) = any (select false) from int4_tbl;\n+\n --\n -- Check that whole-row Vars reading the result of a subselect don't include\n -- any junk columns therein\n",
+  "oracle_command": "make -C src/test/regress check TESTS=subselect",
+  "expected_tests": [
+    "subselect"
+  ],
+  "failing_tests": [
+    "subselect"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 13,
+  "oracle_diff_by_file": {
+    "subselect": 13
+  }
+}

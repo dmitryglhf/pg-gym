@@ -1,0 +1,36 @@
+{
+  "name": "pg_strings_conversion_similar_regexes",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e3ffc3e91d04579240fb54a96f9059b246488dce",
+  "parent": "6ea812f4dc634af01feb06fc3da45d53f5a1ec83",
+  "date": "2025-05-28",
+  "subject": "Fix conversion of SIMILAR TO regexes for character classes",
+  "area": "SIMILAR TO, regular-expression conversion",
+  "licence": "PostgreSQL",
+  "goal": "Conversion of SIMILAR TO patterns into POSIX regular expressions incorrectly escapes or reinterprets metacharacters that occur inside bracket character classes.\n\nExercise classes containing `_`, `%`, `.`, `$`, `(`, `^`, leading `]`, doubled carets and POSIX classes such as `[:alpha:]`. Within a bracket class, characters that SQL defines literally must remain literal; wildcard expansion and escaping outside the class must still occur, and syntactically unbalanced expressions must still error. EXPLAIN's emitted regex and actual matches must agree for all these cases.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/regexp.c",
+      "added": 32,
+      "deleted": 6
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/strings.sql",
+    "src/test/regress/expected/strings.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "strings"
+    ],
+    "command": "make -C src/test/regress check TESTS=strings"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..bdb0468 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2228,10 +2228,8 @@ timestamp_eq(PG_FUNCTION_ARGS)
+ Datum
+ timestamp_ne(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	dt1 = PG_GETARG_TIMESTAMP(0);
+-	Timestamp	dt2 = PG_GETARG_TIMESTAMP(1);
+-
+-	PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) != 0);
++	elog(ERROR, "timestamp_ne is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

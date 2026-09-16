@@ -1,0 +1,46 @@
+diff --git a/src/backend/utils/adt/geo_ops.c b/src/backend/utils/adt/geo_ops.c
+index 07d1649..852d038 100644
+--- a/src/backend/utils/adt/geo_ops.c
++++ b/src/backend/utils/adt/geo_ops.c
+@@ -843,17 +843,11 @@ box_distance(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*		box_center		-		returns the center point of the box.
+- */
+ Datum
+ box_center(PG_FUNCTION_ARGS)
+ {
+-	BOX		   *box = PG_GETARG_BOX_P(0);
+-	Point	   *result = (Point *) palloc(sizeof(Point));
+-
+-	box_cn(result, box);
+-
+-	PG_RETURN_POINT_P(result);
++	elog(ERROR, "box_center is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -5137,19 +5131,11 @@ dist_cpoint(PG_FUNCTION_ARGS)
+ 	PG_RETURN_FLOAT8(result);
+ }
+ 
+-/*		circle_center	-		returns the center point of the circle.
+- */
+ Datum
+ circle_center(PG_FUNCTION_ARGS)
+ {
+-	CIRCLE	   *circle = PG_GETARG_CIRCLE_P(0);
+-	Point	   *result;
+-
+-	result = (Point *) palloc(sizeof(Point));
+-	result->x = circle->center.x;
+-	result->y = circle->center.y;
+-
+-	PG_RETURN_POINT_P(result);
++	elog(ERROR, "circle_center is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

@@ -1,0 +1,16 @@
+{
+  "func": "jsonb_object_keys",
+  "variants": [
+    {
+      "arguments": "jsonb",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "get jsonb object keys"
+    }
+  ],
+  "description": "Returns the set of keys in the top-level JSON object.",
+  "examples": [],
+  "mode": "stub",
+  "category": "json"
+}

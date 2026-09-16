@@ -1,0 +1,36 @@
+{
+  "name": "pg_subselect_mislabeling_lateral_references",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "72822a99d44f040e9776c892a8ab877a06c7b7ad",
+  "parent": "4527b9e26db8d4987df6f83fc580993d8d103a7e",
+  "date": "2024-11-28",
+  "subject": "Avoid mislabeling of lateral references when pulling up a subquery.",
+  "area": "planner, lateral subquery pull-up",
+  "licence": "PostgreSQL",
+  "goal": "Pulling up a lateral subquery can assign the wrong outer-join nullability to an expression that combines an outer reference with a column from the subquery. Aggregation above the join then receives a differently nullable expression and can produce a wrong plan or result.\n\nLeft join a table to a lateral subquery projecting `t1.ten + t2.ten`, group by the outer key and sum that expression. The ten grouped sums must match direct left-join semantics, including zero and the expected multiples for the other groups, and EXPLAIN must attribute each input correctly. Non-lateral subqueries and lateral expressions that reference only one side must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/prep/prepjointree.c",
+      "added": 17,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "subselect"
+    ],
+    "command": "make -C src/test/regress check TESTS=subselect"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

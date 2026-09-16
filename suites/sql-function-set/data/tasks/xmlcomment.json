@@ -1,0 +1,16 @@
+{
+  "func": "xmlcomment",
+  "variants": [
+    {
+      "arguments": "text",
+      "returns": "xml",
+      "kind": "f",
+      "volatile": "i",
+      "description": "generate XML comment"
+    }
+  ],
+  "description": "The function xmlcomment creates an XML value containing an XML comment with the specified text as content. The text cannot contain -- or end with a -, otherwise the resulting construct would not be a valid XML comment. If the argument is null, the result is null.\nExample:",
+  "examples": [],
+  "mode": "stub",
+  "category": "xml"
+}

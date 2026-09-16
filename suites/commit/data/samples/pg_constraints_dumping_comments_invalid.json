@@ -1,0 +1,36 @@
+{
+  "name": "pg_constraints_dumping_comments_invalid",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "d07bc7c2b3ca5454a036487f67870fa7fb73491c",
+  "parent": "c0a392c9e0ded5928e2767ae82c56c4760f9d114",
+  "date": "2025-07-16",
+  "subject": "Fix dumping of comments on invalid constraints on domains",
+  "area": "pg_dump, domain constraints",
+  "licence": "PostgreSQL",
+  "goal": "pg_dump writes a domain's constraints inside the CREATE DOMAIN command, except constraints marked NOT VALID, which it writes separately so they land after the data. A comment on such a constraint is still written with the domain, so restoring the dump tries to comment on a constraint that does not exist yet and fails.\n\nTo reach it, create a domain, add a NOT VALID check constraint, comment on that constraint, then dump and restore.\n\nThe comment has to travel with the constraint it belongs to. Comments on valid domain constraints must keep being written where they are written now.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/bin/pg_dump/pg_dump.c",
+      "added": 22,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/constraints.sql",
+    "src/test/regress/expected/constraints.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "constraints"
+    ],
+    "command": "make -C src/test/regress check TESTS=constraints"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

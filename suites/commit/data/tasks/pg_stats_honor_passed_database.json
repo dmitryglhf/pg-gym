@@ -1,0 +1,10 @@
+{
+  "name": "pg_stats_honor_passed_database",
+  "area": "cumulative statistics, shared relations",
+  "goal": "Resetting counters for a shared relation can update the reset timestamp for the current database instead of the special shared-object database entry.\n\nRecord `stats_reset` from pg_stat_database where datid is zero, reset counters for a shared catalog such as pg_shdescription twice, and wait for statistics to flush. The datid-zero timestamp must advance. Per-database relation resets must continue to affect their own database entry, and resetting one database or shared object must not alter unrelated counters.",
+  "func": "pg_stats_honor_passed_database",
+  "graded_by": [
+    "src/test/regress/sql/stats.sql",
+    "src/test/regress/expected/stats.out"
+  ]
+}

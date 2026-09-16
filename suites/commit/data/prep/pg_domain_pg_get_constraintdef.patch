@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/ruleutils.c b/src/backend/utils/adt/ruleutils.c
+index ea5d8683..dc6d1d6d 100644
+--- a/src/backend/utils/adt/ruleutils.c
++++ b/src/backend/utils/adt/ruleutils.c
+@@ -2499,11 +2499,6 @@ pg_get_constraintdef_worker(Oid constraintId, bool fullCommand,
+ 								 conForm->connoinherit ? " NO INHERIT" : "");
+ 				break;
+ 			}
+-
+-		case CONSTRAINT_NOTNULL:
+-			appendStringInfoString(&buf, "NOT NULL");
+-			break;
+-
+ 		case CONSTRAINT_TRIGGER:
+ 
+ 			/*

@@ -1,0 +1,31 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..9407e76 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -4154,24 +4154,11 @@ interval_avg_deserialize(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(result);
+ }
+ 
+-/*
+- * Inverse transition function for sum() and avg() interval aggregates.
+- */
+ Datum
+ interval_avg_accum_inv(PG_FUNCTION_ARGS)
+ {
+-	IntervalAggState *state;
+-
+-	state = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);
+-
+-	/* Should not get here with no state */
+-	if (state == NULL)
+-		elog(ERROR, "interval_avg_accum_inv called with NULL state");
+-
+-	if (!PG_ARGISNULL(1))
+-		do_interval_discard(state, PG_GETARG_INTERVAL_P(1));
+-
+-	PG_RETURN_POINTER(state);
++	elog(ERROR, "interval_avg_accum_inv is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* avg(interval) aggregate final function */

@@ -1,0 +1,40 @@
+{
+  "name": "pg_copydml_wrong_assertion_poor",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "3685ad6188c1697c8a685f8fabe79e508b0dcc6e",
+  "parent": "234f6d09e531b3b5b021ce9574737219a6ac844b",
+  "date": "2024-10-21",
+  "subject": "Fix wrong assertion and poor error messages in \"COPY (query) TO\".",
+  "area": "COPY, interaction with rewrite rules",
+  "licence": "PostgreSQL",
+  "goal": "`COPY (query) TO` runs the query through the rewriter first. When a DO INSTEAD rule turns the query into something that is not a plain data-returning statement, such as NOTIFY, a build with assertions enabled aborts, and a build without them reports an error that does not describe what happened.\n\nTo reach it, put a DO INSTEAD rule on a table that rewrites INSERT into NOTIFY, then COPY that INSERT to stdout. A DO ALSO rule in the same position is refused already, but the message announcing it is not grammatical.\n\nBoth cases have to end in a clear error rather than an assertion failure. A query the rewriter leaves alone must keep copying exactly as it does now.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/copyto.c",
+      "added": 6,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/copydml.sql",
+    "src/test/regress/expected/copydml.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "copydml"
+    ],
+    "command": "make -C src/test/regress check TESTS=copydml"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true,
+  "contract": [
+    "COPY query must not be a utility command",
+    "DO ALSO rules are not supported for COPY"
+  ]
+}

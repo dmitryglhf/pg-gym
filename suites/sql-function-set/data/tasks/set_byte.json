@@ -1,0 +1,18 @@
+{
+  "func": "set_byte",
+  "variants": [
+    {
+      "arguments": "bytea int4 int4",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "set byte"
+    }
+  ],
+  "description": "Sets n'th byte in binary string to newvalue.",
+  "examples": [
+    "set_byte('\\x1234567890'::bytea, 4, 64) -> \\x1234567840"
+  ],
+  "mode": "stub",
+  "category": "encoding"
+}

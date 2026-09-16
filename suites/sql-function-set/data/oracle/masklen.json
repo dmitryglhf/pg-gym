@@ -1,0 +1,27 @@
+{
+  "func": "masklen",
+  "mode": "stub",
+  "patch": "prep/masklen.patch",
+  "symbols": [
+    "network_masklen"
+  ],
+  "units": {
+    "network_masklen": {
+      "file": "src/backend/utils/adt/network.c",
+      "code": "Datum\nnetwork_masklen(PG_FUNCTION_ARGS)\n{\n\tinet\t   *ip = PG_GETARG_INET_PP(0);\n\n\tPG_RETURN_INT32(ip_bits(ip));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "inet"
+  ],
+  "category": "network",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 29,
+  "oracle_diff_by_file": {
+    "inet": 29
+  }
+}

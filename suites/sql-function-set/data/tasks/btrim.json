@@ -1,0 +1,33 @@
+{
+  "func": "btrim",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "trim selected characters from both ends of string"
+    },
+    {
+      "arguments": "text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "trim spaces from both ends of string"
+    },
+    {
+      "arguments": "bytea bytea",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "trim selected bytes from both ends of string"
+    }
+  ],
+  "description": "Removes the longest string containing only characters in characters (a space by default) from the start and end of string.\nRemoves the longest string containing only bytes appearing in bytesremoved from the start and end of bytes.",
+  "examples": [
+    "btrim('xyxtrimyyx', 'xyz') -> trim",
+    "btrim('\\x1234567890'::bytea, '\\x9012'::bytea) -> \\x345678"
+  ],
+  "mode": "stub",
+  "category": "string"
+}

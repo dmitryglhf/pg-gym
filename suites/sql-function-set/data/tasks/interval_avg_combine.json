@@ -1,0 +1,15 @@
+{
+  "func": "interval_avg_combine",
+  "variants": [
+    {
+      "arguments": "internal internal",
+      "returns": "internal",
+      "kind": "f",
+      "volatile": "i",
+      "description": "aggregate combine function"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

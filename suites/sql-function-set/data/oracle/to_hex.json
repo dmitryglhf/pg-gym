@@ -1,0 +1,28 @@
+{
+  "func": "to_hex",
+  "mode": "stub",
+  "patch": "prep/to_hex.patch",
+  "symbols": [
+    "to_hex32",
+    "to_hex64"
+  ],
+  "units": {
+    "to_hex32": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*\n * Convert an integer to a string containing a base-16 (hex) representation of\n * the number.\n */\nDatum\nto_hex32(PG_FUNCTION_ARGS)\n{\n\tuint64\t\tvalue = (uint32) PG_GETARG_INT32(0);\n\n\tPG_RETURN_TEXT_P(convert_to_base(value, 16));\n}\n"
+    },
+    "to_hex64": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "\tPG_RETURN_TEXT_P(convert_to_base(value, 16));\n}\nDatum\nto_hex64(PG_FUNCTION_ARGS)\n{\n\tuint64\t\tvalue = (uint64) PG_GETARG_INT64(0);\n\n\tPG_RETURN_TEXT_P(convert_to_base(value, 16));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null,
+  "category": "formatting",
+  "usable": false,
+  "verify_status": "build_failed",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

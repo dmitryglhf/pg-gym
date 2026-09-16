@@ -1,0 +1,27 @@
+{
+  "func": "array_positions",
+  "mode": "stub",
+  "patch": "prep/array_positions.patch",
+  "symbols": [
+    "array_positions"
+  ],
+  "units": {
+    "array_positions": {
+      "file": "src/backend/utils/adt/array_userfuncs.c",
+      "code": "/*-----------------------------------------------------------------------------\n * array_positions :\n *\t\t\treturn an array of positions of a value in an array.\n *\n * IS NOT DISTINCT FROM semantics are used for comparisons.  Returns NULL when\n * the input array is NULL.  When the value is not found in the array, returns\n * an empty array.\n *\n * This is not strict so we have to test for null inputs explicitly.\n *-----------------------------------------------------------------------------\n */\nDatum\narray_positions(PG_FUNCTION_ARGS)\n{\n\tArrayType  *array;\n\tOid\t\t\tcollation = PG_GET_COLLATION();\n\tOid\t\t\telement_type;\n\tDatum\t\tsearched_element,\n\t\t\t\tvalue;\n\tbool\t\tisnull;\n\tint\t\t\tposition;\n\tTypeCacheEntry *typentry;\n\tArrayMetaState *my_extra;\n\tbool\t\tnull_search;\n\tArrayIterator array_iterator;\n\tArrayBuildState *astate = NULL;\n\n\tif (PG_ARGISNULL(0))\n\t\tPG_RETURN_NULL();\n\n\tarray = PG_GETARG_ARRAYTYPE_P(0);\n\n\t/*\n\t * We refuse to search for elements in multi-dimensional arrays, since we\n\t * have no good way to report the element's location in the array.\n\t */\n\tif (ARR_NDIM(array) > 1)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t errmsg(\"searching for elements in multidimensional arrays is not supported\")));\n\n\tastate = initArrayResult(INT4OID, CurrentMemoryContext, false);\n\n\t/* Searching in an empty array is well-defined, though: it always fails */\n\tif (ARR_NDIM(array) < 1)\n\t\tPG_RETURN_DATUM(makeArrayResult(astate, CurrentMemoryContext));\n\n\tif (PG_ARGISNULL(1))\n\t{\n\t\t/* fast return when the array doesn't have nulls */\n\t\tif (!array_contains_nulls(array))\n\t\t\tPG_RETURN_DATUM(makeArrayResult(astate, CurrentMemoryContext));\n\t\tsearched_element = (Datum) 0;\n\t\tnull_search = true;\n\t}\n\telse\n\t{\n\t\tsearched_element = PG_GETARG_DATUM(1);\n\t\tnull_search = false;\n\t}\n\n\telement_type = ARR_ELEMTYPE(array);\n\tposition = (ARR_LBOUND(array))[0] - 1;\n\n\t/*\n\t * We arrange to look up type info for array_create_iterator only once per\n\t * series of calls, assuming the element type doesn't change underneath\n\t * us.\n\t */\n\tmy_extra = (ArrayMetaState *) fcinfo->flinfo->fn_extra;\n\tif (my_extra == NULL)\n\t{\n\t\tfcinfo->flinfo->fn_extra = MemoryContextAlloc(fcinfo->flinfo->fn_mcxt,\n\t\t\t\t\t\t\t\t\t\t\t\t\t  sizeof(ArrayMetaState));\n\t\tmy_extra = (ArrayMetaState *) fcinfo->flinfo->fn_extra;\n\t\tmy_extra->element_type = ~element_type;\n\t}\n\n\tif (my_extra->element_type != element_type)\n\t{\n\t\tget_typlenbyvalalign(element_type,\n\t\t\t\t\t\t\t &my_extra->typlen,\n\t\t\t\t\t\t\t &my_extra->typbyval,\n\t\t\t\t\t\t\t &my_extra->typalign);\n\n\t\ttypentry = lookup_type_cache(element_type, TYPECACHE_EQ_OPR_FINFO);\n\n\t\tif (!OidIsValid(typentry->eq_opr_finfo.fn_oid))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_UNDEFINED_FUNCTION),\n\t\t\t\t\t errmsg(\"could not identify an equality operator for type %s\",\n\t\t\t\t\t\t\tformat_type_be(element_type))));\n\n\t\tmy_extra->element_type = element_type;\n\t\tfmgr_info_cxt(typentry->eq_opr_finfo.fn_oid, &my_extra->proc,\n\t\t\t\t\t  fcinfo->flinfo->fn_mcxt);\n\t}\n\n\t/*\n\t * Accumulate each array position iff the element matches the given\n\t * element.\n\t */\n\tarray_iterator = array_create_iterator(array, 0, my_extra);\n\twhile (array_iterate(array_iterator, &value, &isnull))\n\t{\n\t\tposition += 1;\n\n\t\t/*\n\t\t * Can't look at the array element's value if it's null; but if we\n\t\t * search for null, we have a hit.\n\t\t */\n\t\tif (isnull || null_search)\n\t\t{\n\t\t\tif (isnull && null_search)\n\t\t\t\tastate =\n\t\t\t\t\taccumArrayResult(astate, Int32GetDatum(position), false,\n\t\t\t\t\t\t\t\t\t INT4OID, CurrentMemoryContext);\n\n\t\t\tcontinue;\n\t\t}\n\n\t\t/* not nulls, so run the operator */\n\t\tif (DatumGetBool(FunctionCall2Coll(&my_extra->proc, collation,\n\t\t\t\t\t\t\t\t\t\t   searched_element, value)))\n\t\t\tastate =\n\t\t\t\taccumArrayResult(astate, Int32GetDatum(position), false,\n\t\t\t\t\t\t\t\t INT4OID, CurrentMemoryContext);\n\t}\n\n\tarray_free_iterator(array_iterator);\n\n\t/* Avoid leaking memory when handed toasted input */\n\tPG_FREE_IF_COPY(array, 0);\n\n\tPG_RETURN_DATUM(makeArrayResult(astate, CurrentMemoryContext));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "arrays"
+  ],
+  "category": "array",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 43,
+  "oracle_diff_by_file": {
+    "arrays": 43
+  }
+}

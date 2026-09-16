@@ -1,0 +1,10 @@
+{
+  "name": "pg_privileges_inconsistent_quoting_role",
+  "area": "ACLs, role-name quoting",
+  "goal": "ACL item output and input disagree for role names containing a double quote, and an empty quoted name around the grantor separator can be misparsed as a quote character.\n\nCreate a role named like `regress_\"quoted`, build an aclitem with makeaclitem(), and round-trip its textual form. Both grantee and grantor must be emitted with SQL-style doubled quotes and parse back identically. An aclitem such as `\"\"=r*/\"\"` must be rejected because no grantor name follows the slash. Simple, whitespace-containing and PUBLIC ACL names must keep their established syntax.",
+  "func": "pg_privileges_inconsistent_quoting_role",
+  "graded_by": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ]
+}

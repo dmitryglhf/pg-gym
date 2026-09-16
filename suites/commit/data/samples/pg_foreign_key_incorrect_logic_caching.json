@@ -1,0 +1,36 @@
+{
+  "name": "pg_foreign_key_incorrect_logic_caching",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "0d307461538082880151c804e037ab3bd85936e7",
+  "parent": "256698d26746644e2f688bf3495bd6c55a7d58be",
+  "date": "2025-10-26",
+  "subject": "Fix incorrect logic for caching ResultRelInfos for triggers",
+  "area": "executor, trigger result relations",
+  "licence": "PostgreSQL",
+  "goal": "The executor caches the result relation it builds for a trigger. Inside one query the same partition can legitimately need two different ones: in some places its root result relation has to be unset, in others it has to point at the parent. The cache does not distinguish them and returns whichever was built first.\n\nWhen the wrong one comes back, the column mapping between the partitioned table and the partition is not applied, so a partition whose column numbers differ from its parent's reads the wrong columns, and can crash.\n\nTo reach it, a foreign key onto a partitioned table with a partition whose column order differs from the parent's, exercised so that both kinds of lookup happen in one statement.\n\nA cached entry may only be reused when it matches what the caller asked for.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/executor/execMain.c",
+      "added": 17,
+      "deleted": 7
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/foreign_key.sql",
+    "src/test/regress/expected/foreign_key.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "foreign_key"
+    ],
+    "command": "make -C src/test/regress check TESTS=foreign_key"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

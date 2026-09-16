@@ -1,0 +1,17 @@
+{
+  "func": "make_interval",
+  "variants": [
+    {
+      "arguments": "int4 int4 int4 int4 int4 int4 float8",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "construct interval"
+    }
+  ],
+  "description": "Create interval from years, months, weeks, days, hours, minutes and seconds fields, each of which can default to zero",
+  "examples": [
+    "make_interval(days =&gt; 10) -> 10 days"
+  ],
+  "mode": "stub"
+}

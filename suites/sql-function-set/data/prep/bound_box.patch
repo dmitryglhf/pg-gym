@@ -1,0 +1,31 @@
+diff --git a/src/backend/utils/adt/geo_ops.c b/src/backend/utils/adt/geo_ops.c
+index 07d1649..4fc02f9 100644
+--- a/src/backend/utils/adt/geo_ops.c
++++ b/src/backend/utils/adt/geo_ops.c
+@@ -4314,24 +4314,11 @@ point_box(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BOX_P(box);
+ }
+ 
+-/*
+- * Smallest bounding box that includes both of the given boxes
+- */
+ Datum
+ boxes_bound_box(PG_FUNCTION_ARGS)
+ {
+-	BOX		   *box1 = PG_GETARG_BOX_P(0),
+-			   *box2 = PG_GETARG_BOX_P(1),
+-			   *container;
+-
+-	container = (BOX *) palloc(sizeof(BOX));
+-
+-	container->high.x = float8_max(box1->high.x, box2->high.x);
+-	container->low.x = float8_min(box1->low.x, box2->low.x);
+-	container->high.y = float8_max(box1->high.y, box2->high.y);
+-	container->low.y = float8_min(box1->low.y, box2->low.y);
+-
+-	PG_RETURN_BOX_P(container);
++	elog(ERROR, "boxes_bound_box is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

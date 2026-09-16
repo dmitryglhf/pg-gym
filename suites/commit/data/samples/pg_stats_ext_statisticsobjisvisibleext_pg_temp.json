@@ -1,0 +1,36 @@
+{
+  "name": "pg_stats_ext_statisticsobjisvisibleext_pg_temp",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "6778fbca63c9efffefee8086914cef8428c4ccad",
+  "parent": "3fc9aa5b0233883e0f73902200777d251e848e18",
+  "date": "2025-09-29",
+  "subject": "Fix StatisticsObjIsVisibleExt() for pg_temp.",
+  "area": "name resolution, extended statistics",
+  "licence": "PostgreSQL",
+  "goal": "An unqualified statistics object name is never resolved in the temporary schema. That has been the rule for every namespace search except relations and types since CVE-2007-2138. The test that answers whether a statistics object is visible under the current search path does not follow it, and calls an object created in pg_temp visible.\n\n    CREATE STATISTICS pg_temp.stats_ext_temp ON a, b FROM ab1;\n    SELECT pg_statistics_obj_is_visible(oid) FROM pg_statistic_ext\n     WHERE stxname = 'stats_ext_temp';\n\nThat answers true, while DROP STATISTICS stats_ext_temp cannot find the object at all. The same wrong answer makes psql's \\dX list such objects, and makes pg_describe_object() and the error messages built on it print the name with no schema on the front, as though the bare name would find it.\n\nVisibility has to agree with what an unqualified name actually resolves to, so that query has to answer false and the description has to be schema-qualified. Statistics objects in ordinary schemas, on the search path or not, must be reported exactly as they are now, and no other kind of object's visibility may change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/catalog/namespace.c",
+      "added": 3,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/stats_ext.sql",
+    "src/test/regress/expected/stats_ext.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "stats_ext"
+    ],
+    "command": "make -C src/test/regress check TESTS=stats_ext"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

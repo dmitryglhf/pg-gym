@@ -1,0 +1,18 @@
+{
+  "func": "interval_avg_serialize",
+  "mode": "stub",
+  "patch": "prep/interval_avg_serialize.patch",
+  "symbols": [
+    "interval_avg_serialize"
+  ],
+  "units": {
+    "interval_avg_serialize": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * interval_avg_serialize\n *\t\tSerialize IntervalAggState for interval aggregates.\n */\nDatum\ninterval_avg_serialize(PG_FUNCTION_ARGS)\n{\n\tIntervalAggState *state;\n\tStringInfoData buf;\n\tbytea\t   *result;\n\n\t/* Ensure we disallow calling when not in aggregate context */\n\tif (!AggCheckCallContext(fcinfo, NULL))\n\t\telog(ERROR, \"aggregate function called in non-aggregate context\");\n\n\tstate = (IntervalAggState *) PG_GETARG_POINTER(0);\n\n\tpq_begintypsend(&buf);\n\n\t/* N */\n\tpq_sendint64(&buf, state->N);\n\n\t/* sumX */\n\tpq_sendint64(&buf, state->sumX.time);\n\tpq_sendint32(&buf, state->sumX.day);\n\tpq_sendint32(&buf, state->sumX.month);\n\n\t/* pInfcount */\n\tpq_sendint64(&buf, state->pInfcount);\n\n\t/* nInfcount */\n\tpq_sendint64(&buf, state->nInfcount);\n\n\tresult = pq_endtypsend(&buf);\n\n\tPG_RETURN_BYTEA_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

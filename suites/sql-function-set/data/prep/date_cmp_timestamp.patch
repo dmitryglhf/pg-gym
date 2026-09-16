@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..6f6d961 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -813,10 +813,8 @@ date_ge_timestamp(PG_FUNCTION_ARGS)
+ Datum
+ date_cmp_timestamp(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal = PG_GETARG_DATEADT(0);
+-	Timestamp	dt2 = PG_GETARG_TIMESTAMP(1);
+-
+-	PG_RETURN_INT32(date_cmp_timestamp_internal(dateVal, dt2));
++	elog(ERROR, "date_cmp_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ int32

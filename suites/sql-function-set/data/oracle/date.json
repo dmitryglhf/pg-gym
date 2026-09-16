@@ -1,0 +1,35 @@
+{
+  "func": "date",
+  "mode": "stub",
+  "patch": "prep/date.patch",
+  "symbols": [
+    "timestamp_date",
+    "timestamptz_date"
+  ],
+  "units": {
+    "timestamp_date": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timestamp_date()\n * Convert timestamp to date data type.\n */\nDatum\ntimestamp_date(PG_FUNCTION_ARGS)\n{\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(0);\n\tDateADT\t\tresult;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tfsec_t\t\tfsec;\n\n\tif (TIMESTAMP_IS_NOBEGIN(timestamp))\n\t\tDATE_NOBEGIN(result);\n\telse if (TIMESTAMP_IS_NOEND(timestamp))\n\t\tDATE_NOEND(result);\n\telse\n\t{\n\t\tif (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\t\tresult = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;\n\t}\n\n\tPG_RETURN_DATEADT(result);\n}\n\n"
+    },
+    "timestamptz_date": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timestamptz_date()\n * Convert timestamp with time zone to date data type.\n */\nDatum\ntimestamptz_date(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMP(0);\n\tDateADT\t\tresult;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tfsec_t\t\tfsec;\n\tint\t\t\ttz;\n\n\tif (TIMESTAMP_IS_NOBEGIN(timestamp))\n\t\tDATE_NOBEGIN(result);\n\telse if (TIMESTAMP_IS_NOEND(timestamp))\n\t\tDATE_NOEND(result);\n\telse\n\t{\n\t\tif (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\t\tresult = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;\n\t}\n\n\tPG_RETURN_DATEADT(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "expressions",
+    "horology",
+    "jsonb_jsonpath"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 67,
+  "oracle_diff_by_file": {
+    "horology": 20,
+    "expressions": 5,
+    "jsonb_jsonpath": 42
+  }
+}

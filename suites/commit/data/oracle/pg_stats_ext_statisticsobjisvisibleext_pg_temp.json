@@ -1,0 +1,27 @@
+{
+  "func": "pg_stats_ext_statisticsobjisvisibleext_pg_temp",
+  "sha": "6778fbca63c9efffefee8086914cef8428c4ccad",
+  "parent": "3fc9aa5b0233883e0f73902200777d251e848e18",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_stats_ext_statisticsobjisvisibleext_pg_temp.patch",
+  "test_files": [
+    "src/test/regress/sql/stats_ext.sql",
+    "src/test/regress/expected/stats_ext.out"
+  ],
+  "reference": "diff --git a/src/backend/catalog/namespace.c b/src/backend/catalog/namespace.c\nindex 30807f91..8eaa1c58 100644\n--- a/src/backend/catalog/namespace.c\n+++ b/src/backend/catalog/namespace.c\n@@ -2686,6 +2686,9 @@ StatisticsObjIsVisibleExt(Oid stxid, bool *is_missing)\n \t\t{\n \t\t\tOid\t\t\tnamespaceId = lfirst_oid(l);\n \n+\t\t\tif (namespaceId == myTempNamespace)\n+\t\t\t\tcontinue;\t\t/* do not look in temp namespace */\n+\n \t\t\tif (namespaceId == stxnamespace)\n \t\t\t{\n \t\t\t\t/* Found it first in path */\n",
+  "test": "diff --git a/src/test/regress/expected/stats_ext.out b/src/test/regress/expected/stats_ext.out\nindex 846bb521..a3669f7a 100644\n--- a/src/test/regress/expected/stats_ext.out\n+++ b/src/test/regress/expected/stats_ext.out\n@@ -99,6 +99,20 @@ ALTER STATISTICS ab1_a_b_stats RENAME TO ab1_a_b_stats_new;\n ERROR:  must be owner of statistics object ab1_a_b_stats\n RESET SESSION AUTHORIZATION;\n DROP ROLE regress_stats_ext;\n+CREATE STATISTICS pg_temp.stats_ext_temp ON a, b FROM ab1;\n+SELECT regexp_replace(pg_describe_object(tableoid, oid, 0),\n+                      'pg_temp_[0-9]*', 'pg_temp_REDACTED') AS descr,\n+       pg_statistics_obj_is_visible(oid) AS visible\n+  FROM pg_statistic_ext\n+ WHERE stxname = 'stats_ext_temp';\n+                       descr                       | visible \n+---------------------------------------------------+---------\n+ statistics object pg_temp_REDACTED.stats_ext_temp | f\n+(1 row)\n+\n+DROP STATISTICS stats_ext_temp;  -- shall fail\n+ERROR:  statistics object \"stats_ext_temp\" does not exist\n+DROP STATISTICS pg_temp.stats_ext_temp;\n CREATE STATISTICS IF NOT EXISTS ab1_a_b_stats ON a, b FROM ab1;\n NOTICE:  statistics object \"ab1_a_b_stats\" already exists, skipping\n DROP STATISTICS ab1_a_b_stats;\ndiff --git a/src/test/regress/sql/stats_ext.sql b/src/test/regress/sql/stats_ext.sql\nindex 958f09b4..95811bee 100644\n--- a/src/test/regress/sql/stats_ext.sql\n+++ b/src/test/regress/sql/stats_ext.sql\n@@ -69,6 +69,14 @@ DROP STATISTICS ab1_a_b_stats;\n ALTER STATISTICS ab1_a_b_stats RENAME TO ab1_a_b_stats_new;\n RESET SESSION AUTHORIZATION;\n DROP ROLE regress_stats_ext;\n+CREATE STATISTICS pg_temp.stats_ext_temp ON a, b FROM ab1;\n+SELECT regexp_replace(pg_describe_object(tableoid, oid, 0),\n+                      'pg_temp_[0-9]*', 'pg_temp_REDACTED') AS descr,\n+       pg_statistics_obj_is_visible(oid) AS visible\n+  FROM pg_statistic_ext\n+ WHERE stxname = 'stats_ext_temp';\n+DROP STATISTICS stats_ext_temp;  -- shall fail\n+DROP STATISTICS pg_temp.stats_ext_temp;\n \n CREATE STATISTICS IF NOT EXISTS ab1_a_b_stats ON a, b FROM ab1;\n DROP STATISTICS ab1_a_b_stats;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=stats_ext",
+  "expected_tests": [
+    "stats_ext"
+  ],
+  "failing_tests": [
+    "stats_ext"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 5,
+  "oracle_diff_by_file": {
+    "stats_ext": 5
+  }
+}

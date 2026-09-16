@@ -1,0 +1,15 @@
+{
+  "func": "interval_hash",
+  "variants": [
+    {
+      "arguments": "interval",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "hash"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

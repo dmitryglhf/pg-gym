@@ -1,0 +1,15 @@
+{
+  "func": "timestamptz_gt_timestamp",
+  "variants": [
+    {
+      "arguments": "timestamptz timestamp",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "s",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

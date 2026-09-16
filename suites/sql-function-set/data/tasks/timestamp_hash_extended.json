@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_hash_extended",
+  "variants": [
+    {
+      "arguments": "timestamp int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "hash"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

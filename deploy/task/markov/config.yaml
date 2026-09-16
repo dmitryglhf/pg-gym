@@ -1,0 +1,14 @@
+active_provider: pgpro
+GOOSE_PROVIDER: pgpro
+GOOSE_MODEL: Qwen/Qwen3.8-27B-FP8
+GOOSE_TELEMETRY_ENABLED: false
+
+extensions:
+  developer:
+    enabled: true
+    type: builtin
+    name: developer
+    description: Write and edit files, and execute shell commands
+    display_name: Developer
+    timeout: null
+    bundled: true

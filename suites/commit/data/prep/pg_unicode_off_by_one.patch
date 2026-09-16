@@ -1,0 +1,13 @@
+diff --git a/src/common/unicode_norm.c b/src/common/unicode_norm.c
+index 57669e17..14e84946 100644
+--- a/src/common/unicode_norm.c
++++ b/src/common/unicode_norm.c
+@@ -236,7 +236,7 @@ recompose_code(uint32 start, uint32 code, uint32 *result)
+ 	/* Check if two current characters are LV and T */
+ 	else if (start >= SBASE && start < (SBASE + SCOUNT) &&
+ 			 ((start - SBASE) % TCOUNT) == 0 &&
+-			 code > TBASE && code < (TBASE + TCOUNT))
++			 code >= TBASE && code < (TBASE + TCOUNT))
+ 	{
+ 		/* make syllable of form LVT */
+ 		uint32		tindex = code - TBASE;

@@ -1,0 +1,27 @@
+{
+  "func": "pg_triggers_oversight_findtriggerincompatiblewithinheritance",
+  "sha": "e028ce911ad21e23ca39555e01a2d6c41c76aa79",
+  "parent": "7dafc4a413f42a6c0e13c91e50e05329f91e954f",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_triggers_oversight_findtriggerincompatiblewithinheritance.patch",
+  "test_files": [
+    "src/test/regress/sql/triggers.sql",
+    "src/test/regress/expected/triggers.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/trigger.c b/src/backend/commands/trigger.c\nindex c27d007e..c8976344 100644\n--- a/src/backend/commands/trigger.c\n+++ b/src/backend/commands/trigger.c\n@@ -2279,6 +2279,8 @@ FindTriggerIncompatibleWithInheritance(TriggerDesc *trigdesc)\n \t\t{\n \t\t\tTrigger    *trigger = &trigdesc->triggers[i];\n \n+\t\t\tif (!TRIGGER_FOR_ROW(trigger->tgtype))\n+\t\t\t\tcontinue;\n \t\t\tif (trigger->tgoldtable != NULL || trigger->tgnewtable != NULL)\n \t\t\t\treturn trigger->tgname;\n \t\t}\n",
+  "test": "diff --git a/src/test/regress/expected/triggers.out b/src/test/regress/expected/triggers.out\nindex b7f0c302..a6786e20 100644\n--- a/src/test/regress/expected/triggers.out\n+++ b/src/test/regress/expected/triggers.out\n@@ -3016,6 +3016,10 @@ NOTICE:  trigger = child3_delete_trig, old table = (42,CCC)\n -- copy into parent sees parent-format tuples\n copy parent (a, b) from stdin;\n NOTICE:  trigger = parent_insert_trig, new table = (AAA,42), (BBB,42), (CCC,42)\n+-- check detach/reattach behavior; statement triggers with transition tables\n+-- should not prevent a table from becoming a partition again\n+alter table parent detach partition child1;\n+alter table parent attach partition child1 for values in ('AAA');\n -- DML affecting parent sees tuples collected from children even if\n -- there is no transition table trigger on the children\n drop trigger child1_insert_trig on child1;\n@@ -3213,6 +3217,10 @@ NOTICE:  trigger = parent_insert_trig, new table = (AAA,42), (BBB,42), (CCC,42)\n create index on parent(b);\n copy parent (a, b) from stdin;\n NOTICE:  trigger = parent_insert_trig, new table = (DDD,42)\n+-- check disinherit/reinherit behavior; statement triggers with transition\n+-- tables should not prevent a table from becoming an inheritance child again\n+alter table child1 no inherit parent;\n+alter table child1 inherit parent;\n -- DML affecting parent sees tuples collected from children even if\n -- there is no transition table trigger on the children\n drop trigger child1_insert_trig on child1;\ndiff --git a/src/test/regress/sql/triggers.sql b/src/test/regress/sql/triggers.sql\nindex a3c3115a..5a0fa012 100644\n--- a/src/test/regress/sql/triggers.sql\n+++ b/src/test/regress/sql/triggers.sql\n@@ -2110,6 +2110,11 @@ BBB\t42\n CCC\t42\n \\.\n \n+-- check detach/reattach behavior; statement triggers with transition tables\n+-- should not prevent a table from becoming a partition again\n+alter table parent detach partition child1;\n+alter table parent attach partition child1 for values in ('AAA');\n+\n -- DML affecting parent sees tuples collected from children even if\n -- there is no transition table trigger on the children\n drop trigger child1_insert_trig on child1;\n@@ -2329,6 +2334,11 @@ copy parent (a, b) from stdin;\n DDD\t42\n \\.\n \n+-- check disinherit/reinherit behavior; statement triggers with transition\n+-- tables should not prevent a table from becoming an inheritance child again\n+alter table child1 no inherit parent;\n+alter table child1 inherit parent;\n+\n -- DML affecting parent sees tuples collected from children even if\n -- there is no transition table trigger on the children\n drop trigger child1_insert_trig on child1;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=triggers",
+  "expected_tests": [
+    "triggers"
+  ],
+  "failing_tests": [
+    "triggers"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 17,
+  "oracle_diff_by_file": {
+    "triggers": 17
+  }
+}

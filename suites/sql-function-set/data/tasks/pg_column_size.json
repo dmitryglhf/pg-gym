@@ -1,0 +1,16 @@
+{
+  "func": "pg_column_size",
+  "variants": [
+    {
+      "arguments": "any",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "s",
+      "description": "bytes required to store the value, perhaps with compression"
+    }
+  ],
+  "description": "Shows the number of bytes used to store any individual data value. If applied directly to a table column value, this reflects any compression that was done.",
+  "examples": [],
+  "mode": "stub",
+  "category": "sysinfo"
+}

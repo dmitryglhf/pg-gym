@@ -1,0 +1,27 @@
+{
+  "func": "pg_create_table_like_attnum_remapping_generateclonedextstatsstmt",
+  "sha": "a0104b4474e92a130c742dfa36da1aa8e221fa61",
+  "parent": "5499be3325d8d7d53795214c98495f378c501fe1",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_create_table_like_attnum_remapping_generateclonedextstatsstmt.patch",
+  "test_files": [
+    "src/test/regress/sql/create_table_like.sql",
+    "src/test/regress/expected/create_table_like.out"
+  ],
+  "reference": "diff --git a/src/backend/parser/parse_utilcmd.c b/src/backend/parser/parse_utilcmd.c\nindex 788e469c..09fe02fa 100644\n--- a/src/backend/parser/parse_utilcmd.c\n+++ b/src/backend/parser/parse_utilcmd.c\n@@ -1859,7 +1859,10 @@ generateClonedIndexStmt(RangeVar *heapRel, Relation source_idx,\n  * extended statistic \"source_statsid\", for the rel identified by heapRel and\n  * heapRelid.\n  *\n- * Attribute numbers in expression Vars are adjusted according to attmap.\n+ * stxkeys in the source statistic holds attribute numbers from the parent\n+ * relation.  Those attnums, along with the attribute numbers referenced by\n+ * Vars inside the expression tree, are remapped to the new relation's\n+ * numbering according to attmap.\n  */\n static CreateStatsStmt *\n generateClonedExtStatsStmt(RangeVar *heapRel, Oid heapRelid,\n@@ -1917,7 +1920,8 @@ generateClonedExtStatsStmt(RangeVar *heapRel, Oid heapRelid,\n \t\tStatsElem  *selem = makeNode(StatsElem);\n \t\tAttrNumber\tattnum = statsrec->stxkeys.values[i];\n \n-\t\tselem->name = get_attname(heapRelid, attnum, false);\n+\t\tselem->name =\n+\t\t\tget_attname(heapRelid, attmap->attnums[attnum - 1], false);\n \t\tselem->expr = NULL;\n \n \t\tdef_names = lappend(def_names, selem);\n",
+  "test": "diff --git a/src/test/regress/expected/create_table_like.out b/src/test/regress/expected/create_table_like.out\nindex 6bfc6d04..f49f2684 100644\n--- a/src/test/regress/expected/create_table_like.out\n+++ b/src/test/regress/expected/create_table_like.out\n@@ -533,3 +533,34 @@ DROP TYPE ctlty1;\n DROP VIEW ctlv1;\n DROP TABLE IF EXISTS ctlt4, ctlt10, ctlt11, ctlt11a, ctlt12;\n NOTICE:  table \"ctlt10\" does not exist, skipping\n+-- LIKE ... INCLUDING STATISTICS with dropped columns in the parent,\n+-- so stxkeys attnums are not contiguous.\n+CREATE TABLE ctl_stats3_parent (a int, b int, c int);\n+ALTER TABLE ctl_stats3_parent DROP COLUMN b;\n+CREATE STATISTICS ctl_stats3_stat ON a, c FROM ctl_stats3_parent;\n+CREATE TABLE ctl_stats3_child (LIKE ctl_stats3_parent INCLUDING STATISTICS);\n+CREATE TABLE ctl_stats4_parent (a int, b int, c int, d int);\n+ALTER TABLE ctl_stats4_parent DROP COLUMN b;\n+CREATE STATISTICS ctl_stats4_stat ON a, c FROM ctl_stats4_parent;\n+CREATE TABLE ctl_stats4_child (LIKE ctl_stats4_parent INCLUDING STATISTICS);\n+SELECT s.stxrelid::regclass AS relation,\n+       array_agg(a.attname ORDER BY u.ord) AS stats_columns\n+FROM pg_statistic_ext s\n+CROSS JOIN LATERAL\n+  unnest(s.stxkeys::int2[]) WITH ORDINALITY AS u(attnum, ord)\n+JOIN pg_attribute a\n+  ON a.attrelid = s.stxrelid AND a.attnum = u.attnum\n+WHERE s.stxrelid IN ('ctl_stats3_child'::regclass,\n+                     'ctl_stats4_child'::regclass)\n+GROUP BY s.stxrelid\n+ORDER BY s.stxrelid::regclass::text;\n+     relation     | stats_columns \n+------------------+---------------\n+ ctl_stats3_child | {a,c}\n+ ctl_stats4_child | {a,c}\n+(2 rows)\n+\n+DROP TABLE ctl_stats3_parent;\n+DROP TABLE ctl_stats3_child;\n+DROP TABLE ctl_stats4_parent;\n+DROP TABLE ctl_stats4_child;\ndiff --git a/src/test/regress/sql/create_table_like.sql b/src/test/regress/sql/create_table_like.sql\nindex 04008a02..7c7206c6 100644\n--- a/src/test/regress/sql/create_table_like.sql\n+++ b/src/test/regress/sql/create_table_like.sql\n@@ -223,3 +223,29 @@ DROP SEQUENCE ctlseq1;\n DROP TYPE ctlty1;\n DROP VIEW ctlv1;\n DROP TABLE IF EXISTS ctlt4, ctlt10, ctlt11, ctlt11a, ctlt12;\n+\n+-- LIKE ... INCLUDING STATISTICS with dropped columns in the parent,\n+-- so stxkeys attnums are not contiguous.\n+CREATE TABLE ctl_stats3_parent (a int, b int, c int);\n+ALTER TABLE ctl_stats3_parent DROP COLUMN b;\n+CREATE STATISTICS ctl_stats3_stat ON a, c FROM ctl_stats3_parent;\n+CREATE TABLE ctl_stats3_child (LIKE ctl_stats3_parent INCLUDING STATISTICS);\n+CREATE TABLE ctl_stats4_parent (a int, b int, c int, d int);\n+ALTER TABLE ctl_stats4_parent DROP COLUMN b;\n+CREATE STATISTICS ctl_stats4_stat ON a, c FROM ctl_stats4_parent;\n+CREATE TABLE ctl_stats4_child (LIKE ctl_stats4_parent INCLUDING STATISTICS);\n+SELECT s.stxrelid::regclass AS relation,\n+       array_agg(a.attname ORDER BY u.ord) AS stats_columns\n+FROM pg_statistic_ext s\n+CROSS JOIN LATERAL\n+  unnest(s.stxkeys::int2[]) WITH ORDINALITY AS u(attnum, ord)\n+JOIN pg_attribute a\n+  ON a.attrelid = s.stxrelid AND a.attnum = u.attnum\n+WHERE s.stxrelid IN ('ctl_stats3_child'::regclass,\n+                     'ctl_stats4_child'::regclass)\n+GROUP BY s.stxrelid\n+ORDER BY s.stxrelid::regclass::text;\n+DROP TABLE ctl_stats3_parent;\n+DROP TABLE ctl_stats3_child;\n+DROP TABLE ctl_stats4_parent;\n+DROP TABLE ctl_stats4_child;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=create_table_like",
+  "expected_tests": [
+    "create_table_like"
+  ],
+  "failing_tests": [
+    "create_table_like"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 10,
+  "oracle_diff_by_file": {
+    "create_table_like": 10
+  }
+}

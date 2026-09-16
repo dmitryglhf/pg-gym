@@ -1,0 +1,42 @@
+diff --git a/src/bin/pg_dump/pg_dump.c b/src/bin/pg_dump/pg_dump.c
+index 06f630a91..9ed1a856f 100644
+--- a/src/bin/pg_dump/pg_dump.c
++++ b/src/bin/pg_dump/pg_dump.c
+@@ -11623,13 +11623,8 @@ dumpDomain(Archive *fout, const TypeInfo *tyinfo)
+ 	for (i = 0; i < tyinfo->nDomChecks; i++)
+ 	{
+ 		ConstraintInfo *domcheck = &(tyinfo->domChecks[i]);
+-		PQExpBuffer conprefix;
++		PQExpBuffer conprefix = createPQExpBuffer();
+ 
+-		/* but only if the constraint itself was dumped here */
+-		if (domcheck->separate)
+-			continue;
+-
+-		conprefix = createPQExpBuffer();
+ 		appendPQExpBuffer(conprefix, "CONSTRAINT %s ON DOMAIN",
+ 						  fmtId(domcheck->dobj.name));
+ 
+@@ -17366,22 +17361,6 @@ dumpConstraint(Archive *fout, const ConstraintInfo *coninfo)
+ 										  .section = SECTION_POST_DATA,
+ 										  .createStmt = q->data,
+ 										  .dropStmt = delq->data));
+-
+-			if (coninfo->dobj.dump & DUMP_COMPONENT_COMMENT)
+-			{
+-				PQExpBuffer conprefix = createPQExpBuffer();
+-				char	   *qtypname = pg_strdup(fmtId(tyinfo->dobj.name));
+-
+-				appendPQExpBuffer(conprefix, "CONSTRAINT %s ON DOMAIN",
+-								  fmtId(coninfo->dobj.name));
+-
+-				dumpComment(fout, conprefix->data, qtypname,
+-							tyinfo->dobj.namespace->dobj.name,
+-							tyinfo->rolname,
+-							coninfo->dobj.catId, 0, tyinfo->dobj.dumpId);
+-				destroyPQExpBuffer(conprefix);
+-				free(qtypname);
+-			}
+ 		}
+ 	}
+ 	else

@@ -1,0 +1,26 @@
+diff --git a/src/fe_utils/print.c b/src/fe_utils/print.c
+index 92b5df74..d6c4d78f 100644
+--- a/src/fe_utils/print.c
++++ b/src/fe_utils/print.c
+@@ -1458,10 +1458,9 @@ print_aligned_vertical(const printTableContent *cont,
+ 	}
+ 
+ 	/*
+-	 * Determine data column width: fit output width in wrapped mode, or
+-	 * ensure alignment with the record header line in aligned mode.
++	 * Calculate available width for data in wrapped mode
+ 	 */
+-	if (cont->opt->format == PRINT_WRAPPED || cont->opt->format == PRINT_ALIGNED)
++	if (cont->opt->format == PRINT_WRAPPED)
+ 	{
+ 		unsigned int swidth,
+ 					rwidth = 0,
+@@ -1533,7 +1532,7 @@ print_aligned_vertical(const printTableContent *cont,
+ 			if (width < rwidth)
+ 				width = rwidth;
+ 
+-			if (cont->opt->format == PRINT_WRAPPED && output_columns > 0)
++			if (output_columns > 0)
+ 			{
+ 				unsigned int min_width;
+ 

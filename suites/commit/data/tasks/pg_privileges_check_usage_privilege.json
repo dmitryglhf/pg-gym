@@ -1,0 +1,10 @@
+{
+  "name": "pg_privileges_check_usage_privilege",
+  "area": "ALTER TABLE OF, type privileges",
+  "goal": "ALTER TABLE ... OF can associate an existing table with a composite type without checking whether the caller has USAGE on that type. CREATE TABLE OF already requires it.\n\nLet one role own a matching ordinary table but lack USAGE on a composite type owned by another role, then issue ALTER TABLE ... OF. It must fail with the normal type permission error and leave the table unassociated. After USAGE is granted the same command must succeed. Ownership checks, column-shape validation and CREATE TABLE OF behavior must remain unchanged.",
+  "func": "pg_privileges_check_usage_privilege",
+  "graded_by": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ]
+}

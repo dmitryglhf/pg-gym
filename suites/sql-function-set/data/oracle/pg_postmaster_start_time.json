@@ -1,0 +1,18 @@
+{
+  "func": "pg_postmaster_start_time",
+  "mode": "stub",
+  "patch": "prep/pg_postmaster_start_time.patch",
+  "symbols": [
+    "pg_postmaster_start_time"
+  ],
+  "units": {
+    "pg_postmaster_start_time": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\npg_postmaster_start_time(PG_FUNCTION_ARGS)\n{\n\tPG_RETURN_TIMESTAMPTZ(PgStartTime);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

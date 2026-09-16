@@ -1,0 +1,38 @@
+{
+  "func": "range_merge",
+  "mode": "stub",
+  "patch": "prep/range_merge.patch",
+  "symbols": [
+    "range_merge",
+    "range_merge_from_multirange"
+  ],
+  "units": {
+    "range_merge": {
+      "file": "src/backend/utils/adt/rangetypes.c",
+      "code": "/*\n * range merge: like set union, except also allow and account for non-adjacent\n * input ranges.\n */\nDatum\nrange_merge(PG_FUNCTION_ARGS)\n{\n\tRangeType  *r1 = PG_GETARG_RANGE_P(0);\n\tRangeType  *r2 = PG_GETARG_RANGE_P(1);\n\tTypeCacheEntry *typcache;\n\n\ttypcache = range_get_typcache(fcinfo, RangeTypeGetOid(r1));\n\n\tPG_RETURN_RANGE_P(range_union_internal(typcache, r1, r2, false));\n}\n\n"
+    },
+    "range_merge_from_multirange": {
+      "file": "src/backend/utils/adt/multirangetypes.c",
+      "code": "/* Find the smallest range that includes everything in the multirange */\nDatum\nrange_merge_from_multirange(PG_FUNCTION_ARGS)\n{\n\tMultirangeType *mr = PG_GETARG_MULTIRANGE_P(0);\n\tOid\t\t\tmltrngtypoid = MultirangeTypeGetOid(mr);\n\tTypeCacheEntry *typcache;\n\tRangeType  *result;\n\n\ttypcache = multirange_get_typcache(fcinfo, mltrngtypoid);\n\n\tif (MultirangeIsEmpty(mr))\n\t{\n\t\tresult = make_empty_range(typcache->rngtype);\n\t}\n\telse if (mr->rangeCount == 1)\n\t{\n\t\tresult = multirange_get_range(typcache->rngtype, mr, 0);\n\t}\n\telse\n\t{\n\t\tRangeBound\tfirstLower,\n\t\t\t\t\tfirstUpper,\n\t\t\t\t\tlastLower,\n\t\t\t\t\tlastUpper;\n\n\t\tmultirange_get_bounds(typcache->rngtype, mr, 0,\n\t\t\t\t\t\t\t  &firstLower, &firstUpper);\n\t\tmultirange_get_bounds(typcache->rngtype, mr, mr->rangeCount - 1,\n\t\t\t\t\t\t\t  &lastLower, &lastUpper);\n\n\t\tresult = make_range(typcache->rngtype, &firstLower, &lastUpper,\n\t\t\t\t\t\t\tfalse, NULL);\n\t}\n\n\tPG_RETURN_RANGE_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "multirangetypes",
+    "polymorphism",
+    "rangetypes"
+  ],
+  "category": "range",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 50,
+  "oracle_diff_by_file": {
+    "rangetypes": 15,
+    "multirangetypes": 21,
+    "brin": 2,
+    "polymorphism": 12
+  }
+}

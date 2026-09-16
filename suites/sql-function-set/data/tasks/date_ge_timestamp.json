@@ -1,0 +1,15 @@
+{
+  "func": "date_ge_timestamp",
+  "variants": [
+    {
+      "arguments": "date timestamp",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

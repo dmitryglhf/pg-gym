@@ -1,0 +1,27 @@
+{
+  "func": "uuid_extract_version",
+  "mode": "stub",
+  "patch": "prep/uuid_extract_version.patch",
+  "symbols": [
+    "uuid_extract_version"
+  ],
+  "units": {
+    "uuid_extract_version": {
+      "file": "src/backend/utils/adt/uuid.c",
+      "code": "/*\n * Extract UUID version.\n *\n * Returns null if not RFC 4122 variant.\n */\nDatum\nuuid_extract_version(PG_FUNCTION_ARGS)\n{\n\tpg_uuid_t  *uuid = PG_GETARG_UUID_P(0);\n\tuint16\t\tversion;\n\n\t/* check if RFC 4122 variant */\n\tif ((uuid->data[8] & 0xc0) != 0x80)\n\t\tPG_RETURN_NULL();\n\n\tversion = uuid->data[6] >> 4;\n\n\tPG_RETURN_UINT16(version);\n}\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "uuid"
+  ],
+  "category": "uuid",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 15,
+  "oracle_diff_by_file": {
+    "uuid": 15
+  }
+}

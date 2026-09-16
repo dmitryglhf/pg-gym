@@ -1,0 +1,43 @@
+{
+  "func": "time",
+  "variants": [
+    {
+      "arguments": "timestamp",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert timestamp to time"
+    },
+    {
+      "arguments": "interval",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert interval to time"
+    },
+    {
+      "arguments": "time int4",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust time precision"
+    },
+    {
+      "arguments": "timestamptz",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert timestamp with time zone to time"
+    },
+    {
+      "arguments": "timetz",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert time with time zone to time"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

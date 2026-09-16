@@ -1,0 +1,10 @@
+{
+  "name": "pg_foreign_key_bugs_foreign_keys",
+  "area": "foreign keys, partition attach and detach",
+  "goal": "Foreign keys on partitioned tables can be corrupted or crash during attach and detach when a partition's physical column order differs from its parent's, especially after dropped columns. The resulting trigger may read the wrong attributes, and some DDL paths can also attempt an unsafe lock escalation.\n\nBuild a partitioned referenced table and a referencing partition whose logical key columns have different attribute numbers, attach it, and exercise inserts plus detach/finalize operations. A violating row must be rejected using the logical key columns, valid rows must remain valid, and attach/detach must neither crash nor leave broken constraints. Equivalent concurrent DDL must not introduce a lock-upgrade deadlock; ordinary same-layout foreign keys must be unchanged.",
+  "func": "pg_foreign_key_bugs_foreign_keys",
+  "graded_by": [
+    "src/test/regress/sql/foreign_key.sql",
+    "src/test/regress/expected/foreign_key.out"
+  ]
+}

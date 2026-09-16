@@ -1,0 +1,18 @@
+{
+  "func": "factorial",
+  "variants": [
+    {
+      "arguments": "int8",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "factorial"
+    }
+  ],
+  "description": "Factorial",
+  "examples": [
+    "factorial(5) -> 120"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

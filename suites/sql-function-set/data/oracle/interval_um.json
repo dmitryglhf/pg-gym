@@ -1,0 +1,18 @@
+{
+  "func": "interval_um",
+  "mode": "stub",
+  "patch": "prep/interval_um.patch",
+  "symbols": [
+    "interval_um"
+  ],
+  "units": {
+    "interval_um": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ninterval_um(PG_FUNCTION_ARGS)\n{\n\tInterval   *interval = PG_GETARG_INTERVAL_P(0);\n\tInterval   *result;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\tinterval_um_internal(interval, result);\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

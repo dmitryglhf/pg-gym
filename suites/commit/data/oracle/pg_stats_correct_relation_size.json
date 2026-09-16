@@ -1,0 +1,27 @@
+{
+  "func": "pg_stats_correct_relation_size",
+  "sha": "587b6aa3f3cea5d30e65317c34d0cae288edaa6d",
+  "parent": "788baa9a25ae83b576621166367c868d3329b4d4",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_stats_correct_relation_size.patch",
+  "test_files": [
+    "src/test/regress/sql/stats.sql",
+    "src/test/regress/expected/stats.out"
+  ],
+  "reference": "diff --git a/src/backend/access/table/tableam.c b/src/backend/access/table/tableam.c\nindex e57a0b7e..3ec11fb5 100644\n--- a/src/backend/access/table/tableam.c\n+++ b/src/backend/access/table/tableam.c\n@@ -24,6 +24,7 @@\n #include \"access/syncscan.h\"\n #include \"access/tableam.h\"\n #include \"access/xact.h\"\n+#include \"optimizer/optimizer.h\"\n #include \"optimizer/plancat.h\"\n #include \"port/pg_bitutils.h\"\n #include \"storage/bufmgr.h\"\n@@ -740,6 +741,8 @@ table_block_relation_estimate_size(Relation rel, int32 *attr_widths,\n \t\ttuple_width += overhead_bytes_per_tuple;\n \t\t/* note: integer division is intentional here */\n \t\tdensity = (usable_bytes_per_page * fillfactor / 100) / tuple_width;\n+\t\t/* There's at least one row on the page, even with low fillfactor. */\n+\t\tdensity = clamp_row_est(density);\n \t}\n \t*tuples = rint(density * (double) curpages);\n \n",
+  "test": "diff --git a/src/test/regress/expected/stats.out b/src/test/regress/expected/stats.out\nindex 6e08898b..43b7873c 100644\n--- a/src/test/regress/expected/stats.out\n+++ b/src/test/regress/expected/stats.out\n@@ -1646,4 +1646,21 @@ SELECT COUNT(*) FROM brin_hot_3 WHERE a = 2;\n \n DROP TABLE brin_hot_3;\n SET enable_seqscan = on;\n+-- Test that estimation of relation size works with tuples wider than the\n+-- relation fillfactor. We create a table with wide inline attributes and\n+-- low fillfactor, insert rows and then see how many rows EXPLAIN shows\n+-- before running analyze. We disable autovacuum so that it does not\n+-- interfere with the test.\n+CREATE TABLE table_fillfactor (\n+  n char(1000)\n+) with (fillfactor=10, autovacuum_enabled=off);\n+INSERT INTO table_fillfactor\n+SELECT 'x' FROM generate_series(1,1000);\n+SELECT * FROM check_estimated_rows('SELECT * FROM table_fillfactor');\n+ estimated | actual \n+-----------+--------\n+      1000 |   1000\n+(1 row)\n+\n+DROP TABLE table_fillfactor;\n -- End of Stats Test\ndiff --git a/src/test/regress/sql/stats.sql b/src/test/regress/sql/stats.sql\nindex d8ac0d06..ed0bc1ef 100644\n--- a/src/test/regress/sql/stats.sql\n+++ b/src/test/regress/sql/stats.sql\n@@ -849,4 +849,20 @@ DROP TABLE brin_hot_3;\n \n SET enable_seqscan = on;\n \n+-- Test that estimation of relation size works with tuples wider than the\n+-- relation fillfactor. We create a table with wide inline attributes and\n+-- low fillfactor, insert rows and then see how many rows EXPLAIN shows\n+-- before running analyze. We disable autovacuum so that it does not\n+-- interfere with the test.\n+CREATE TABLE table_fillfactor (\n+  n char(1000)\n+) with (fillfactor=10, autovacuum_enabled=off);\n+\n+INSERT INTO table_fillfactor\n+SELECT 'x' FROM generate_series(1,1000);\n+\n+SELECT * FROM check_estimated_rows('SELECT * FROM table_fillfactor');\n+\n+DROP TABLE table_fillfactor;\n+\n -- End of Stats Test\n",
+  "oracle_command": "make -C src/test/regress check TESTS=stats",
+  "expected_tests": [
+    "stats"
+  ],
+  "failing_tests": [
+    "stats"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2,
+  "oracle_diff_by_file": {
+    "stats": 2
+  }
+}

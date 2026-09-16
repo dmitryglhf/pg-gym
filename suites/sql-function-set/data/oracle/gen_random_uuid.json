@@ -1,0 +1,27 @@
+{
+  "func": "gen_random_uuid",
+  "mode": "stub",
+  "patch": "prep/gen_random_uuid.patch",
+  "symbols": [
+    "gen_random_uuid"
+  ],
+  "units": {
+    "gen_random_uuid": {
+      "file": "src/backend/utils/adt/uuid.c",
+      "code": "Datum\ngen_random_uuid(PG_FUNCTION_ARGS)\n{\n\tpg_uuid_t  *uuid = palloc(UUID_LEN);\n\n\tif (!pg_strong_random(uuid, UUID_LEN))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INTERNAL_ERROR),\n\t\t\t\t errmsg(\"could not generate random values\")));\n\n\t/*\n\t * Set magic numbers for a \"version 4\" (pseudorandom) UUID, see\n\t * http://tools.ietf.org/html/rfc4122#section-4.4\n\t */\n\tuuid->data[6] = (uuid->data[6] & 0x0f) | 0x40;\t/* time_hi_and_version */\n\tuuid->data[8] = (uuid->data[8] & 0x3f) | 0x80;\t/* clock_seq_hi_and_reserved */\n\n\tPG_RETURN_UUID_P(uuid);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "uuid"
+  ],
+  "category": "uuid",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 14,
+  "oracle_diff_by_file": {
+    "uuid": 14
+  }
+}

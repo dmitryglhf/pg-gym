@@ -1,0 +1,36 @@
+{
+  "name": "pg_with_rewriting_data_modifying",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "c090965036631775942f5e4ff3c836fc6003c819",
+  "parent": "e79b2766216ab998080725323bcb4f4e87d639cc",
+  "date": "2025-11-29",
+  "subject": "Avoid rewriting data-modifying CTEs more than once.",
+  "area": "rewrite rules, data-modifying CTEs",
+  "licence": "PostgreSQL",
+  "goal": "A data-modifying CTE reached through nested rewrite rules can be rewritten more than once. With GENERATED ALWAYS identity columns, the second pass attempts to expand an already expanded target and fails or performs duplicate work.\n\nCreate identity tables, views over them and an INSERT rule whose action contains another data-modifying CTE, then insert through the outer view from a WITH statement. The command must return one identity value and insert exactly one row into each table named by an actual action, with none in the rule's replaced target. Each statement must be rewritten exactly once; ordinary rules, non-modifying CTEs and identity enforcement must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/rewrite/rewriteHandler.c",
+      "added": 26,
+      "deleted": 5
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "with"
+    ],
+    "command": "make -C src/test/regress check TESTS=with"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

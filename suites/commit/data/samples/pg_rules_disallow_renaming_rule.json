@@ -1,0 +1,39 @@
+{
+  "name": "pg_rules_disallow_renaming_rule",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e99fb3262441b47d88632b2857f03083be67f3e3",
+  "parent": "86992769e8fb75910858f64172797f4f011e4f02",
+  "date": "2026-07-04",
+  "subject": "Disallow renaming a rule to \"_RETURN\".",
+  "area": "rules, ALTER RULE",
+  "licence": "PostgreSQL",
+  "goal": "An ON SELECT rule has to be named _RETURN and a rule of any other kind has to not be. Creating a rule enforces this, and a good deal of client code relies on it. Renaming one does not: a non-SELECT rule can be renamed to _RETURN.\n\nThe result cannot be dumped and restored, because the CREATE RULE command the dump produces is rejected on the way back in.\n\n    CREATE RULE r AS ON INSERT TO t DO INSTEAD NOTHING;\n    ALTER RULE r ON t RENAME TO \"_RETURN\";\n\nThe rename has to be refused. Renaming an ON SELECT rule to _RETURN, and renames not involving that name at all, must keep working.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/rewrite/rewriteDefine.c",
+      "added": 16,
+      "deleted": 20
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/rules.sql",
+    "src/test/regress/expected/rules.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "rules"
+    ],
+    "command": "make -C src/test/regress check TESTS=rules"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true,
+  "contract": [
+    "non-view rule for \"%s\" must not be named \"%s\""
+  ]
+}

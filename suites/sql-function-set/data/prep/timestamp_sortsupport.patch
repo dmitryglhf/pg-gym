@@ -1,0 +1,26 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..70d466f 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2294,19 +2294,8 @@ timestamp_fastcmp(Datum x, Datum y, SortSupport ssup)
+ Datum
+ timestamp_sortsupport(PG_FUNCTION_ARGS)
+ {
+-	SortSupport ssup = (SortSupport) PG_GETARG_POINTER(0);
+-
+-#if SIZEOF_DATUM >= 8
+-
+-	/*
+-	 * If this build has pass-by-value timestamps, then we can use a standard
+-	 * comparator function.
+-	 */
+-	ssup->comparator = ssup_datum_signed_cmp;
+-#else
+-	ssup->comparator = timestamp_fastcmp;
+-#endif
+-	PG_RETURN_VOID();
++	elog(ERROR, "timestamp_sortsupport is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

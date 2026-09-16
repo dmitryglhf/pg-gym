@@ -1,0 +1,39 @@
+diff --git a/src/backend/utils/adt/arrayfuncs.c b/src/backend/utils/adt/arrayfuncs.c
+index 75cc4ee..531a39f 100644
+--- a/src/backend/utils/adt/arrayfuncs.c
++++ b/src/backend/utils/adt/arrayfuncs.c
+@@ -1754,32 +1754,11 @@ array_upper(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT32(result);
+ }
+ 
+-/*
+- * array_length :
+- *		returns the length, of the dimension requested, for
+- *		the array pointed to by "v", as an int4
+- */
+ Datum
+ array_length(PG_FUNCTION_ARGS)
+ {
+-	AnyArrayType *v = PG_GETARG_ANY_ARRAY_P(0);
+-	int			reqdim = PG_GETARG_INT32(1);
+-	int		   *dimv;
+-	int			result;
+-
+-	/* Sanity check: does it look like an array at all? */
+-	if (AARR_NDIM(v) <= 0 || AARR_NDIM(v) > MAXDIM)
+-		PG_RETURN_NULL();
+-
+-	/* Sanity check: was the requested dim valid */
+-	if (reqdim <= 0 || reqdim > AARR_NDIM(v))
+-		PG_RETURN_NULL();
+-
+-	dimv = AARR_DIMS(v);
+-
+-	result = dimv[reqdim - 1];
+-
+-	PG_RETURN_INT32(result);
++	elog(ERROR, "array_length is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

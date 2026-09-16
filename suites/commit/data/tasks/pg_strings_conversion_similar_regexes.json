@@ -1,0 +1,10 @@
+{
+  "name": "pg_strings_conversion_similar_regexes",
+  "area": "SIMILAR TO, regular-expression conversion",
+  "goal": "Conversion of SIMILAR TO patterns into POSIX regular expressions incorrectly escapes or reinterprets metacharacters that occur inside bracket character classes.\n\nExercise classes containing `_`, `%`, `.`, `$`, `(`, `^`, leading `]`, doubled carets and POSIX classes such as `[:alpha:]`. Within a bracket class, characters that SQL defines literally must remain literal; wildcard expansion and escaping outside the class must still occur, and syntactically unbalanced expressions must still error. EXPLAIN's emitted regex and actual matches must agree for all these cases.",
+  "func": "pg_strings_conversion_similar_regexes",
+  "graded_by": [
+    "src/test/regress/sql/strings.sql",
+    "src/test/regress/expected/strings.out"
+  ]
+}

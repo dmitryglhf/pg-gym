@@ -1,0 +1,10 @@
+{
+  "name": "pg_sqljson_queryfuncs_jsonexpr_deparsing_quote",
+  "area": "SQL/JSON, PASSING deparsing",
+  "goal": "Deparsing a SQL/JSON expression can omit required quoting around variable names in its PASSING clause. A stored expression using a case-sensitive name or a name colliding with a type keyword then changes meaning when printed and reparsed.\n\nCreate a constraint or view containing JSON_EXISTS with variables such as `AS \"int\"`, `AS \"TXT\"` and an ordinary `AS arr`, then inspect and replay its definition. Required quotes and case must be preserved, while names that are safe unquoted may remain unquoted. JSON_QUERY must continue to distinguish `$Xyz` from `$\"Xyz\"` according to the declared PASSING name.",
+  "func": "pg_sqljson_queryfuncs_jsonexpr_deparsing_quote",
+  "graded_by": [
+    "src/test/regress/sql/sqljson_queryfuncs.sql",
+    "src/test/regress/expected/sqljson_queryfuncs.out"
+  ]
+}

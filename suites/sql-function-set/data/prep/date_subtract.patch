@@ -1,0 +1,32 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..174d8e9 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3351,10 +3351,8 @@ timestamptz_pl_interval(PG_FUNCTION_ARGS)
+ Datum
+ timestamptz_mi_interval(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-
+-	PG_RETURN_TIMESTAMP(timestamptz_mi_interval_internal(timestamp, span, NULL));
++	elog(ERROR, "timestamptz_mi_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamptz_pl_interval_at_zone()
+@@ -3374,12 +3372,8 @@ timestamptz_pl_interval_at_zone(PG_FUNCTION_ARGS)
+ Datum
+ timestamptz_mi_interval_at_zone(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-	text	   *zone = PG_GETARG_TEXT_PP(2);
+-	pg_tz	   *attimezone = lookup_timezone(zone);
+-
+-	PG_RETURN_TIMESTAMP(timestamptz_mi_interval_internal(timestamp, span, attimezone));
++	elog(ERROR, "timestamptz_mi_interval_at_zone is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* interval_um_internal()

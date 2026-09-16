@@ -1,0 +1,18 @@
+{
+  "func": "strip",
+  "variants": [
+    {
+      "arguments": "tsvector",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "strip position information"
+    }
+  ],
+  "description": "Removes positions and weights from the tsvector.",
+  "examples": [
+    "strip('fat:2,4 cat:3 rat:5A'::tsvector) -> 'cat' 'fat' 'rat'"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

@@ -1,0 +1,77 @@
+diff --git a/src/backend/utils/adt/geo_ops.c b/src/backend/utils/adt/geo_ops.c
+index 07d1649..b08cf19 100644
+--- a/src/backend/utils/adt/geo_ops.c
++++ b/src/backend/utils/adt/geo_ops.c
+@@ -790,14 +790,11 @@ box_ge(PG_FUNCTION_ARGS)
+  *	"Arithmetic" operators on boxes.
+  *---------------------------------------------------------*/
+ 
+-/*		box_area		-		returns the area of the box.
+- */
+ Datum
+ box_area(PG_FUNCTION_ARGS)
+ {
+-	BOX		   *box = PG_GETARG_BOX_P(0);
+-
+-	PG_RETURN_FLOAT8(box_ar(box));
++	elog(ERROR, "box_area is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -1365,36 +1362,11 @@ line_interpt_line(Point *result, LINE *l1, LINE *l2)
+  **
+  ***********************************************************************/
+ 
+-/*----------------------------------------------------------
+- *	String to path / path to string conversion.
+- *		External format:
+- *				"((xcoord, ycoord),... )"
+- *				"[(xcoord, ycoord),... ]"
+- *				"(xcoord, ycoord),... "
+- *				"[xcoord, ycoord,... ]"
+- *		Also support older format:
+- *				"(closed, npts, xcoord, ycoord,... )"
+- *---------------------------------------------------------*/
+-
+ Datum
+ path_area(PG_FUNCTION_ARGS)
+ {
+-	PATH	   *path = PG_GETARG_PATH_P(0);
+-	float8		area = 0.0;
+-	int			i,
+-				j;
+-
+-	if (!path->closed)
+-		PG_RETURN_NULL();
+-
+-	for (i = 0; i < path->npts; i++)
+-	{
+-		j = (i + 1) % path->npts;
+-		area = float8_pl(area, float8_mul(path->p[i].x, path->p[j].y));
+-		area = float8_mi(area, float8_mul(path->p[i].y, path->p[j].x));
+-	}
+-
+-	PG_RETURN_FLOAT8(float8_div(fabs(area), 2.0));
++	elog(ERROR, "path_area is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -5026,14 +4998,11 @@ circle_div_pt(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*		circle_area		-		returns the area of the circle.
+- */
+ Datum
+ circle_area(PG_FUNCTION_ARGS)
+ {
+-	CIRCLE	   *circle = PG_GETARG_CIRCLE_P(0);
+-
+-	PG_RETURN_FLOAT8(circle_ar(circle));
++	elog(ERROR, "circle_area is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

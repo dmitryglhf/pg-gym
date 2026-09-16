@@ -1,0 +1,18 @@
+{
+  "func": "interval_pl",
+  "mode": "stub",
+  "patch": "prep/interval_pl.patch",
+  "symbols": [
+    "interval_pl"
+  ],
+  "units": {
+    "interval_pl": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ninterval_pl(PG_FUNCTION_ARGS)\n{\n\tInterval   *span1 = PG_GETARG_INTERVAL_P(0);\n\tInterval   *span2 = PG_GETARG_INTERVAL_P(1);\n\tInterval   *result;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\t/*\n\t * Handle infinities.\n\t *\n\t * We treat anything that amounts to \"infinity - infinity\" as an error,\n\t * since the interval type has nothing equivalent to NaN.\n\t */\n\tif (INTERVAL_IS_NOBEGIN(span1))\n\t{\n\t\tif (INTERVAL_IS_NOEND(span2))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"interval out of range\")));\n\t\telse\n\t\t\tINTERVAL_NOBEGIN(result);\n\t}\n\telse if (INTERVAL_IS_NOEND(span1))\n\t{\n\t\tif (INTERVAL_IS_NOBEGIN(span2))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"interval out of range\")));\n\t\telse\n\t\t\tINTERVAL_NOEND(result);\n\t}\n\telse if (INTERVAL_NOT_FINITE(span2))\n\t\tmemcpy(result, span2, sizeof(Interval));\n\telse\n\t\tfinite_interval_pl(span1, span2, result);\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

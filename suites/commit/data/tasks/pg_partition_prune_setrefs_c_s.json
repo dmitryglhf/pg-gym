@@ -1,0 +1,10 @@
+{
+  "name": "pg_partition_prune_setrefs_c_s",
+  "area": "planner, run-time partition pruning",
+  "goal": "A subquery used in a run-time partition-pruning expression can leave the finished plan containing an internal placeholder that execution does not understand. Planning or running the query then fails with an unrecognized-node-type error.\n\n    create table asptab (id int primary key) partition by range (id);\n    create table asptab0 partition of asptab for values from (0) to (1);\n    create table asptab1 partition of asptab for values from (1) to (2);\n\n    explain (costs off)\n    select * from\n      (select exists (select 1 from int4_tbl tinner where f1 = touter.f1) as b\n       from int4_tbl touter) ss,\n      asptab\n    where asptab.id > ss.b::int;\n\nThat query has to plan and run. Its EXPLAIN output must contain executable SubPlans under both partition scans, and pruning has to keep selecting the same partitions it selects now. Existing partition-pruning plans must remain unchanged.",
+  "func": "pg_partition_prune_setrefs_c_s",
+  "graded_by": [
+    "src/test/regress/sql/partition_prune.sql",
+    "src/test/regress/expected/partition_prune.out"
+  ]
+}

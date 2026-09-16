@@ -1,0 +1,22 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..495e259 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2774,15 +2774,8 @@ timestamp_smaller(PG_FUNCTION_ARGS)
+ Datum
+ timestamp_larger(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	dt1 = PG_GETARG_TIMESTAMP(0);
+-	Timestamp	dt2 = PG_GETARG_TIMESTAMP(1);
+-	Timestamp	result;
+-
+-	if (timestamp_cmp_internal(dt1, dt2) > 0)
+-		result = dt1;
+-	else
+-		result = dt2;
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "timestamp_larger is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

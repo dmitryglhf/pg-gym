@@ -1,0 +1,37 @@
+diff --git a/src/backend/utils/adt/enum.c b/src/backend/utils/adt/enum.c
+index 814c7fb..9455e96 100644
+--- a/src/backend/utils/adt/enum.c
++++ b/src/backend/utils/adt/enum.c
+@@ -436,30 +436,8 @@ enum_endpoint(Oid enumtypoid, ScanDirection direction)
+ Datum
+ enum_first(PG_FUNCTION_ARGS)
+ {
+-	Oid			enumtypoid;
+-	Oid			min;
+-
+-	/*
+-	 * We rely on being able to get the specific enum type from the calling
+-	 * expression tree.  Notice that the actual value of the argument isn't
+-	 * examined at all; in particular it might be NULL.
+-	 */
+-	enumtypoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+-	if (enumtypoid == InvalidOid)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+-				 errmsg("could not determine actual enum type")));
+-
+-	/* Get the OID using the index */
+-	min = enum_endpoint(enumtypoid, ForwardScanDirection);
+-
+-	if (!OidIsValid(min))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+-				 errmsg("enum %s contains no values",
+-						format_type_be(enumtypoid))));
+-
+-	PG_RETURN_OID(min);
++	elog(ERROR, "enum_first is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

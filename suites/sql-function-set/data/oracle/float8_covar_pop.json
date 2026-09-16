@@ -1,0 +1,27 @@
+{
+  "func": "float8_covar_pop",
+  "mode": "stub",
+  "patch": "prep/float8_covar_pop.patch",
+  "symbols": [
+    "float8_covar_pop"
+  ],
+  "units": {
+    "float8_covar_pop": {
+      "file": "src/backend/utils/adt/float.c",
+      "code": "Datum\nfloat8_covar_pop(PG_FUNCTION_ARGS)\n{\n\tArrayType  *transarray = PG_GETARG_ARRAYTYPE_P(0);\n\tfloat8\t   *transvalues;\n\tfloat8\t\tN,\n\t\t\t\tSxy;\n\n\ttransvalues = check_float8_array(transarray, \"float8_covar_pop\", 6);\n\tN = transvalues[0];\n\tSxy = transvalues[5];\n\n\t/* if N is 0 we should return NULL */\n\tif (N < 1.0)\n\t\tPG_RETURN_NULL();\n\n\tPG_RETURN_FLOAT8(Sxy / N);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "aggregates"
+  ],
+  "category": "aggregate",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 20,
+  "oracle_diff_by_file": {
+    "aggregates": 20
+  }
+}

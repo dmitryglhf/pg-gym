@@ -1,0 +1,16 @@
+{
+  "func": "pg_size_bytes",
+  "variants": [
+    {
+      "arguments": "text",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert a size in human-readable format with size units into bytes"
+    }
+  ],
+  "description": "Converts a size in human-readable format (as returned by pg_size_pretty) into bytes. Valid units are bytes, B, kB, MB, GB, TB, and PB.",
+  "examples": [],
+  "mode": "stub",
+  "category": "sysinfo"
+}

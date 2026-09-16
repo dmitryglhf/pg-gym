@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..4ed9a68 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1557,9 +1557,8 @@ time_send(PG_FUNCTION_ARGS)
+ Datum
+ timetypmodin(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);
+-
+-	PG_RETURN_INT32(anytime_typmodin(false, ta));
++	elog(ERROR, "timetypmodin is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

@@ -1,0 +1,29 @@
+{
+  "func": "factorial",
+  "mode": "stub",
+  "patch": "prep/factorial.patch",
+  "symbols": [
+    "numeric_fac"
+  ],
+  "units": {
+    "numeric_fac": {
+      "file": "src/backend/utils/adt/numeric.c",
+      "code": "/*\n * numeric_fac()\n *\n * Compute factorial\n */\nDatum\nnumeric_fac(PG_FUNCTION_ARGS)\n{\n\tint64\t\tnum = PG_GETARG_INT64(0);\n\tNumeric\t\tres;\n\tNumericVar\tfact;\n\tNumericVar\tresult;\n\n\tif (num < 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"factorial of a negative number is undefined\")));\n\tif (num <= 1)\n\t{\n\t\tres = make_result(&const_one);\n\t\tPG_RETURN_NUMERIC(res);\n\t}\n\t/* Fail immediately if the result would overflow */\n\tif (num > 32177)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"value overflows numeric format\")));\n\n\tinit_var(&fact);\n\tinit_var(&result);\n\n\tint64_to_numericvar(num, &result);\n\n\tfor (num = num - 1; num > 1; num--)\n\t{\n\t\t/* this loop can take awhile, so allow it to be interrupted */\n\t\tCHECK_FOR_INTERRUPTS();\n\n\t\tint64_to_numericvar(num, &fact);\n\n\t\tmul_var(&result, &fact, &result, 0);\n\t}\n\n\tres = make_result(&result);\n\n\tfree_var(&fact);\n\tfree_var(&result);\n\n\tPG_RETURN_NUMERIC(res);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "create_operator",
+    "numeric"
+  ],
+  "category": "numeric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 29,
+  "oracle_diff_by_file": {
+    "numeric": 19,
+    "create_operator": 10
+  }
+}

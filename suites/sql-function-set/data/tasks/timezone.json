@@ -1,0 +1,71 @@
+{
+  "func": "timezone",
+  "variants": [
+    {
+      "arguments": "interval timestamptz",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust timestamp to new time zone"
+    },
+    {
+      "arguments": "text timestamptz",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust timestamp to new time zone"
+    },
+    {
+      "arguments": "timestamptz",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "s",
+      "description": "adjust timestamp to local time zone"
+    },
+    {
+      "arguments": "text timetz",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "adjust time with time zone to new zone"
+    },
+    {
+      "arguments": "interval timetz",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust time with time zone to new zone"
+    },
+    {
+      "arguments": "timetz",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "adjust time to local time zone"
+    },
+    {
+      "arguments": "text timestamp",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust timestamp to new time zone"
+    },
+    {
+      "arguments": "interval timestamp",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust timestamp to new time zone"
+    },
+    {
+      "arguments": "timestamp",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "adjust timestamp to local time zone"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

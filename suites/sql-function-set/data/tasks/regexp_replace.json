@@ -1,0 +1,47 @@
+{
+  "func": "regexp_replace",
+  "variants": [
+    {
+      "arguments": "text text text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "replace text using regexp"
+    },
+    {
+      "arguments": "text text text text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "replace text using regexp"
+    },
+    {
+      "arguments": "text text text int4 int4 text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "replace text using regexp"
+    },
+    {
+      "arguments": "text text text int4 int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "replace text using regexp"
+    },
+    {
+      "arguments": "text text text int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "replace text using regexp"
+    }
+  ],
+  "description": "Replaces the substring that is the first match to the POSIX regular expression pattern, or all such matches if the g flag is used.\nReplaces the substring that is the N'th match to the POSIX regular expression pattern, or all such matches if N is zero.",
+  "examples": [
+    "regexp_replace('Thomas', '.[mN]a.', 'M') -> ThM",
+    "regexp_replace('Thomas', '.', 'X', 3, 2) -> ThoXas"
+  ],
+  "mode": "stub",
+  "category": "pattern"
+}

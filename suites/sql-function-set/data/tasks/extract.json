@@ -1,0 +1,53 @@
+{
+  "func": "extract",
+  "variants": [
+    {
+      "arguments": "text timestamptz",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "s",
+      "description": "extract field from timestamp with time zone"
+    },
+    {
+      "arguments": "text interval",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract field from interval"
+    },
+    {
+      "arguments": "text timetz",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract field from time with time zone"
+    },
+    {
+      "arguments": "text date",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract field from date"
+    },
+    {
+      "arguments": "text time",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract field from time"
+    },
+    {
+      "arguments": "text timestamp",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract field from timestamp"
+    }
+  ],
+  "description": "Get timestamp subfield\nGet interval subfield\nThe extract function retrieves subfields such as year or hour from date/time values. source must be a value expression of type timestamp, date, time, or interval. (Timestamps and times can be with or without time zone.) field is an identifier or string that selects what field to extract from the source value. Not all fields are valid for every input data type; for example, fields smaller than a day cannot be extracted from a date, while fields of a day or more cannot be extracted from a time. The extract function returns values of type numeric.\nThe following are valid field names: century The century; for interval values, the year field divided by 100\nThe day of the month (1&ndash;31); for interval values, the number of days\nThe year field divided by 10\nThe day of the week as Sunday (0) to Saturday (6)\nNote that extract's day of the week numbering differs from that of the to_char(..., 'D') function.\nThe day of the year (1&ndash;365/366)\nFor timestamp with time zone values, the number of seconds since 1970-01-01 00:00:00 UTC (negative for timestamps before that); for date and timestamp values, the nominal number of seconds since 1970-01-01 00:00:00, without regard to timezone or daylight-savings rules; for interval values, the total number of seconds in the interval\nYou can convert an epoch value back to a timestamp with time zone with to_timestamp:\nBeware that applying to_timestamp to an epoch extracted from a date or timestamp value could produce a misleading result: the result will effectively assume that the original value had been given in UTC, which might not be the case.\nThe hour field (0&ndash;23 in timestamps, unrestricted in intervals)\nThe day of the week as Monday (1) to Sunday (7)\nThis is identical to dow except for Sunday. This matches the ISO 8601 day of the week numbering.\nThe ISO 8601 week-numbering year that the date falls in\nEach ISO 8601 week-numbering year begins with the Monday of the week containing the 4th of January, so in early January or late December the ISO year may be different from the Gregorian year. See the week field for more information.\nThe Julian Date corresponding to the date or timestamp. Timestamps that are not local midnight result in a fractional value. See for more information.\nThe seconds field, including fractional parts, multiplied by 1 000 000; note that this includes full seconds\nThe millennium; for interval values, the year field divided by 1000\nYears in the 1900s are in the second millennium. The third millennium started January 1, 2001.\nThe seconds field, including fractional parts, multiplied by 1000. Note that this includes full seconds.\nThe minutes field (0&ndash;59)\nThe number of the month within the year (1&ndash;12); for interval values, the number of months modulo 12 (0&ndash;11)\nThe quarter of the year (1&ndash;4) that the date is in\nThe seconds field, including any fractional seconds\nThe time zone offset from UTC, measured in seconds. Positive values correspond to time zones east of UTC, negative values to zones west of UTC. (Technically, PostgreSQL does not use UTC because leap seconds are not handled.)\nThe hour component of the time zone offset\nThe minute component of the time zone offset\nThe number of the ISO 8601 week-numbering week of the year. By definition, ISO weeks start on Mondays and the first week of a year contains January 4 of that year. In other words, the first Thursday of a year is in week 1 of that year.\nIn the ISO week-numbering system, it is possible for early-January dates to be part of the 52nd or 53rd week of the previous year, and for late-December dates to be part of the first week of the next year. For example, 2005-01-01 is part of the 53rd week of year 2004, and 2006-01-01 is part of the 52nd week of year 2005, while 2012-12-31 is part of the first week of 2013. It's recommended to use the isoyear field together with week to get consistent results.",
+  "examples": [
+    "extract(hour from timestamp '2001-02-16 20:38:40') -> 20",
+    "extract(month from interval '2 years 3 months') -> 3"
+  ],
+  "mode": "stub"
+}

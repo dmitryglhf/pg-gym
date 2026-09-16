@@ -1,0 +1,34 @@
+{
+  "func": "regexp_matches",
+  "mode": "stub",
+  "patch": "prep/regexp_matches.patch",
+  "symbols": [
+    "regexp_matches",
+    "regexp_matches_no_flags"
+  ],
+  "units": {
+    "regexp_matches": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/*\n * regexp_matches()\n *\t\tReturn a table of all matches of a pattern within a string.\n */\nDatum\nregexp_matches(PG_FUNCTION_ARGS)\n{\n\tFuncCallContext *funcctx;\n\tregexp_matches_ctx *matchctx;\n\n\tif (SRF_IS_FIRSTCALL())\n\t{\n\t\ttext\t   *pattern = PG_GETARG_TEXT_PP(1);\n\t\ttext\t   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(2);\n\t\tpg_re_flags re_flags;\n\t\tMemoryContext oldcontext;\n\n\t\tfuncctx = SRF_FIRSTCALL_INIT();\n\t\toldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);\n\n\t\t/* Determine options */\n\t\tparse_re_flags(&re_flags, flags);\n\n\t\t/* be sure to copy the input string into the multi-call ctx */\n\t\tmatchctx = setup_regexp_matches(PG_GETARG_TEXT_P_COPY(0), pattern,\n\t\t\t\t\t\t\t\t\t\t&re_flags, 0,\n\t\t\t\t\t\t\t\t\t\tPG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t\t\ttrue, false, false);\n\n\t\t/* Pre-create workspace that build_regexp_match_result needs */\n\t\tmatchctx->elems = (Datum *) palloc(sizeof(Datum) * matchctx->npatterns);\n\t\tmatchctx->nulls = (bool *) palloc(sizeof(bool) * matchctx->npatterns);\n\n\t\tMemoryContextSwitchTo(oldcontext);\n\t\tfuncctx->user_fctx = (void *) matchctx;\n\t}\n\n\tfuncctx = SRF_PERCALL_SETUP();\n\tmatchctx = (regexp_matches_ctx *) funcctx->user_fctx;\n\n\tif (matchctx->next_match < matchctx->nmatches)\n\t{\n\t\tArrayType  *result_ary;\n\n\t\tresult_ary = build_regexp_match_result(matchctx);\n\t\tmatchctx->next_match++;\n\t\tSRF_RETURN_NEXT(funcctx, PointerGetDatum(result_ary));\n\t}\n\n\tSRF_RETURN_DONE(funcctx);\n}\n\n"
+    },
+    "regexp_matches_no_flags": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_matches_no_flags(PG_FUNCTION_ARGS)\n{\n\treturn regexp_matches(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "regex",
+    "strings"
+  ],
+  "category": "pattern",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 236,
+  "oracle_diff_by_file": {
+    "strings": 93,
+    "regex": 143
+  }
+}

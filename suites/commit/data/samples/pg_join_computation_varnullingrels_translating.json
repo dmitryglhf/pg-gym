@@ -1,0 +1,36 @@
+{
+  "name": "pg_join_computation_varnullingrels_translating",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "bcaf1b5101c44a4549774ef047dafcbf46cfd904",
+  "parent": "f4ec7154ce8d3e3a572baea682c1f58890a72589",
+  "date": "2026-02-20",
+  "subject": "Fix computation of varnullingrels when translating appendrel Var",
+  "area": "planner, lateral UNION ALL under outer joins",
+  "licence": "PostgreSQL",
+  "goal": "Pulling up a lateral UNION ALL below an outer join can lose the fact that an outer relation's columns may have been null-extended. A later `IS NOT NULL` filter is then simplified incorrectly and rows containing NULL leak into the result.\n\nCreate a table, left join it to another relation, then use a lateral UNION ALL that references the nullable side and filter the lateral output with `IS NOT NULL`. The query must return only the rows for which the referenced value is actually non-null, with EXPLAIN retaining the necessary semantics. Equivalent non-lateral UNION ALL and inner joins must not change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/util/appendinfo.c",
+      "added": 9,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "join"
+    ],
+    "command": "make -C src/test/regress check TESTS=join"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,96 @@
+diff --git a/src/backend/utils/adt/oracle_compat.c b/src/backend/utils/adt/oracle_compat.c
+index f93077a..76305e5 100644
+--- a/src/backend/utils/adt/oracle_compat.c
++++ b/src/backend/utils/adt/oracle_compat.c
+@@ -324,52 +324,18 @@ rpad(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/********************************************************************
+- *
+- * btrim
+- *
+- * Syntax:
+- *
+- *	 text btrim(text string, text set)
+- *
+- * Purpose:
+- *
+- *	 Returns string with characters removed from the front and back
+- *	 up to the first character not in set.
+- *
+- ********************************************************************/
+-
+ Datum
+ btrim(PG_FUNCTION_ARGS)
+ {
+-	text	   *string = PG_GETARG_TEXT_PP(0);
+-	text	   *set = PG_GETARG_TEXT_PP(1);
+-	text	   *ret;
+-
+-	ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),
+-				 VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set),
+-				 true, true);
+-
+-	PG_RETURN_TEXT_P(ret);
++	elog(ERROR, "btrim is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/********************************************************************
+- *
+- * btrim1 --- btrim with set fixed as ' '
+- *
+- ********************************************************************/
+-
+ Datum
+ btrim1(PG_FUNCTION_ARGS)
+ {
+-	text	   *string = PG_GETARG_TEXT_PP(0);
+-	text	   *ret;
+-
+-	ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),
+-				 " ", 1,
+-				 true, true);
+-
+-	PG_RETURN_TEXT_P(ret);
++	elog(ERROR, "btrim1 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+@@ -602,32 +568,11 @@ dobyteatrim(bytea *string, bytea *set, bool doltrim, bool dortrim)
+ 	return ret;
+ }
+ 
+-/********************************************************************
+- *
+- * byteatrim
+- *
+- * Syntax:
+- *
+- *	 bytea byteatrim(bytea string, bytea set)
+- *
+- * Purpose:
+- *
+- *	 Returns string with characters removed from the front and back
+- *	 up to the first character not in set.
+- *
+- * Cloned from btrim and modified as required.
+- ********************************************************************/
+-
+ Datum
+ byteatrim(PG_FUNCTION_ARGS)
+ {
+-	bytea	   *string = PG_GETARG_BYTEA_PP(0);
+-	bytea	   *set = PG_GETARG_BYTEA_PP(1);
+-	bytea	   *ret;
+-
+-	ret = dobyteatrim(string, set, true, true);
+-
+-	PG_RETURN_BYTEA_P(ret);
++	elog(ERROR, "byteatrim is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /********************************************************************

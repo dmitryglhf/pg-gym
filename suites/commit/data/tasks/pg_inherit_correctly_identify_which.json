@@ -1,0 +1,10 @@
+{
+  "name": "pg_inherit_correctly_identify_which",
+  "area": "planner, inherited UNION ALL queries",
+  "goal": "A flattened UNION ALL containing an expression-bearing child can leave ORDER BY unable to match its requested expression to an output column, producing `could not find pathkey item to sort`.\n\nFor example, select `1 - id AS c` from a subquery that unions `id` with `id * 2`, then order by c. The query must plan, return all rows, and sort them by the requested expression. Plain UNION ALL, inherited scans, and ordering without translated child expressions must keep their current plans and results.",
+  "func": "pg_inherit_correctly_identify_which",
+  "graded_by": [
+    "src/test/regress/sql/inherit.sql",
+    "src/test/regress/expected/inherit.out"
+  ]
+}

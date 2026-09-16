@@ -1,0 +1,11 @@
+node_modules/
+_fresh/
+.deno-cache/
+.preview-runtime/
+vite.config.*.timestamp-*
+.env
+.env.*
+!.env.example
+var/
+.venv/
+__pycache__/

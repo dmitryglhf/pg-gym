@@ -1,0 +1,26 @@
+{
+  "func": "lower_inf",
+  "variants": [
+    {
+      "arguments": "anyrange",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "is the range's lower bound infinite?"
+    },
+    {
+      "arguments": "anymultirange",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "is the multirange's lower bound infinite?"
+    }
+  ],
+  "description": "Does the range have no lower bound? (A lower bound of -Infinity returns false.)\nDoes the multirange have no lower bound? (A lower bound of -Infinity returns false.)",
+  "examples": [
+    "lower_inf('(,)'::daterange) -> t",
+    "lower_inf('{(,)}'::datemultirange) -> t"
+  ],
+  "mode": "stub",
+  "category": "range"
+}

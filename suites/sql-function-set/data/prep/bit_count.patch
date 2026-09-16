@@ -1,0 +1,46 @@
+diff --git a/src/backend/utils/adt/varbit.c b/src/backend/utils/adt/varbit.c
+index ad9cf37..44d2ac0 100644
+--- a/src/backend/utils/adt/varbit.c
++++ b/src/backend/utils/adt/varbit.c
+@@ -1202,17 +1202,11 @@ bit_overlay(VarBit *t1, VarBit *t2, int sp, int sl)
+ 	return result;
+ }
+ 
+-/*
+- * bit_count
+- *
+- * Returns the number of bits set in a bit string.
+- */
+ Datum
+ bit_bit_count(PG_FUNCTION_ARGS)
+ {
+-	VarBit	   *arg = PG_GETARG_VARBIT_P(0);
+-
+-	PG_RETURN_INT64(pg_popcount((char *) VARBITS(arg), VARBITBYTES(arg)));
++	elog(ERROR, "bit_bit_count is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index 15d2cab..bf3c2c0 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -3189,15 +3189,11 @@ bytea_overlay(bytea *t1, bytea *t2, int sp, int sl)
+ 	return result;
+ }
+ 
+-/*
+- * bit_count
+- */
+ Datum
+ bytea_bit_count(PG_FUNCTION_ARGS)
+ {
+-	bytea	   *t1 = PG_GETARG_BYTEA_PP(0);
+-
+-	PG_RETURN_INT64(pg_popcount(VARDATA_ANY(t1), VARSIZE_ANY_EXHDR(t1)));
++	elog(ERROR, "bytea_bit_count is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,32 @@
+{
+  "func": "ts_delete",
+  "mode": "stub",
+  "patch": "prep/ts_delete.patch",
+  "symbols": [
+    "tsvector_delete_arr",
+    "tsvector_delete_str"
+  ],
+  "units": {
+    "tsvector_delete_arr": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "/*\n * Delete given array of lexemes from tsvector.\n * Implementation of user-level ts_delete(tsvector, text[]).\n */\nDatum\ntsvector_delete_arr(PG_FUNCTION_ARGS)\n{\n\tTSVector\ttsin = PG_GETARG_TSVECTOR(0),\n\t\t\t\ttsout;\n\tArrayType  *lexemes = PG_GETARG_ARRAYTYPE_P(1);\n\tint\t\t\ti,\n\t\t\t\tnlex,\n\t\t\t\tskip_count,\n\t\t\t   *skip_indices;\n\tDatum\t   *dlexemes;\n\tbool\t   *nulls;\n\n\tdeconstruct_array_builtin(lexemes, TEXTOID, &dlexemes, &nulls, &nlex);\n\n\t/*\n\t * In typical use case array of lexemes to delete is relatively small. So\n\t * here we optimize things for that scenario: iterate through lexarr\n\t * performing binary search of each lexeme from lexarr in tsvector.\n\t */\n\tskip_indices = palloc0(nlex * sizeof(int));\n\tfor (i = skip_count = 0; i < nlex; i++)\n\t{\n\t\tchar\t   *lex;\n\t\tint\t\t\tlex_len,\n\t\t\t\t\tlex_pos;\n\n\t\t/* Ignore null array elements, they surely don't match */\n\t\tif (nulls[i])\n\t\t\tcontinue;\n\n\t\tlex = VARDATA(dlexemes[i]);\n\t\tlex_len = VARSIZE(dlexemes[i]) - VARHDRSZ;\n\t\tlex_pos = tsvector_bsearch(tsin, lex, lex_len);\n\n\t\tif (lex_pos >= 0)\n\t\t\tskip_indices[skip_count++] = lex_pos;\n\t}\n\n\ttsout = tsvector_delete_by_indices(tsin, skip_indices, skip_count);\n\n\tpfree(skip_indices);\n\tPG_FREE_IF_COPY(tsin, 0);\n\tPG_FREE_IF_COPY(lexemes, 1);\n\n\tPG_RETURN_POINTER(tsout);\n}\n\n"
+    },
+    "tsvector_delete_str": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "/*\n * Delete given lexeme from tsvector.\n * Implementation of user-level ts_delete(tsvector, text).\n */\nDatum\ntsvector_delete_str(PG_FUNCTION_ARGS)\n{\n\tTSVector\ttsin = PG_GETARG_TSVECTOR(0),\n\t\t\t\ttsout;\n\ttext\t   *tlexeme = PG_GETARG_TEXT_PP(1);\n\tchar\t   *lexeme = VARDATA_ANY(tlexeme);\n\tint\t\t\tlexeme_len = VARSIZE_ANY_EXHDR(tlexeme),\n\t\t\t\tskip_index;\n\n\tif ((skip_index = tsvector_bsearch(tsin, lexeme, lexeme_len)) == -1)\n\t\tPG_RETURN_POINTER(tsin);\n\n\ttsout = tsvector_delete_by_indices(tsin, &skip_index, 1);\n\n\tPG_FREE_IF_COPY(tsin, 0);\n\tPG_FREE_IF_COPY(tlexeme, 1);\n\tPG_RETURN_POINTER(tsout);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "tstypes"
+  ],
+  "category": "textsearch",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 65,
+  "oracle_diff_by_file": {
+    "tstypes": 65
+  }
+}

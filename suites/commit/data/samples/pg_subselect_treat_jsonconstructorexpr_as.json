@@ -1,0 +1,36 @@
+{
+  "name": "pg_subselect_treat_jsonconstructorexpr_as",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "d719e2ecb1886d8eae15bb46384751db783719a8",
+  "parent": "968141898777a484e6250b912b89289bd47e1340",
+  "date": "2025-09-16",
+  "subject": "Treat JsonConstructorExpr as non-strict",
+  "area": "planner, SQL/JSON under outer joins",
+  "licence": "PostgreSQL",
+  "goal": "The planner treats JSON constructor expressions as strict when simplifying an outer join, even though their SQL/JSON null behavior is not equivalent to a strict function. This can evaluate a constructor on a missing inner row instead of null-extending its output.\n\nLeft join a one-row table to a subquery projecting `JSON_ARRAY(1, a)` with a false join condition. The JSON column in the result must be SQL NULL, and EXPLAIN must retain the placeholder needed for that null extension. Constructors on matched rows, genuinely strict expressions and inner joins must retain their current results and optimizations.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/util/clauses.c",
+      "added": 2,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "subselect"
+    ],
+    "command": "make -C src/test/regress check TESTS=subselect"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

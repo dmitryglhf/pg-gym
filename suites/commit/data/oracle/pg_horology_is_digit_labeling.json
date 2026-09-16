@@ -1,0 +1,27 @@
+{
+  "func": "pg_horology_is_digit_labeling",
+  "sha": "765f76d8cd9911eaae12aa958811e28fe2040dd9",
+  "parent": "c140c0ffb75b0130830b8ef307b0d3b21e18c5cf",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_horology_is_digit_labeling.patch",
+  "test_files": [
+    "src/test/regress/sql/horology.sql",
+    "src/test/regress/expected/horology.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/formatting.c b/src/backend/utils/adt/formatting.c\nindex 8736ada4b..5f4b37aba 100644\n--- a/src/backend/utils/adt/formatting.c\n+++ b/src/backend/utils/adt/formatting.c\n@@ -622,7 +622,7 @@ typedef enum\n \tDCH_Day,\n \tDCH_Dy,\n \tDCH_D,\n-\tDCH_FF1,\n+\tDCH_FF1,\t\t\t\t\t/* FFn codes must be consecutive */\n \tDCH_FF2,\n \tDCH_FF3,\n \tDCH_FF4,\n@@ -788,12 +788,12 @@ static const KeyWord DCH_keywords[] = {\n \t{\"Day\", 3, DCH_Day, false, FROM_CHAR_DATE_NONE},\n \t{\"Dy\", 2, DCH_Dy, false, FROM_CHAR_DATE_NONE},\n \t{\"D\", 1, DCH_D, true, FROM_CHAR_DATE_GREGORIAN},\n-\t{\"FF1\", 3, DCH_FF1, false, FROM_CHAR_DATE_NONE},\t/* F */\n-\t{\"FF2\", 3, DCH_FF2, false, FROM_CHAR_DATE_NONE},\n-\t{\"FF3\", 3, DCH_FF3, false, FROM_CHAR_DATE_NONE},\n-\t{\"FF4\", 3, DCH_FF4, false, FROM_CHAR_DATE_NONE},\n-\t{\"FF5\", 3, DCH_FF5, false, FROM_CHAR_DATE_NONE},\n-\t{\"FF6\", 3, DCH_FF6, false, FROM_CHAR_DATE_NONE},\n+\t{\"FF1\", 3, DCH_FF1, true, FROM_CHAR_DATE_NONE}, /* F */\n+\t{\"FF2\", 3, DCH_FF2, true, FROM_CHAR_DATE_NONE},\n+\t{\"FF3\", 3, DCH_FF3, true, FROM_CHAR_DATE_NONE},\n+\t{\"FF4\", 3, DCH_FF4, true, FROM_CHAR_DATE_NONE},\n+\t{\"FF5\", 3, DCH_FF5, true, FROM_CHAR_DATE_NONE},\n+\t{\"FF6\", 3, DCH_FF6, true, FROM_CHAR_DATE_NONE},\n \t{\"FX\", 2, DCH_FX, false, FROM_CHAR_DATE_NONE},\n \t{\"HH24\", 4, DCH_HH24, true, FROM_CHAR_DATE_NONE},\t/* H */\n \t{\"HH12\", 4, DCH_HH12, true, FROM_CHAR_DATE_NONE},\n@@ -844,12 +844,12 @@ static const KeyWord DCH_keywords[] = {\n \t{\"dd\", 2, DCH_DD, true, FROM_CHAR_DATE_GREGORIAN},\n \t{\"dy\", 2, DCH_dy, false, FROM_CHAR_DATE_NONE},\n \t{\"d\", 1, DCH_D, true, FROM_CHAR_DATE_GREGORIAN},\n-\t{\"ff1\", 3, DCH_FF1, false, FROM_CHAR_DATE_NONE},\t/* f */\n-\t{\"ff2\", 3, DCH_FF2, false, FROM_CHAR_DATE_NONE},\n-\t{\"ff3\", 3, DCH_FF3, false, FROM_CHAR_DATE_NONE},\n-\t{\"ff4\", 3, DCH_FF4, false, FROM_CHAR_DATE_NONE},\n-\t{\"ff5\", 3, DCH_FF5, false, FROM_CHAR_DATE_NONE},\n-\t{\"ff6\", 3, DCH_FF6, false, FROM_CHAR_DATE_NONE},\n+\t{\"ff1\", 3, DCH_FF1, true, FROM_CHAR_DATE_NONE}, /* f */\n+\t{\"ff2\", 3, DCH_FF2, true, FROM_CHAR_DATE_NONE},\n+\t{\"ff3\", 3, DCH_FF3, true, FROM_CHAR_DATE_NONE},\n+\t{\"ff4\", 3, DCH_FF4, true, FROM_CHAR_DATE_NONE},\n+\t{\"ff5\", 3, DCH_FF5, true, FROM_CHAR_DATE_NONE},\n+\t{\"ff6\", 3, DCH_FF6, true, FROM_CHAR_DATE_NONE},\n \t{\"fx\", 2, DCH_FX, false, FROM_CHAR_DATE_NONE},\n \t{\"hh24\", 4, DCH_HH24, true, FROM_CHAR_DATE_NONE},\t/* h */\n \t{\"hh12\", 4, DCH_HH12, true, FROM_CHAR_DATE_NONE},\n",
+  "test": "diff --git a/src/test/regress/expected/horology.out b/src/test/regress/expected/horology.out\nindex 82c0e1a12..12eefb09d 100644\n--- a/src/test/regress/expected/horology.out\n+++ b/src/test/regress/expected/horology.out\n@@ -3453,6 +3453,17 @@ SELECT i, to_timestamp('2018-11-02 12:34:56.123456', 'YYYY-MM-DD HH24:MI:SS.FF'\n \n SELECT i, to_timestamp('2018-11-02 12:34:56.123456789', 'YYYY-MM-DD HH24:MI:SS.FF' || i) FROM generate_series(1, 6) i;\n ERROR:  date/time field value out of range: \"2018-11-02 12:34:56.123456789\"\n+SELECT i, to_timestamp('20181102123456123456', 'YYYYMMDDHH24MISSFF' || i) FROM generate_series(1, 6) i;\n+ i |            to_timestamp             \n+---+-------------------------------------\n+ 1 | Fri Nov 02 12:34:56.1 2018 PDT\n+ 2 | Fri Nov 02 12:34:56.12 2018 PDT\n+ 3 | Fri Nov 02 12:34:56.123 2018 PDT\n+ 4 | Fri Nov 02 12:34:56.1235 2018 PDT\n+ 5 | Fri Nov 02 12:34:56.12346 2018 PDT\n+ 6 | Fri Nov 02 12:34:56.123456 2018 PDT\n+(6 rows)\n+\n SELECT to_date('1 4 1902', 'Q MM YYYY');  -- Q is ignored\n   to_date   \n ------------\ndiff --git a/src/test/regress/sql/horology.sql b/src/test/regress/sql/horology.sql\nindex 0fe3c783e..864816372 100644\n--- a/src/test/regress/sql/horology.sql\n+++ b/src/test/regress/sql/horology.sql\n@@ -558,6 +558,7 @@ SELECT i, to_timestamp('2018-11-02 12:34:56.1234', 'YYYY-MM-DD HH24:MI:SS.FF' ||\n SELECT i, to_timestamp('2018-11-02 12:34:56.12345', 'YYYY-MM-DD HH24:MI:SS.FF' || i) FROM generate_series(1, 6) i;\n SELECT i, to_timestamp('2018-11-02 12:34:56.123456', 'YYYY-MM-DD HH24:MI:SS.FF' || i) FROM generate_series(1, 6) i;\n SELECT i, to_timestamp('2018-11-02 12:34:56.123456789', 'YYYY-MM-DD HH24:MI:SS.FF' || i) FROM generate_series(1, 6) i;\n+SELECT i, to_timestamp('20181102123456123456', 'YYYYMMDDHH24MISSFF' || i) FROM generate_series(1, 6) i;\n \n SELECT to_date('1 4 1902', 'Q MM YYYY');  -- Q is ignored\n SELECT to_date('3 4 21 01', 'W MM CC YY');\n",
+  "oracle_command": "make -C src/test/regress check TESTS=horology",
+  "expected_tests": [
+    "horology"
+  ],
+  "failing_tests": [
+    "horology"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 10,
+  "oracle_diff_by_file": {
+    "horology": 10
+  }
+}

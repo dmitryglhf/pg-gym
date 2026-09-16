@@ -1,0 +1,15 @@
+{
+  "func": "timetztypmodin",
+  "variants": [
+    {
+      "arguments": "_cstring",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O typmod"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

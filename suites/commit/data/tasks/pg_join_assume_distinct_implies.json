@@ -1,0 +1,10 @@
+{
+  "name": "pg_join_assume_distinct_implies",
+  "area": "planner, DISTINCT ON and set-returning functions",
+  "goal": "The planner can incorrectly treat DISTINCT ON output as unique when a set-returning expression in the target list expands each selected row afterward. A join may then be removed or costed as unique even though the subquery produces duplicates.\n\nUse a subquery such as `SELECT DISTINCT ON (id) id, generate_series(1,2) ... ORDER BY id` on the nullable side of a join. The outer query must preserve both rows generated for each id, and its plan must not rely on a false uniqueness proof. Plain DISTINCT, DISTINCT ON without delayed set-returning expressions, and genuinely unique subqueries must remain optimizable.",
+  "func": "pg_join_assume_distinct_implies",
+  "graded_by": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ]
+}

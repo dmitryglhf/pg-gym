@@ -1,0 +1,18 @@
+{
+  "func": "timestamptypmodout",
+  "mode": "stub",
+  "patch": "prep/timestamptypmodout.patch",
+  "symbols": [
+    "timestamptypmodout"
+  ],
+  "units": {
+    "timestamptypmodout": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamptypmodout(PG_FUNCTION_ARGS)\n{\n\tint32\t\ttypmod = PG_GETARG_INT32(0);\n\n\tPG_RETURN_CSTRING(anytimestamp_typmodout(false, typmod));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

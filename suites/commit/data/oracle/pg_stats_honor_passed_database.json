@@ -1,0 +1,27 @@
+{
+  "func": "pg_stats_honor_passed_database",
+  "sha": "a4fefb3e0dc5451166ebef6adcc082a57ddba039",
+  "parent": "93ed18720105ebacfd2a2bdeb55bf33feaf2ec80",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_stats_honor_passed_database.patch",
+  "test_files": [
+    "src/test/regress/sql/stats.sql",
+    "src/test/regress/expected/stats.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/activity/pgstat_database.c b/src/backend/utils/activity/pgstat_database.c\nindex 10ee3e57..3398a798 100644\n--- a/src/backend/utils/activity/pgstat_database.c\n+++ b/src/backend/utils/activity/pgstat_database.c\n@@ -197,7 +197,7 @@ pgstat_report_connect(Oid dboid)\n \n \tpgLastSessionReportTime = MyStartTimestamp;\n \n-\tdbentry = pgstat_prep_database_pending(MyDatabaseId);\n+\tdbentry = pgstat_prep_database_pending(dboid);\n \tdbentry->sessions++;\n }\n \n@@ -212,7 +212,7 @@ pgstat_report_disconnect(Oid dboid)\n \tif (!pgstat_should_report_connstat())\n \t\treturn;\n \n-\tdbentry = pgstat_prep_database_pending(MyDatabaseId);\n+\tdbentry = pgstat_prep_database_pending(dboid);\n \n \tswitch (pgStatSessionEndCause)\n \t{\n@@ -356,7 +356,7 @@ pgstat_reset_database_timestamp(Oid dboid, TimestampTz ts)\n \tPgStat_EntryRef *dbref;\n \tPgStatShared_Database *dbentry;\n \n-\tdbref = pgstat_get_entry_ref_locked(PGSTAT_KIND_DATABASE, MyDatabaseId, InvalidOid,\n+\tdbref = pgstat_get_entry_ref_locked(PGSTAT_KIND_DATABASE, dboid, InvalidOid,\n \t\t\t\t\t\t\t\t\t\tfalse);\n \n \tdbentry = (PgStatShared_Database *) dbref->shared_stats;\n",
+  "test": "diff --git a/src/test/regress/expected/stats.out b/src/test/regress/expected/stats.out\nindex 43b7873c..048ebbb5 100644\n--- a/src/test/regress/expected/stats.out\n+++ b/src/test/regress/expected/stats.out\n@@ -791,6 +791,8 @@ SELECT (n_tup_ins + n_tup_upd) > 0 AS has_data FROM pg_stat_all_tables\n  t\n (1 row)\n \n+-- stats_reset may not be set for datid=0 and shared objects in\n+-- pg_stat_database, so reset once.\n SELECT pg_stat_reset_single_table_counters('pg_shdescription'::regclass);\n  pg_stat_reset_single_table_counters \n -------------------------------------\n@@ -804,6 +806,22 @@ SELECT (n_tup_ins + n_tup_upd) > 0 AS has_data FROM pg_stat_all_tables\n  f\n (1 row)\n \n+SELECT stats_reset AS shared_db_reset_before\n+  FROM pg_stat_database WHERE datid = 0 \\gset\n+-- Second reset for comparison.\n+SELECT pg_stat_reset_single_table_counters('pg_shdescription'::regclass);\n+ pg_stat_reset_single_table_counters \n+-------------------------------------\n+ \n+(1 row)\n+\n+SELECT stats_reset > :'shared_db_reset_before'::timestamptz AS has_updated\n+  FROM pg_stat_database WHERE datid = 0;\n+ has_updated \n+-------------\n+ t\n+(1 row)\n+\n -- set back comment\n \\if :{?description_before}\n   COMMENT ON DATABASE :\"datname\" IS :'description_before';\ndiff --git a/src/test/regress/sql/stats.sql b/src/test/regress/sql/stats.sql\nindex ed0bc1ef..3b4c4908 100644\n--- a/src/test/regress/sql/stats.sql\n+++ b/src/test/regress/sql/stats.sql\n@@ -396,9 +396,17 @@ COMMIT;\n -- check that the stats are reset.\n SELECT (n_tup_ins + n_tup_upd) > 0 AS has_data FROM pg_stat_all_tables\n   WHERE relid = 'pg_shdescription'::regclass;\n+-- stats_reset may not be set for datid=0 and shared objects in\n+-- pg_stat_database, so reset once.\n SELECT pg_stat_reset_single_table_counters('pg_shdescription'::regclass);\n SELECT (n_tup_ins + n_tup_upd) > 0 AS has_data FROM pg_stat_all_tables\n   WHERE relid = 'pg_shdescription'::regclass;\n+SELECT stats_reset AS shared_db_reset_before\n+  FROM pg_stat_database WHERE datid = 0 \\gset\n+-- Second reset for comparison.\n+SELECT pg_stat_reset_single_table_counters('pg_shdescription'::regclass);\n+SELECT stats_reset > :'shared_db_reset_before'::timestamptz AS has_updated\n+  FROM pg_stat_database WHERE datid = 0;\n \n -- set back comment\n \\if :{?description_before}\n",
+  "oracle_command": "make -C src/test/regress check TESTS=stats",
+  "expected_tests": [
+    "stats"
+  ],
+  "failing_tests": [
+    "stats"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 7,
+  "oracle_diff_by_file": {
+    "stats": 7
+  }
+}

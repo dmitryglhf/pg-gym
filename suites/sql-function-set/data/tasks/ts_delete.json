@@ -1,0 +1,26 @@
+{
+  "func": "ts_delete",
+  "variants": [
+    {
+      "arguments": "tsvector text",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "delete lexeme"
+    },
+    {
+      "arguments": "tsvector _text",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "delete given lexemes"
+    }
+  ],
+  "description": "Removes any occurrence of the given lexeme from the vector. The lexeme string is treated as a lexeme as-is, without further processing.\nRemoves any occurrences of the lexemes in lexemes from the vector. The strings in lexemes are taken as lexemes as-is, without further processing. Strings that do not match any lexeme in vector are ignored.",
+  "examples": [
+    "ts_delete('fat:2,4 cat:3 rat:5A'::tsvector, 'fat') -> 'cat':3 'rat':5A",
+    "ts_delete('fat:2,4 cat:3 rat:5A'::tsvector, ARRAY['fat','rat']) -> 'cat':3"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

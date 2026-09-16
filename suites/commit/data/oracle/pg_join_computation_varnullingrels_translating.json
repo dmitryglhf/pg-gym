@@ -1,0 +1,27 @@
+{
+  "func": "pg_join_computation_varnullingrels_translating",
+  "sha": "bcaf1b5101c44a4549774ef047dafcbf46cfd904",
+  "parent": "f4ec7154ce8d3e3a572baea682c1f58890a72589",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_join_computation_varnullingrels_translating.patch",
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/util/appendinfo.c b/src/backend/optimizer/util/appendinfo.c\nindex 6ba4eba2..bbac5b82 100644\n--- a/src/backend/optimizer/util/appendinfo.c\n+++ b/src/backend/optimizer/util/appendinfo.c\n@@ -233,8 +233,9 @@ adjust_appendrel_attrs_mutator(Node *node,\n \t\t * You might think we need to adjust var->varnullingrels, but that\n \t\t * shouldn't need any changes.  It will contain outer-join relids,\n \t\t * while the transformation we are making affects only baserels.\n-\t\t * Below, we just propagate var->varnullingrels into the translated\n-\t\t * Var.\n+\t\t * Below, we just merge var->varnullingrels into the translated Var.\n+\t\t * (We must merge not just copy: the child Var could have some\n+\t\t * nullingrel bits set already, and we mustn't drop those.)\n \t\t *\n \t\t * If var->varnullingrels isn't empty, and the translation wouldn't be\n \t\t * a Var, we have to fail.  One could imagine wrapping the translated\n@@ -279,7 +280,12 @@ adjust_appendrel_attrs_mutator(Node *node,\n \t\t\t\t\telog(ERROR, \"attribute %d of relation \\\"%s\\\" does not exist\",\n \t\t\t\t\t\t var->varattno, get_rel_name(appinfo->parent_reloid));\n \t\t\t\tif (IsA(newnode, Var))\n-\t\t\t\t\t((Var *) newnode)->varnullingrels = var->varnullingrels;\n+\t\t\t\t{\n+\t\t\t\t\tVar\t\t   *newvar = (Var *) newnode;\n+\n+\t\t\t\t\tnewvar->varnullingrels = bms_add_members(newvar->varnullingrels,\n+\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t var->varnullingrels);\n+\t\t\t\t}\n \t\t\t\telse if (var->varnullingrels != NULL)\n \t\t\t\t\telog(ERROR, \"failed to apply nullingrels to a non-Var\");\n \t\t\t\treturn newnode;\n",
+  "test": "diff --git a/src/test/regress/expected/join.out b/src/test/regress/expected/join.out\nindex 2eaadcee..23c154e2 100644\n--- a/src/test/regress/expected/join.out\n+++ b/src/test/regress/expected/join.out\n@@ -4020,6 +4020,57 @@ where ss.x is null;\n                      Output: 'bar'::text\n (12 rows)\n \n+-- Test computation of varnullingrels when translating appendrel Var\n+begin;\n+create temp table t_append (a int not null, b int);\n+insert into t_append values (1, 1);\n+insert into t_append values (2, 3);\n+explain (verbose, costs off)\n+select t1.a, s.a from t_append t1\n+  left join t_append t2 on t1.a = t2.b\n+  join lateral (\n+    select t1.a as a union all select t2.a as a\n+  ) s on true\n+where s.a is not null;\n+                    QUERY PLAN                     \n+---------------------------------------------------\n+ Nested Loop\n+   Output: t1.a, (t1.a)\n+   ->  Merge Left Join\n+         Output: t1.a, t2.a\n+         Merge Cond: (t1.a = t2.b)\n+         ->  Sort\n+               Output: t1.a\n+               Sort Key: t1.a\n+               ->  Seq Scan on pg_temp.t_append t1\n+                     Output: t1.a\n+         ->  Sort\n+               Output: t2.a, t2.b\n+               Sort Key: t2.b\n+               ->  Seq Scan on pg_temp.t_append t2\n+                     Output: t2.a, t2.b\n+   ->  Append\n+         ->  Result\n+               Output: t1.a\n+         ->  Result\n+               Output: t2.a\n+               One-Time Filter: (t2.a IS NOT NULL)\n+(21 rows)\n+\n+select t1.a, s.a from t_append t1\n+  left join t_append t2 on t1.a = t2.b\n+  join lateral (\n+    select t1.a as a union all select t2.a as a\n+  ) s on true\n+where s.a is not null;\n+ a | a \n+---+---\n+ 1 | 1\n+ 1 | 1\n+ 2 | 2\n+(3 rows)\n+\n+rollback;\n --\n -- test inlining of immutable functions\n --\ndiff --git a/src/test/regress/sql/join.sql b/src/test/regress/sql/join.sql\nindex dcc94c07..d3c12bf5 100644\n--- a/src/test/regress/sql/join.sql\n+++ b/src/test/regress/sql/join.sql\n@@ -1329,6 +1329,30 @@ select * from int4_tbl left join (\n ) ss(x) on true\n where ss.x is null;\n \n+-- Test computation of varnullingrels when translating appendrel Var\n+begin;\n+\n+create temp table t_append (a int not null, b int);\n+insert into t_append values (1, 1);\n+insert into t_append values (2, 3);\n+\n+explain (verbose, costs off)\n+select t1.a, s.a from t_append t1\n+  left join t_append t2 on t1.a = t2.b\n+  join lateral (\n+    select t1.a as a union all select t2.a as a\n+  ) s on true\n+where s.a is not null;\n+\n+select t1.a, s.a from t_append t1\n+  left join t_append t2 on t1.a = t2.b\n+  join lateral (\n+    select t1.a as a union all select t2.a as a\n+  ) s on true\n+where s.a is not null;\n+\n+rollback;\n+\n --\n -- test inlining of immutable functions\n --\n",
+  "oracle_command": "make -C src/test/regress check TESTS=join",
+  "expected_tests": [
+    "join"
+  ],
+  "failing_tests": [
+    "join"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 6,
+  "oracle_diff_by_file": {
+    "join": 6
+  }
+}

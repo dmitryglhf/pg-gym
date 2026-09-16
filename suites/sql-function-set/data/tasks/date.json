@@ -1,0 +1,22 @@
+{
+  "func": "date",
+  "variants": [
+    {
+      "arguments": "timestamptz",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert timestamp with time zone to date"
+    },
+    {
+      "arguments": "timestamp",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert timestamp to date"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

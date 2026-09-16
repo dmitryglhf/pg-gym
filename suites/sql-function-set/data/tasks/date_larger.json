@@ -1,0 +1,15 @@
+{
+  "func": "date_larger",
+  "variants": [
+    {
+      "arguments": "date date",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "i",
+      "description": "larger of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

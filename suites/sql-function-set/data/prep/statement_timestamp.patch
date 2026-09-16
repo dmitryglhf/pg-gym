@@ -1,0 +1,14 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..8547685 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1623,7 +1623,8 @@ now(PG_FUNCTION_ARGS)
+ Datum
+ statement_timestamp(PG_FUNCTION_ARGS)
+ {
+-	PG_RETURN_TIMESTAMPTZ(GetCurrentStatementStartTimestamp());
++	elog(ERROR, "statement_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

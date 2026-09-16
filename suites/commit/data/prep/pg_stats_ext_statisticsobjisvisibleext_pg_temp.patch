@@ -1,0 +1,14 @@
+diff --git a/src/backend/catalog/namespace.c b/src/backend/catalog/namespace.c
+index 8eaa1c58..30807f91 100644
+--- a/src/backend/catalog/namespace.c
++++ b/src/backend/catalog/namespace.c
+@@ -2686,9 +2686,6 @@ StatisticsObjIsVisibleExt(Oid stxid, bool *is_missing)
+ 		{
+ 			Oid			namespaceId = lfirst_oid(l);
+ 
+-			if (namespaceId == myTempNamespace)
+-				continue;		/* do not look in temp namespace */
+-
+ 			if (namespaceId == stxnamespace)
+ 			{
+ 				/* Found it first in path */

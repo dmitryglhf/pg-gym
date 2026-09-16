@@ -1,0 +1,20 @@
+diff --git a/src/backend/utils/adt/misc.c b/src/backend/utils/adt/misc.c
+index 0e6c458..9aa0414 100644
+--- a/src/backend/utils/adt/misc.c
++++ b/src/backend/utils/adt/misc.c
+@@ -557,13 +557,11 @@ pg_get_catalog_foreign_keys(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*
+- * Return the type of the argument.
+- */
+ Datum
+ pg_typeof(PG_FUNCTION_ARGS)
+ {
+-	PG_RETURN_OID(get_fn_expr_argtype(fcinfo->flinfo, 0));
++	elog(ERROR, "pg_typeof is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

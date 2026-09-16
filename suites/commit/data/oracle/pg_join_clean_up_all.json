@@ -1,0 +1,27 @@
+{
+  "func": "pg_join_clean_up_all",
+  "sha": "766d40286600ebb9e3aa241451fa96427ed2f454",
+  "parent": "88d7fdcc9aaa065daf10ff3b777f607fe65bdc02",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_join_clean_up_all.patch",
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/plan/analyzejoins.c b/src/backend/optimizer/plan/analyzejoins.c\nindex c3fd4a81..e3550ee9 100644\n--- a/src/backend/optimizer/plan/analyzejoins.c\n+++ b/src/backend/optimizer/plan/analyzejoins.c\n@@ -553,7 +553,7 @@ remove_rel_from_query(PlannerInfo *root, int relid, SpecialJoinInfo *sjinfo)\n /*\n  * Remove any references to relid or ojrelid from the RestrictInfo.\n  *\n- * We only bother to clean out bits in clause_relids and required_relids,\n+ * We only bother to clean out bits in the RestrictInfo's various relid sets,\n  * not nullingrel bits in contained Vars and PHVs.  (This might have to be\n  * improved sometime.)  However, if the RestrictInfo contains an OR clause\n  * we have to also clean up the sub-clauses.\n@@ -575,6 +575,22 @@ remove_rel_from_restrictinfo(RestrictInfo *rinfo, int relid, int ojrelid)\n \trinfo->required_relids = bms_copy(rinfo->required_relids);\n \trinfo->required_relids = bms_del_member(rinfo->required_relids, relid);\n \trinfo->required_relids = bms_del_member(rinfo->required_relids, ojrelid);\n+\t/* Likewise for incompatible_relids */\n+\trinfo->incompatible_relids = bms_copy(rinfo->incompatible_relids);\n+\trinfo->incompatible_relids = bms_del_member(rinfo->incompatible_relids, relid);\n+\trinfo->incompatible_relids = bms_del_member(rinfo->incompatible_relids, ojrelid);\n+\t/* Likewise for outer_relids */\n+\trinfo->outer_relids = bms_copy(rinfo->outer_relids);\n+\trinfo->outer_relids = bms_del_member(rinfo->outer_relids, relid);\n+\trinfo->outer_relids = bms_del_member(rinfo->outer_relids, ojrelid);\n+\t/* Likewise for left_relids */\n+\trinfo->left_relids = bms_copy(rinfo->left_relids);\n+\trinfo->left_relids = bms_del_member(rinfo->left_relids, relid);\n+\trinfo->left_relids = bms_del_member(rinfo->left_relids, ojrelid);\n+\t/* Likewise for right_relids */\n+\trinfo->right_relids = bms_copy(rinfo->right_relids);\n+\trinfo->right_relids = bms_del_member(rinfo->right_relids, relid);\n+\trinfo->right_relids = bms_del_member(rinfo->right_relids, ojrelid);\n \n \t/* If it's an OR, recurse to clean up sub-clauses */\n \tif (restriction_is_or_clause(rinfo))\n",
+  "test": "diff --git a/src/test/regress/expected/join.out b/src/test/regress/expected/join.out\nindex 23c154e2..f39e5ba4 100644\n--- a/src/test/regress/expected/join.out\n+++ b/src/test/regress/expected/join.out\n@@ -5674,6 +5674,45 @@ from int8_tbl t1\n          ->  Seq Scan on onek t4\n (13 rows)\n \n+-- bug #19460: we need to clean up RestrictInfos more than we had been doing\n+explain (costs off)\n+select * from\n+  (select 1::int as id) as lhs\n+full join\n+  (select dummy_source.id\n+   from (select null::int as id) as dummy_source\n+   left join (select a.id from a where a.id = 42) as sub\n+   on sub.id = dummy_source.id\n+  ) as rhs\n+on lhs.id = rhs.id;\n+              QUERY PLAN              \n+--------------------------------------\n+ Hash Full Join\n+   Hash Cond: ((1) = (NULL::integer))\n+   ->  Result\n+   ->  Hash\n+         ->  Result\n+(5 rows)\n+\n+explain (costs off)\n+select * from\n+  (select 1::int as id) as lhs\n+full join\n+  (select dummy_source.id\n+   from (select 2::int as id) as dummy_source\n+   left join (select a.id from a) as sub\n+   on sub.id = dummy_source.id\n+  ) as rhs\n+on lhs.id = rhs.id;\n+        QUERY PLAN        \n+--------------------------\n+ Hash Full Join\n+   Hash Cond: ((1) = (2))\n+   ->  Result\n+   ->  Hash\n+         ->  Result\n+(5 rows)\n+\n -- More tests of correct placement of pseudoconstant quals\n -- simple constant-false condition\n explain (costs off)\ndiff --git a/src/test/regress/sql/join.sql b/src/test/regress/sql/join.sql\nindex d3c12bf5..e47de0ea 100644\n--- a/src/test/regress/sql/join.sql\n+++ b/src/test/regress/sql/join.sql\n@@ -2059,6 +2059,29 @@ from int8_tbl t1\n   left join onek t4\n     on t2.q2 < t3.unique2;\n \n+-- bug #19460: we need to clean up RestrictInfos more than we had been doing\n+explain (costs off)\n+select * from\n+  (select 1::int as id) as lhs\n+full join\n+  (select dummy_source.id\n+   from (select null::int as id) as dummy_source\n+   left join (select a.id from a where a.id = 42) as sub\n+   on sub.id = dummy_source.id\n+  ) as rhs\n+on lhs.id = rhs.id;\n+\n+explain (costs off)\n+select * from\n+  (select 1::int as id) as lhs\n+full join\n+  (select dummy_source.id\n+   from (select 2::int as id) as dummy_source\n+   left join (select a.id from a) as sub\n+   on sub.id = dummy_source.id\n+  ) as rhs\n+on lhs.id = rhs.id;\n+\n -- More tests of correct placement of pseudoconstant quals\n \n -- simple constant-false condition\n",
+  "oracle_command": "make -C src/test/regress check TESTS=join",
+  "expected_tests": [
+    "join"
+  ],
+  "failing_tests": [
+    "join"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 141,
+  "oracle_diff_by_file": {
+    "join": 141
+  }
+}

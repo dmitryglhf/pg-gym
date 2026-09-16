@@ -1,0 +1,26 @@
+{
+  "func": "pg_timezone_abbrevs",
+  "mode": "stub",
+  "patch": "prep/pg_timezone_abbrevs.patch",
+  "symbols": [
+    "pg_timezone_abbrevs"
+  ],
+  "units": {
+    "pg_timezone_abbrevs": {
+      "file": "src/backend/utils/adt/datetime.c",
+      "code": "/*\n * This set-returning function reads all the available time zone abbreviations\n * and returns a set of (abbrev, utc_offset, is_dst).\n */\nDatum\npg_timezone_abbrevs(PG_FUNCTION_ARGS)\n{\n\tFuncCallContext *funcctx;\n\tint\t\t   *pindex;\n\tDatum\t\tresult;\n\tHeapTuple\ttuple;\n\tDatum\t\tvalues[3];\n\tbool\t\tnulls[3] = {0};\n\tconst datetkn *tp;\n\tchar\t\tbuffer[TOKMAXLEN + 1];\n\tint\t\t\tgmtoffset;\n\tbool\t\tis_dst;\n\tunsigned char *p;\n\tstruct pg_itm_in itm_in;\n\tInterval   *resInterval;\n\n\t/* stuff done only on the first call of the function */\n\tif (SRF_IS_FIRSTCALL())\n\t{\n\t\tTupleDesc\ttupdesc;\n\t\tMemoryContext oldcontext;\n\n\t\t/* create a function context for cross-call persistence */\n\t\tfuncctx = SRF_FIRSTCALL_INIT();\n\n\t\t/*\n\t\t * switch to memory context appropriate for multiple function calls\n\t\t */\n\t\toldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);\n\n\t\t/* allocate memory for user context */\n\t\tpindex = (int *) palloc(sizeof(int));\n\t\t*pindex = 0;\n\t\tfuncctx->user_fctx = (void *) pindex;\n\n\t\tif (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)\n\t\t\telog(ERROR, \"return type must be a row type\");\n\t\tfuncctx->tuple_desc = tupdesc;\n\n\t\tMemoryContextSwitchTo(oldcontext);\n\t}\n\n\t/* stuff done on every call of the function */\n\tfuncctx = SRF_PERCALL_SETUP();\n\tpindex = (int *) funcctx->user_fctx;\n\n\tif (zoneabbrevtbl == NULL ||\n\t\t*pindex >= zoneabbrevtbl->numabbrevs)\n\t\tSRF_RETURN_DONE(funcctx);\n\n\ttp = zoneabbrevtbl->abbrevs + *pindex;\n\n\tswitch (tp->type)\n\t{\n\t\tcase TZ:\n\t\t\tgmtoffset = tp->value;\n\t\t\tis_dst = false;\n\t\t\tbreak;\n\t\tcase DTZ:\n\t\t\tgmtoffset = tp->value;\n\t\t\tis_dst = true;\n\t\t\tbreak;\n\t\tcase DYNTZ:\n\t\t\t{\n\t\t\t\t/* Determine the current meaning of the abbrev */\n\t\t\t\tpg_tz\t   *tzp;\n\t\t\t\tDateTimeErrorExtra extra;\n\t\t\t\tTimestampTz now;\n\t\t\t\tint\t\t\tisdst;\n\n\t\t\t\ttzp = FetchDynamicTimeZone(zoneabbrevtbl, tp, &extra);\n\t\t\t\tif (tzp == NULL)\n\t\t\t\t\tDateTimeParseError(DTERR_BAD_ZONE_ABBREV, &extra,\n\t\t\t\t\t\t\t\t\t   NULL, NULL, NULL);\n\t\t\t\tnow = GetCurrentTransactionStartTimestamp();\n\t\t\t\tgmtoffset = -DetermineTimeZoneAbbrevOffsetTS(now,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t tp->token,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t tzp,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t &isdst);\n\t\t\t\tis_dst = (bool) isdst;\n\t\t\t\tbreak;\n\t\t\t}\n\t\tdefault:\n\t\t\telog(ERROR, \"unrecognized timezone type %d\", (int) tp->type);\n\t\t\tgmtoffset = 0;\t\t/* keep compiler quiet */\n\t\t\tis_dst = false;\n\t\t\tbreak;\n\t}\n\n\t/*\n\t * Convert name to text, using upcasing conversion that is the inverse of\n\t * what ParseDateTime() uses.\n\t */\n\tstrlcpy(buffer, tp->token, sizeof(buffer));\n\tfor (p = (unsigned char *) buffer; *p; p++)\n\t\t*p = pg_toupper(*p);\n\n\tvalues[0] = CStringGetTextDatum(buffer);\n\n\t/* Convert offset (in seconds) to an interval; can't overflow */\n\tMemSet(&itm_in, 0, sizeof(struct pg_itm_in));\n\titm_in.tm_usec = (int64) gmtoffset * USECS_PER_SEC;\n\tresInterval = (Interval *) palloc(sizeof(Interval));\n\t(void) itmin2interval(&itm_in, resInterval);\n\tvalues[1] = IntervalPGetDatum(resInterval);\n\n\tvalues[2] = BoolGetDatum(is_dst);\n\n\t(*pindex)++;\n\n\ttuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);\n\tresult = HeapTupleGetDatum(tuple);\n\n\tSRF_RETURN_NEXT(funcctx, result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "sysviews"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 15,
+  "oracle_diff_by_file": {
+    "sysviews": 15
+  }
+}

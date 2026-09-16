@@ -1,0 +1,41 @@
+{
+  "func": "gcd",
+  "mode": "stub",
+  "patch": "prep/gcd.patch",
+  "symbols": [
+    "int4gcd",
+    "int8gcd",
+    "numeric_gcd"
+  ],
+  "units": {
+    "int4gcd": {
+      "file": "src/backend/utils/adt/int.c",
+      "code": "Datum\nint4gcd(PG_FUNCTION_ARGS)\n{\n\tint32\t\targ1 = PG_GETARG_INT32(0);\n\tint32\t\targ2 = PG_GETARG_INT32(1);\n\tint32\t\tresult;\n\n\tresult = int4gcd_internal(arg1, arg2);\n\n\tPG_RETURN_INT32(result);\n}\n\n"
+    },
+    "int8gcd": {
+      "file": "src/backend/utils/adt/int8.c",
+      "code": "Datum\nint8gcd(PG_FUNCTION_ARGS)\n{\n\tint64\t\targ1 = PG_GETARG_INT64(0);\n\tint64\t\targ2 = PG_GETARG_INT64(1);\n\tint64\t\tresult;\n\n\tresult = int8gcd_internal(arg1, arg2);\n\n\tPG_RETURN_INT64(result);\n}\n\n"
+    },
+    "numeric_gcd": {
+      "file": "src/backend/utils/adt/numeric.c",
+      "code": "/*\n * numeric_gcd() -\n *\n *\tCalculate the greatest common divisor of two numerics\n */\nDatum\nnumeric_gcd(PG_FUNCTION_ARGS)\n{\n\tNumeric\t\tnum1 = PG_GETARG_NUMERIC(0);\n\tNumeric\t\tnum2 = PG_GETARG_NUMERIC(1);\n\tNumericVar\targ1;\n\tNumericVar\targ2;\n\tNumericVar\tresult;\n\tNumeric\t\tres;\n\n\t/*\n\t * Handle NaN and infinities: we consider the result to be NaN in all such\n\t * cases.\n\t */\n\tif (NUMERIC_IS_SPECIAL(num1) || NUMERIC_IS_SPECIAL(num2))\n\t\tPG_RETURN_NUMERIC(make_result(&const_nan));\n\n\t/*\n\t * Unpack the arguments\n\t */\n\tinit_var_from_num(num1, &arg1);\n\tinit_var_from_num(num2, &arg2);\n\n\tinit_var(&result);\n\n\t/*\n\t * Find the GCD and return the result\n\t */\n\tgcd_var(&arg1, &arg2, &result);\n\n\tres = make_result(&result);\n\n\tfree_var(&result);\n\n\tPG_RETURN_NUMERIC(res);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "int4",
+    "int8",
+    "numeric"
+  ],
+  "category": "numeric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 43,
+  "oracle_diff_by_file": {
+    "int4": 15,
+    "int8": 15,
+    "numeric": 13
+  }
+}

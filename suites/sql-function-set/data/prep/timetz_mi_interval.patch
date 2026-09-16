@@ -1,0 +1,38 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..2be044c 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2616,31 +2616,11 @@ timetz_pl_interval(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMETZADT_P(result);
+ }
+ 
+-/* timetz_mi_interval()
+- * Subtract interval from timetz.
+- */
+ Datum
+ timetz_mi_interval(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-	TimeTzADT  *result;
+-
+-	if (INTERVAL_NOT_FINITE(span))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("cannot subtract infinite interval from time")));
+-
+-	result = (TimeTzADT *) palloc(sizeof(TimeTzADT));
+-
+-	result->time = time->time - span->time;
+-	result->time -= result->time / USECS_PER_DAY * USECS_PER_DAY;
+-	if (result->time < INT64CONST(0))
+-		result->time += USECS_PER_DAY;
+-
+-	result->zone = time->zone;
+-
+-	PG_RETURN_TIMETZADT_P(result);
++	elog(ERROR, "timetz_mi_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

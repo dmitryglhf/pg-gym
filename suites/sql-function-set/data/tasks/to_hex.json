@@ -1,0 +1,26 @@
+{
+  "func": "to_hex",
+  "variants": [
+    {
+      "arguments": "int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert int4 number to hex"
+    },
+    {
+      "arguments": "int8",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert int8 number to hex"
+    }
+  ],
+  "description": "Converts the number to its equivalent two's complement hexadecimal representation.",
+  "examples": [
+    "to_hex(2147483647) -> 7fffffff",
+    "to_hex(-1234) -> fffffb2e"
+  ],
+  "mode": "stub",
+  "category": "formatting"
+}

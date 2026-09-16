@@ -1,0 +1,27 @@
+{
+  "func": "pg_publication_replica_identity_check",
+  "sha": "76f45be9315bb02b6f9f41b17e5a448c6241bb20",
+  "parent": "0b934d3994ffdd4b9d557a216a381cca4d6e6f11",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_publication_replica_identity_check.patch",
+  "test_files": [
+    "src/test/regress/sql/publication.sql",
+    "src/test/regress/expected/publication.out"
+  ],
+  "reference": "diff --git a/src/backend/executor/execMain.c b/src/backend/executor/execMain.c\nindex 05f8c70d..d6129f5b 100644\n--- a/src/backend/executor/execMain.c\n+++ b/src/backend/executor/execMain.c\n@@ -1033,7 +1033,16 @@ CheckValidResultRelNew(ResultRelInfo *resultRelInfo, CmdType operation,\n \t{\n \t\tcase RELKIND_RELATION:\n \t\tcase RELKIND_PARTITIONED_TABLE:\n-\t\t\tCheckCmdReplicaIdentity(resultRel, operation);\n+\n+\t\t\t/*\n+\t\t\t * For MERGE, check that the target relation supports each action.\n+\t\t\t * For other operations, just check the operation itself.\n+\t\t\t */\n+\t\t\tif (operation == CMD_MERGE)\n+\t\t\t\tforeach_node(MergeAction, action, mergeActions)\n+\t\t\t\t\tCheckCmdReplicaIdentity(resultRel, action->commandType);\n+\t\t\telse\n+\t\t\t\tCheckCmdReplicaIdentity(resultRel, operation);\n \n \t\t\t/*\n \t\t\t * For INSERT ON CONFLICT DO UPDATE, additionally check that the\n",
+  "test": "diff --git a/src/test/regress/expected/publication.out b/src/test/regress/expected/publication.out\nindex 10c3b393..53529f81 100644\n--- a/src/test/regress/expected/publication.out\n+++ b/src/test/regress/expected/publication.out\n@@ -1765,6 +1765,34 @@ INSERT INTO testpub_insert_onconfl_parted VALUES (1, 1) ON CONFLICT DO NOTHING;\n DROP PUBLICATION pub1;\n DROP TABLE testpub_insert_onconfl_no_ri;\n DROP TABLE testpub_insert_onconfl_parted;\n+-- Test that the MERGE command correctly checks REPLICA IDENTITY when the\n+-- target table is published.\n+CREATE TABLE testpub_merge_no_ri (a int, b int);\n+CREATE TABLE testpub_merge_pk (a int primary key, b int);\n+SET client_min_messages = 'ERROR';\n+CREATE PUBLICATION pub1 FOR ALL TABLES;\n+RESET client_min_messages;\n+-- fail - missing REPLICA IDENTITY\n+MERGE INTO testpub_merge_no_ri USING testpub_merge_pk s ON s.a >= 1\n+ WHEN MATCHED THEN UPDATE SET b = s.b;\n+ERROR:  cannot update table \"testpub_merge_no_ri\" because it does not have a replica identity and publishes updates\n+HINT:  To enable updating the table, set REPLICA IDENTITY using ALTER TABLE.\n+-- fail - missing REPLICA IDENTITY\n+MERGE INTO testpub_merge_no_ri USING testpub_merge_pk s ON s.a >= 1\n+ WHEN MATCHED THEN DELETE;\n+ERROR:  cannot delete from table \"testpub_merge_no_ri\" because it does not have a replica identity and publishes deletes\n+HINT:  To enable deleting from the table, set REPLICA IDENTITY using ALTER TABLE.\n+-- ok - insert and do nothing are not restricted\n+MERGE INTO testpub_merge_no_ri USING testpub_merge_pk s ON s.a >= 1\n+ WHEN MATCHED THEN DO NOTHING\n+ WHEN NOT MATCHED THEN INSERT (a, b) VALUES (0, 0);\n+-- ok - REPLICA IDENTITY is DEFAULT and table has a PK\n+MERGE INTO testpub_merge_pk USING testpub_merge_no_ri s ON s.a >= 1\n+ WHEN MATCHED AND s.a > 0 THEN UPDATE SET b = s.b\n+ WHEN MATCHED THEN DELETE;\n+DROP PUBLICATION pub1;\n+DROP TABLE testpub_merge_no_ri;\n+DROP TABLE testpub_merge_pk;\n RESET SESSION AUTHORIZATION;\n DROP ROLE regress_publication_user, regress_publication_user2;\n DROP ROLE regress_publication_user_dummy;\ndiff --git a/src/test/regress/sql/publication.sql b/src/test/regress/sql/publication.sql\nindex 689d3fdd..cd2795d0 100644\n--- a/src/test/regress/sql/publication.sql\n+++ b/src/test/regress/sql/publication.sql\n@@ -1132,6 +1132,37 @@ DROP PUBLICATION pub1;\n DROP TABLE testpub_insert_onconfl_no_ri;\n DROP TABLE testpub_insert_onconfl_parted;\n \n+-- Test that the MERGE command correctly checks REPLICA IDENTITY when the\n+-- target table is published.\n+CREATE TABLE testpub_merge_no_ri (a int, b int);\n+CREATE TABLE testpub_merge_pk (a int primary key, b int);\n+\n+SET client_min_messages = 'ERROR';\n+CREATE PUBLICATION pub1 FOR ALL TABLES;\n+RESET client_min_messages;\n+\n+-- fail - missing REPLICA IDENTITY\n+MERGE INTO testpub_merge_no_ri USING testpub_merge_pk s ON s.a >= 1\n+ WHEN MATCHED THEN UPDATE SET b = s.b;\n+\n+-- fail - missing REPLICA IDENTITY\n+MERGE INTO testpub_merge_no_ri USING testpub_merge_pk s ON s.a >= 1\n+ WHEN MATCHED THEN DELETE;\n+\n+-- ok - insert and do nothing are not restricted\n+MERGE INTO testpub_merge_no_ri USING testpub_merge_pk s ON s.a >= 1\n+ WHEN MATCHED THEN DO NOTHING\n+ WHEN NOT MATCHED THEN INSERT (a, b) VALUES (0, 0);\n+\n+-- ok - REPLICA IDENTITY is DEFAULT and table has a PK\n+MERGE INTO testpub_merge_pk USING testpub_merge_no_ri s ON s.a >= 1\n+ WHEN MATCHED AND s.a > 0 THEN UPDATE SET b = s.b\n+ WHEN MATCHED THEN DELETE;\n+\n+DROP PUBLICATION pub1;\n+DROP TABLE testpub_merge_no_ri;\n+DROP TABLE testpub_merge_pk;\n+\n RESET SESSION AUTHORIZATION;\n DROP ROLE regress_publication_user, regress_publication_user2;\n DROP ROLE regress_publication_user_dummy;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=publication",
+  "expected_tests": [
+    "publication"
+  ],
+  "failing_tests": [
+    "publication"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 4,
+  "oracle_diff_by_file": {
+    "publication": 4
+  }
+}

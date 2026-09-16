@@ -1,0 +1,19 @@
+{
+  "func": "unistr",
+  "variants": [
+    {
+      "arguments": "text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "unescape Unicode characters"
+    }
+  ],
+  "description": "Evaluate escaped Unicode characters in the argument. Unicode characters can be specified as \\XXXX (4 hexadecimal digits), \\+XXXXXX (6 hexadecimal digits), \\uXXXX (4 hexadecimal digits), or \\UXXXXXXXX (8 hexadecimal digits). To specify a backslash, write two backslashes. All other characters are taken literally.\nIf the server encoding is not UTF-8, the Unicode code point identified by one of these escape sequences is converted to the actual server encoding; an error is reported if that's not possible.\nThis function provides a (non-standard) alternative to string constants with Unicode escapes.",
+  "examples": [
+    "unistr('d\\0061t\\+000061') -> data",
+    "unistr('d\\u0061t\\U00000061') -> data"
+  ],
+  "mode": "stub",
+  "category": "string"
+}

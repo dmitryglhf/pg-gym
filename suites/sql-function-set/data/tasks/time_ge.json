@@ -1,0 +1,15 @@
+{
+  "func": "time_ge",
+  "variants": [
+    {
+      "arguments": "time time",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

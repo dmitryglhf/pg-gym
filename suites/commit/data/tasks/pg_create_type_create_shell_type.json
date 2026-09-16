@@ -1,0 +1,10 @@
+{
+  "name": "pg_create_type_create_shell_type",
+  "area": "CREATE FUNCTION, shell types",
+  "goal": "CREATE FUNCTION may create a shell type automatically when a bare, unqualified argument or result type name does not yet exist. More complex type syntax is being treated as though it named such a type, leaving unwanted shell types behind after a failing command.\n\nExercise nonexistent return types written as an array, with a typmod, through `%TYPE` for a nonexistent column, and in a nonexistent schema. Each command must fail without creating a shell type. A bare eligible name must retain its existing shell-type behavior. Once a real type exists, normal validation of arrays and typmods must remain unchanged.",
+  "func": "pg_create_type_create_shell_type",
+  "graded_by": [
+    "src/test/regress/sql/create_type.sql",
+    "src/test/regress/expected/create_type.out"
+  ]
+}

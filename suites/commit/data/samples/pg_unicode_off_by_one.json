@@ -1,0 +1,36 @@
+{
+  "name": "pg_unicode_off_by_one",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "0c9cbbfb5be79d2061d7f897f6c6f4bccb886062",
+  "parent": "0626fbfebae51a048b5415710200554eac65ff5e",
+  "date": "2026-06-05",
+  "subject": "Fix off-by-one with NFC recomposition for Hangul U+11A7 (TBASE)",
+  "area": "Unicode normalization, Hangul",
+  "licence": "PostgreSQL",
+  "goal": "NFC normalization incorrectly treats Hangul code point U+11A7, the trailing-jamo base marker, as a composable trailing consonant. It can combine a valid LV syllable with a value that must remain separate.\n\nNormalization of `U+AC00 U+11A7` must remain those two code points, and `U+1100 U+1161 U+11A7` must become `U+AC00 U+11A7`. Valid first and last L+V and LV+T compositions, including U+11A8 through U+11C2, must still produce the standard syllables; NFD decomposition must remain the inverse for valid Hangul syllables.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/common/unicode_norm.c",
+      "added": 1,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/unicode.sql",
+    "src/test/regress/expected/unicode.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "unicode"
+    ],
+    "command": "make -C src/test/regress check TESTS=unicode"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

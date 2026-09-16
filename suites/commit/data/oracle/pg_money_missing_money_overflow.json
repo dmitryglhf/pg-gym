@@ -1,0 +1,27 @@
+{
+  "func": "pg_money_missing_money_overflow",
+  "sha": "1416f304d2c9514fe65f112514accc9b653902ad",
+  "parent": "cce758797f75c19080801ddad213f46d7900ec2b",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_money_missing_money_overflow.patch",
+  "test_files": [
+    "src/test/regress/sql/money.sql",
+    "src/test/regress/expected/money.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/cash.c b/src/backend/utils/adt/cash.c\nindex b20c35848..88763f052 100644\n--- a/src/backend/utils/adt/cash.c\n+++ b/src/backend/utils/adt/cash.c\n@@ -160,6 +160,22 @@ cash_div_int64(Cash c, int64 i)\n \t\t\t\t(errcode(ERRCODE_DIVISION_BY_ZERO),\n \t\t\t\t errmsg(\"division by zero\")));\n \n+\t/*\n+\t * INT64_MIN / -1 is problematic, since the result can't be represented on\n+\t * a two's-complement machine.  Some machines produce INT64_MIN, some\n+\t * produce zero, some throw an exception.  We can dodge the problem by\n+\t * recognizing that division by -1 is the same as negation.\n+\t */\n+\tif (i == -1)\n+\t{\n+\t\tif (unlikely(c == PG_INT64_MIN))\n+\t\t\tereport(ERROR,\n+\t\t\t\t\t(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),\n+\t\t\t\t\t errmsg(\"money out of range\")));\n+\t\treturn -c;\n+\t}\n+\n+\t/* No overflow is possible */\n \treturn c / i;\n }\n \n",
+  "test": "diff --git a/src/test/regress/expected/money.out b/src/test/regress/expected/money.out\nindex cc2ff4d96..e7fdb9b7d 100644\n--- a/src/test/regress/expected/money.out\n+++ b/src/test/regress/expected/money.out\n@@ -539,6 +539,14 @@ SELECT '-1'::money / 1.175494e-38::float4;\n ERROR:  money out of range\n SELECT '92233720368547758.07'::money * 2::int4;\n ERROR:  money out of range\n+SELECT '-92233720368547758.08'::money * -1::int8;\n+ERROR:  money out of range\n+SELECT '-92233720368547758.08'::money / -1::int8;\n+ERROR:  money out of range\n+SELECT '-92233720368547758.08'::money / -1::int4;\n+ERROR:  money out of range\n+SELECT '-92233720368547758.08'::money / -1::int2;\n+ERROR:  money out of range\n SELECT '1'::money / 0::int2;\n ERROR:  division by zero\n SELECT '42'::money * 'inf'::float8;\ndiff --git a/src/test/regress/sql/money.sql b/src/test/regress/sql/money.sql\nindex b888ec21c..d769a2110 100644\n--- a/src/test/regress/sql/money.sql\n+++ b/src/test/regress/sql/money.sql\n@@ -142,6 +142,10 @@ SELECT '-92233720368547758.08'::money - '0.01'::money;\n SELECT '92233720368547758.07'::money * 2::float8;\n SELECT '-1'::money / 1.175494e-38::float4;\n SELECT '92233720368547758.07'::money * 2::int4;\n+SELECT '-92233720368547758.08'::money * -1::int8;\n+SELECT '-92233720368547758.08'::money / -1::int8;\n+SELECT '-92233720368547758.08'::money / -1::int4;\n+SELECT '-92233720368547758.08'::money / -1::int2;\n SELECT '1'::money / 0::int2;\n SELECT '42'::money * 'inf'::float8;\n SELECT '42'::money * '-inf'::float8;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=money",
+  "expected_tests": [
+    "money"
+  ],
+  "failing_tests": [
+    "money"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 18,
+  "oracle_diff_by_file": {
+    "money": 18
+  }
+}

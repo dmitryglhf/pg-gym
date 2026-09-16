@@ -1,0 +1,10 @@
+{
+  "name": "pg_with_calculate_agglevelsup_correctly",
+  "area": "aggregates, CTE scope",
+  "goal": "An aggregate containing a subquery over a CTE can be assigned to the wrong query level when the aggregate argument also references an outer query but contains no direct table column from the CTE.\n\nFor each row of int4_tbl, evaluate a scalar WITH that defines `cte1` and computes `count((SELECT outer.f1 FROM cte1))`. The query must plan as a correlated subplan and return count 1 for every outer row. Aggregate ownership and grouping errors for ordinary correlated subqueries must remain unchanged, as must legal CTE references at their own level.",
+  "func": "pg_with_calculate_agglevelsup_correctly",
+  "graded_by": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ]
+}

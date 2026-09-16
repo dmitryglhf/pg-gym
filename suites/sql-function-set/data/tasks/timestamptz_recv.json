@@ -1,0 +1,15 @@
+{
+  "func": "timestamptz_recv",
+  "variants": [
+    {
+      "arguments": "internal oid int4",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_inherit_need_do_commandcounterincrement",
+  "area": "ALTER TABLE, multiple inheritance",
+  "goal": "A single ALTER TABLE containing multiple ADD COLUMN actions can fail in a diamond-shaped inheritance hierarchy when a later action needs to see catalog changes made by an earlier one.\n\nCreate a table inheriting the same ancestor through two paths, then run a command such as `ALTER TABLE child ADD COLUMN i int, ADD COLUMN j bigint DEFAULT 1`. The command must succeed atomically, and catalog inspection of every descendant must show both columns with the correct inheritance and default metadata. Single-action ALTER TABLE and non-diamond inheritance must remain unchanged.",
+  "func": "pg_inherit_need_do_commandcounterincrement",
+  "graded_by": [
+    "src/test/regress/sql/inherit.sql",
+    "src/test/regress/expected/inherit.out"
+  ]
+}

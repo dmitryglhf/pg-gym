@@ -1,0 +1,35 @@
+diff --git a/src/backend/utils/adt/network.c b/src/backend/utils/adt/network.c
+index 640fc37..9fd6101 100644
+--- a/src/backend/utils/adt/network.c
++++ b/src/backend/utils/adt/network.c
+@@ -1166,28 +1166,11 @@ match_network_subset(Node *leftop,
+ }
+ 
+ 
+-/*
+- * Extract data from a network datatype.
+- */
+ Datum
+ network_host(PG_FUNCTION_ARGS)
+ {
+-	inet	   *ip = PG_GETARG_INET_PP(0);
+-	char	   *ptr;
+-	char		tmp[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:255.255.255.255/128")];
+-
+-	/* force display of max bits, regardless of masklen... */
+-	if (pg_inet_net_ntop(ip_family(ip), ip_addr(ip), ip_maxbits(ip),
+-						 tmp, sizeof(tmp)) == NULL)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_BINARY_REPRESENTATION),
+-				 errmsg("could not format inet value: %m")));
+-
+-	/* Suppress /n if present (shouldn't happen now) */
+-	if ((ptr = strchr(tmp, '/')) != NULL)
+-		*ptr = '\0';
+-
+-	PG_RETURN_TEXT_P(cstring_to_text(tmp));
++	elog(ERROR, "network_host is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

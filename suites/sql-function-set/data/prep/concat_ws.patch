@@ -1,0 +1,32 @@
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index 15d2cab..5c65c92 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -5557,25 +5557,11 @@ text_concat(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TEXT_P(result);
+ }
+ 
+-/*
+- * Concatenate all but first argument value with separators. The first
+- * parameter is used as the separator. NULL arguments are ignored.
+- */
+ Datum
+ text_concat_ws(PG_FUNCTION_ARGS)
+ {
+-	char	   *sep;
+-	text	   *result;
+-
+-	/* return NULL when separator is NULL */
+-	if (PG_ARGISNULL(0))
+-		PG_RETURN_NULL();
+-	sep = text_to_cstring(PG_GETARG_TEXT_PP(0));
+-
+-	result = concat_internal(sep, 1, fcinfo);
+-	if (result == NULL)
+-		PG_RETURN_NULL();
+-	PG_RETURN_TEXT_P(result);
++	elog(ERROR, "text_concat_ws is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

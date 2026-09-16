@@ -1,0 +1,36 @@
+{
+  "name": "pg_multirangetypes_allow_composite_type",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "54343f6f9046caa31c71a72479fd567322d72591",
+  "parent": "9dda30dd3d4936e3d590fc319b08eaed41f1f748",
+  "date": "2026-04-23",
+  "subject": "Don't allow composite type to be member of itself via multirange",
+  "area": "type system, composite types",
+  "licence": "PostgreSQL",
+  "goal": "A composite type must not be able to contain itself, directly or through another type. That is refused when the path runs through a domain, an array, another composite type or a range type. Through a multirange it is accepted.\n\nTo reach it, create a composite type, create a range type over it (which brings a multirange type with it), then add an attribute of that multirange type back to the composite. ALTER TABLE ADD COLUMN on a table whose row type is involved gets there the same way.\n\nIt has to be refused like the other cases, and the cases already refused must keep being refused.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/catalog/heap.c",
+      "added": 10,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/multirangetypes.sql",
+    "src/test/regress/expected/multirangetypes.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "multirangetypes"
+    ],
+    "command": "make -C src/test/regress check TESTS=multirangetypes"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

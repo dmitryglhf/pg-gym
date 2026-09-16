@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/network.c b/src/backend/utils/adt/network.c
+index 640fc37..6e83409 100644
+--- a/src/backend/utils/adt/network.c
++++ b/src/backend/utils/adt/network.c
+@@ -1257,9 +1257,8 @@ cidr_abbrev(PG_FUNCTION_ARGS)
+ Datum
+ network_masklen(PG_FUNCTION_ARGS)
+ {
+-	inet	   *ip = PG_GETARG_INET_PP(0);
+-
+-	PG_RETURN_INT32(ip_bits(ip));
++	elog(ERROR, "network_masklen is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

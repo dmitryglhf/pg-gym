@@ -1,0 +1,15 @@
+{
+  "func": "interval_avg_accum",
+  "variants": [
+    {
+      "arguments": "internal interval",
+      "returns": "internal",
+      "kind": "f",
+      "volatile": "i",
+      "description": "aggregate transition function"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

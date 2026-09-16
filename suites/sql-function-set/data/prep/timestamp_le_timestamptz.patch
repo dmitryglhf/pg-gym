@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..79a4db2 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2385,10 +2385,8 @@ timestamp_gt_timestamptz(PG_FUNCTION_ARGS)
+ Datum
+ timestamp_le_timestamptz(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestampVal = PG_GETARG_TIMESTAMP(0);
+-	TimestampTz dt2 = PG_GETARG_TIMESTAMPTZ(1);
+-
+-	PG_RETURN_BOOL(timestamp_cmp_timestamptz_internal(timestampVal, dt2) <= 0);
++	elog(ERROR, "timestamp_le_timestamptz is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

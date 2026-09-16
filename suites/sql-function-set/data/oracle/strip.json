@@ -1,0 +1,29 @@
+{
+  "func": "strip",
+  "mode": "stub",
+  "patch": "prep/strip.patch",
+  "symbols": [
+    "tsvector_strip"
+  ],
+  "units": {
+    "tsvector_strip": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "Datum\ntsvector_strip(PG_FUNCTION_ARGS)\n{\n\tTSVector\tin = PG_GETARG_TSVECTOR(0);\n\tTSVector\tout;\n\tint\t\t\ti,\n\t\t\t\tlen = 0;\n\tWordEntry  *arrin = ARRPTR(in),\n\t\t\t   *arrout;\n\tchar\t   *cur;\n\n\t/* Output can't be bigger than input, so no need for overflow checks */\n\tfor (i = 0; i < in->size; i++)\n\t\tlen += arrin[i].len;\n\n\tlen = CALCDATASIZE(in->size, len);\n\tout = (TSVector) palloc0(len);\n\tSET_VARSIZE(out, len);\n\tout->size = in->size;\n\tarrout = ARRPTR(out);\n\tcur = STRPTR(out);\n\tfor (i = 0; i < in->size; i++)\n\t{\n\t\tmemcpy(cur, STRPTR(in) + arrin[i].pos, arrin[i].len);\n\t\tarrout[i].haspos = 0;\n\t\tarrout[i].len = arrin[i].len;\n\t\tarrout[i].pos = cur - STRPTR(out);\n\t\tcur += arrout[i].len;\n\t}\n\n\tPG_FREE_IF_COPY(in, 0);\n\tPG_RETURN_POINTER(out);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "tsearch",
+    "tstypes"
+  ],
+  "category": "textsearch",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 75,
+  "oracle_diff_by_file": {
+    "tstypes": 65,
+    "tsearch": 10
+  }
+}

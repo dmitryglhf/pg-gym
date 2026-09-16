@@ -1,0 +1,36 @@
+{
+  "name": "pg_collate_icu_utf8_disallow_partitionwise_grouping",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "b6484ca9535e947a068da01015620dfde0b9b488",
+  "parent": "78b1c553bb1c1f334d0b7f3365070ba27a2fcc41",
+  "date": "2024-11-08",
+  "subject": "Disallow partitionwise grouping when collations don't match",
+  "area": "partitionwise aggregation, collations",
+  "licence": "PostgreSQL",
+  "goal": "Full partitionwise aggregation can produce wrong groups when a GROUP BY expression uses a collation different from the corresponding partition key. Values that the partition-key collation separates may compare equal under the grouping collation, so finalizing each partition independently is not equivalent to grouping the table as a whole.\n\nOn a text table partitioned with `COLLATE \"C\"`, group by the key under a case-insensitive ICU collation and compare the rows with partitionwise aggregation disabled and enabled. The results must agree, and the unsafe full-partitionwise plan must not be selected. Grouping under the partition key's own collation, and safe partial partitionwise aggregation followed by a global finalization, must remain eligible.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/plan/planner.c",
+      "added": 36,
+      "deleted": 8
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/collate.icu.utf8.sql",
+    "src/test/regress/expected/collate.icu.utf8.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "collate.icu.utf8"
+    ],
+    "command": "make -C src/test/regress check TESTS=collate.icu.utf8"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

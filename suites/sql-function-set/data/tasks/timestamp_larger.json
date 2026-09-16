@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_larger",
+  "variants": [
+    {
+      "arguments": "timestamp timestamp",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "larger of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

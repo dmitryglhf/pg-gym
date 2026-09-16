@@ -1,0 +1,10 @@
+{
+  "name": "pg_predicate_nulltest_deduction_clone",
+  "area": "planner, null tests in outer joins",
+  "goal": "The planner can reduce an IS NULL or IS NOT NULL join condition to a constant after that condition has been duplicated across an outer-join transformation, even though the referenced column is nullable in the transformed location. The resulting plan returns the wrong number of rows.\n\nBuild a chain of left joins in which a NOT NULL column from an inner table is first made nullable, then used by a later join condition. Conditions `t3.b IS NOT NULL` and `t3.b IS NULL AND t3.a IS NOT NULL` must remain effective and return the same rows as the SQL outer-join semantics require. Safe constant reductions on original conditions over columns that cannot be null-extended must remain available.",
+  "func": "pg_predicate_nulltest_deduction_clone",
+  "graded_by": [
+    "src/test/regress/sql/predicate.sql",
+    "src/test/regress/expected/predicate.out"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "func": "tsquery_phrase",
+  "variants": [
+    {
+      "arguments": "tsquery tsquery",
+      "returns": "tsquery",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    },
+    {
+      "arguments": "tsquery tsquery int4",
+      "returns": "tsquery",
+      "kind": "f",
+      "volatile": "i",
+      "description": "phrase-concatenate with distance"
+    }
+  ],
+  "description": "Constructs a phrase query that searches for matches of query1 and query2 at successive lexemes (same as &lt;-&gt; operator).\nConstructs a phrase query that searches for matches of query1 and query2 that occur exactly distance lexemes apart.",
+  "examples": [
+    "tsquery_phrase(to_tsquery('fat'), to_tsquery('cat')) -> 'fat' &lt;-&gt; 'cat'",
+    "tsquery_phrase(to_tsquery('fat'), to_tsquery('cat'), 10) -> 'fat' &lt;10&gt; 'cat'"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

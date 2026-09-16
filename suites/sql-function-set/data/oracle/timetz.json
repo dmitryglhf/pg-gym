@@ -1,0 +1,44 @@
+{
+  "func": "timetz",
+  "mode": "stub",
+  "patch": "prep/timetz.patch",
+  "symbols": [
+    "time_timetz",
+    "timestamptz_timetz",
+    "timetz_scale"
+  ],
+  "units": {
+    "time_timetz": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntime_timetz(PG_FUNCTION_ARGS)\n{\n\tTimeADT\t\ttime = PG_GETARG_TIMEADT(0);\n\tTimeTzADT  *result;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tfsec_t\t\tfsec;\n\tint\t\t\ttz;\n\n\tGetCurrentDateTime(tm);\n\ttime2tm(time, tm, &fsec);\n\ttz = DetermineTimeZoneOffset(tm, session_timezone);\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\n\tresult->time = time;\n\tresult->zone = tz;\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    },
+    "timestamptz_timetz": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timestamptz_timetz()\n * Convert timestamp to timetz data type.\n */\nDatum\ntimestamptz_timetz(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMP(0);\n\tTimeTzADT  *result;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tint\t\t\ttz;\n\tfsec_t\t\tfsec;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_NULL();\n\n\tif (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\n\ttm2timetz(tm, fsec, tz, result);\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    },
+    "timetz_scale": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timetz_scale()\n * Adjust time type for specified scale factor.\n * Used by PostgreSQL type system to stuff columns.\n */\nDatum\ntimetz_scale(PG_FUNCTION_ARGS)\n{\n\tTimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);\n\tint32\t\ttypmod = PG_GETARG_INT32(1);\n\tTimeTzADT  *result;\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\n\tresult->time = time->time;\n\tresult->zone = time->zone;\n\n\tAdjustTimeForTypmod(&(result->time), typmod);\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "expressions",
+    "horology",
+    "interval",
+    "jsonb_jsonpath",
+    "timetz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 384,
+  "oracle_diff_by_file": {
+    "timetz": 102,
+    "interval": 4,
+    "horology": 130,
+    "expressions": 10,
+    "jsonb_jsonpath": 138
+  }
+}

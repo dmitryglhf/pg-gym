@@ -1,0 +1,36 @@
+{
+  "name": "pg_domain_pg_get_constraintdef",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "6e793582bc663fb7652834170be8902b982b7bcb",
+  "parent": "7786717b9e5d0e7ad828a7c7a65c74732ec492a9",
+  "date": "2024-11-27",
+  "subject": "Fix pg_get_constraintdef for NOT NULL constraints on domains",
+  "area": "domains, constraint deparsing",
+  "licence": "PostgreSQL",
+  "goal": "pg_get_constraintdef() does not correctly describe a named NOT NULL constraint belonging to a domain.\n\nCreate a domain, add a named NOT NULL constraint, locate its pg_constraint row and call pg_get_constraintdef() on it. The result must be `NOT NULL`; the domain must reject null values while the constraint exists, and allow them after the constraint is dropped. CHECK constraints, table NOT NULL constraints and other catalog deparsing must be unaffected.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/ruleutils.c",
+      "added": 5,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/domain.sql",
+    "src/test/regress/expected/domain.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "domain"
+    ],
+    "command": "make -C src/test/regress check TESTS=domain"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

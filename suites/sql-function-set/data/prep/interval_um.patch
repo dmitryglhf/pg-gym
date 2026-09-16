@@ -1,0 +1,20 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..5df6b24 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3408,13 +3408,8 @@ interval_um_internal(const Interval *interval, Interval *result)
+ Datum
+ interval_um(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval = PG_GETARG_INTERVAL_P(0);
+-	Interval   *result;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-	interval_um_internal(interval, result);
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_um is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

@@ -1,0 +1,89 @@
+diff --git a/src/backend/utils/adt/tsvector_op.c b/src/backend/utils/adt/tsvector_op.c
+index 8fe02a5..43a9c05 100644
+--- a/src/backend/utils/adt/tsvector_op.c
++++ b/src/backend/utils/adt/tsvector_op.c
+@@ -544,80 +544,18 @@ tsvector_delete_by_indices(TSVector tsv, int *indices_to_delete,
+ 	return tsout;
+ }
+ 
+-/*
+- * Delete given lexeme from tsvector.
+- * Implementation of user-level ts_delete(tsvector, text).
+- */
+ Datum
+ tsvector_delete_str(PG_FUNCTION_ARGS)
+ {
+-	TSVector	tsin = PG_GETARG_TSVECTOR(0),
+-				tsout;
+-	text	   *tlexeme = PG_GETARG_TEXT_PP(1);
+-	char	   *lexeme = VARDATA_ANY(tlexeme);
+-	int			lexeme_len = VARSIZE_ANY_EXHDR(tlexeme),
+-				skip_index;
+-
+-	if ((skip_index = tsvector_bsearch(tsin, lexeme, lexeme_len)) == -1)
+-		PG_RETURN_POINTER(tsin);
+-
+-	tsout = tsvector_delete_by_indices(tsin, &skip_index, 1);
+-
+-	PG_FREE_IF_COPY(tsin, 0);
+-	PG_FREE_IF_COPY(tlexeme, 1);
+-	PG_RETURN_POINTER(tsout);
++	elog(ERROR, "tsvector_delete_str is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * Delete given array of lexemes from tsvector.
+- * Implementation of user-level ts_delete(tsvector, text[]).
+- */
+ Datum
+ tsvector_delete_arr(PG_FUNCTION_ARGS)
+ {
+-	TSVector	tsin = PG_GETARG_TSVECTOR(0),
+-				tsout;
+-	ArrayType  *lexemes = PG_GETARG_ARRAYTYPE_P(1);
+-	int			i,
+-				nlex,
+-				skip_count,
+-			   *skip_indices;
+-	Datum	   *dlexemes;
+-	bool	   *nulls;
+-
+-	deconstruct_array_builtin(lexemes, TEXTOID, &dlexemes, &nulls, &nlex);
+-
+-	/*
+-	 * In typical use case array of lexemes to delete is relatively small. So
+-	 * here we optimize things for that scenario: iterate through lexarr
+-	 * performing binary search of each lexeme from lexarr in tsvector.
+-	 */
+-	skip_indices = palloc0(nlex * sizeof(int));
+-	for (i = skip_count = 0; i < nlex; i++)
+-	{
+-		char	   *lex;
+-		int			lex_len,
+-					lex_pos;
+-
+-		/* Ignore null array elements, they surely don't match */
+-		if (nulls[i])
+-			continue;
+-
+-		lex = VARDATA(dlexemes[i]);
+-		lex_len = VARSIZE(dlexemes[i]) - VARHDRSZ;
+-		lex_pos = tsvector_bsearch(tsin, lex, lex_len);
+-
+-		if (lex_pos >= 0)
+-			skip_indices[skip_count++] = lex_pos;
+-	}
+-
+-	tsout = tsvector_delete_by_indices(tsin, skip_indices, skip_count);
+-
+-	pfree(skip_indices);
+-	PG_FREE_IF_COPY(tsin, 0);
+-	PG_FREE_IF_COPY(lexemes, 1);
+-
+-	PG_RETURN_POINTER(tsout);
++	elog(ERROR, "tsvector_delete_arr is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

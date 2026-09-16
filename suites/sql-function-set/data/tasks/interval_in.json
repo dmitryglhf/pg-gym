@@ -1,0 +1,15 @@
+{
+  "func": "interval_in",
+  "variants": [
+    {
+      "arguments": "cstring oid int4",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "s",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

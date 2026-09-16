@@ -1,0 +1,10 @@
+{
+  "name": "pg_merge_wrong_varnullingrels_error",
+  "area": "planner, MERGE",
+  "goal": "A MERGE with WHEN NOT MATCHED BY SOURCE actions puts the source relation on the outer side of the join, so the join can null the source's columns. The copy of the join condition the executor uses to tell MATCHED from NOT MATCHED BY SOURCE, along with the actions and the RETURNING list, refers to those columns without recording that.\n\nPlanning then fails with a \"wrong varnullingrels\" error, but only when some plan node sits between the ModifyTable node and the join; with nothing in between a laxer check passes it. A one-time filter Result node is enough to trigger it.\n\nColumns referenced in the join condition inside the join node itself must not be recorded as nullable. MERGE without WHEN NOT MATCHED BY SOURCE must be unaffected.",
+  "func": "pg_merge_wrong_varnullingrels_error",
+  "graded_by": [
+    "src/test/regress/sql/merge.sql",
+    "src/test/regress/expected/merge.out"
+  ]
+}

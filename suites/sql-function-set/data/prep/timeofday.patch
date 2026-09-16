@@ -1,0 +1,35 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..354b71a 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1693,28 +1693,11 @@ GetSQLLocalTimestamp(int32 typmod)
+ 	return ts;
+ }
+ 
+-/*
+- * timeofday(*) -- returns the current time as a text.
+- */
+ Datum
+ timeofday(PG_FUNCTION_ARGS)
+ {
+-	struct timeval tp;
+-	pg_time_t	tt;
+-	struct pg_tm *tm;
+-	char		part1[128];
+-	char		part2[128];
+-	char		buf[128 + 128 + 10];
+-
+-	gettimeofday(&tp, NULL);
+-	tt = (pg_time_t) tp.tv_sec;
+-	tm = pg_localtime(&tt, session_timezone);
+-
+-	pg_strftime(part1, sizeof(part1), "%a %b %d %H:%M:%S", tm);
+-	pg_strftime(part2, sizeof(part2), "%Y %Z", tm);
+-	snprintf(buf, sizeof(buf), "%s.%06d %s", part1, (int) tp.tv_usec, part2);
+-
+-	PG_RETURN_TEXT_P(cstring_to_text(buf));
++	elog(ERROR, "timeofday is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,36 @@
+{
+  "name": "pg_window_count_s_logic",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "be63b285e5006459c1c66d986dd3da27cbcce746",
+  "parent": "71cd10cd249baae25bb420ea4a6d5eae9fe1dd5f",
+  "date": "2026-07-07",
+  "subject": "Fix COUNT's logic for window run condition support",
+  "area": "window functions, run condition pushdown",
+  "licence": "PostgreSQL",
+  "goal": "A qualifier on count() used as a window function can be pushed into WindowAgg as a run condition even when the count is not monotonic. The executor may then stop early and silently discard rows that satisfy the original qualifier.\n\n    EXPLAIN (COSTS OFF)\n    SELECT * FROM\n      (SELECT empno, salary,\n              count(salary) OVER (ORDER BY salary ROWS BETWEEN UNBOUNDED PRECEDING AND 0 PRECEDING EXCLUDE CURRENT ROW) c\n       FROM empsalary) emp\n    WHERE c <= 3;\n\nThat query must keep the filter above WindowAgg rather than install a run condition. Conversely, with no ORDER BY, count(expr) over RANGE BETWEEN CURRENT ROW AND CURRENT ROW is constant across peer rows and remains eligible for a run condition, while the analogous ROWS frame is not. Determine monotonicity correctly across ORDER BY, frame mode, EXCLUDE mode, COUNT(*) versus COUNT(expr), and FILTER without disabling safe existing cases.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/int8.c",
+      "added": 33,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/window.sql",
+    "src/test/regress/expected/window.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "window"
+    ],
+    "command": "make -C src/test/regress check TESTS=window"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

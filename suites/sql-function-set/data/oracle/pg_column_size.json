@@ -1,0 +1,27 @@
+{
+  "func": "pg_column_size",
+  "mode": "stub",
+  "patch": "prep/pg_column_size.patch",
+  "symbols": [
+    "pg_column_size"
+  ],
+  "units": {
+    "pg_column_size": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*\n * Return the size of a datum, possibly compressed\n *\n * Works on any data type\n */\nDatum\npg_column_size(PG_FUNCTION_ARGS)\n{\n\tDatum\t\tvalue = PG_GETARG_DATUM(0);\n\tint32\t\tresult;\n\tint\t\t\ttyplen;\n\n\t/* On first call, get the input type's typlen, and save at *fn_extra */\n\tif (fcinfo->flinfo->fn_extra == NULL)\n\t{\n\t\t/* Lookup the datatype of the supplied argument */\n\t\tOid\t\t\targtypeid = get_fn_expr_argtype(fcinfo->flinfo, 0);\n\n\t\ttyplen = get_typlen(argtypeid);\n\t\tif (typlen == 0)\t\t/* should not happen */\n\t\t\telog(ERROR, \"cache lookup failed for type %u\", argtypeid);\n\n\t\tfcinfo->flinfo->fn_extra = MemoryContextAlloc(fcinfo->flinfo->fn_mcxt,\n\t\t\t\t\t\t\t\t\t\t\t\t\t  sizeof(int));\n\t\t*((int *) fcinfo->flinfo->fn_extra) = typlen;\n\t}\n\telse\n\t\ttyplen = *((int *) fcinfo->flinfo->fn_extra);\n\n\tif (typlen == -1)\n\t{\n\t\t/* varlena type, possibly toasted */\n\t\tresult = toast_datum_size(value);\n\t}\n\telse if (typlen == -2)\n\t{\n\t\t/* cstring */\n\t\tresult = strlen(DatumGetCString(value)) + 1;\n\t}\n\telse\n\t{\n\t\t/* ordinary fixed-width type */\n\t\tresult = typlen;\n\t}\n\n\tPG_RETURN_INT32(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "jsonb"
+  ],
+  "category": "sysinfo",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 25,
+  "oracle_diff_by_file": {
+    "jsonb": 25
+  }
+}

@@ -1,0 +1,22 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..0060b4b 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3436,15 +3436,8 @@ interval_smaller(PG_FUNCTION_ARGS)
+ Datum
+ interval_larger(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval1 = PG_GETARG_INTERVAL_P(0);
+-	Interval   *interval2 = PG_GETARG_INTERVAL_P(1);
+-	Interval   *result;
+-
+-	if (interval_cmp_internal(interval1, interval2) > 0)
+-		result = interval1;
+-	else
+-		result = interval2;
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_larger is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ static void

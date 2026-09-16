@@ -1,0 +1,15 @@
+{
+  "func": "interval_cmp",
+  "variants": [
+    {
+      "arguments": "interval interval",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "less-equal-greater"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

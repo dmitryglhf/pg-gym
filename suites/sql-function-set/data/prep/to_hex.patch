@@ -1,0 +1,30 @@
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index 15d2cab..b7dea7c 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -5034,23 +5034,11 @@ to_oct64(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TEXT_P(convert_to_base(value, 8));
+ }
+ 
+-/*
+- * Convert an integer to a string containing a base-16 (hex) representation of
+- * the number.
+- */
+ Datum
+ to_hex32(PG_FUNCTION_ARGS)
+ {
+-	uint64		value = (uint32) PG_GETARG_INT32(0);
+-
+-	PG_RETURN_TEXT_P(convert_to_base(value, 16));
+-}
+-Datum
+-to_hex64(PG_FUNCTION_ARGS)
+-{
+-	uint64		value = (uint64) PG_GETARG_INT64(0);
+-
+-	PG_RETURN_TEXT_P(convert_to_base(value, 16));
++	elog(ERROR, "to_hex32 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

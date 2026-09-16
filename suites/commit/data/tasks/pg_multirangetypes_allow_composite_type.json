@@ -1,0 +1,10 @@
+{
+  "name": "pg_multirangetypes_allow_composite_type",
+  "area": "type system, composite types",
+  "goal": "A composite type must not be able to contain itself, directly or through another type. That is refused when the path runs through a domain, an array, another composite type or a range type. Through a multirange it is accepted.\n\nTo reach it, create a composite type, create a range type over it (which brings a multirange type with it), then add an attribute of that multirange type back to the composite. ALTER TABLE ADD COLUMN on a table whose row type is involved gets there the same way.\n\nIt has to be refused like the other cases, and the cases already refused must keep being refused.",
+  "func": "pg_multirangetypes_allow_composite_type",
+  "graded_by": [
+    "src/test/regress/sql/multirangetypes.sql",
+    "src/test/regress/expected/multirangetypes.out"
+  ]
+}

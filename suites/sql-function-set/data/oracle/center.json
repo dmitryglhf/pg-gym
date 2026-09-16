@@ -1,0 +1,40 @@
+{
+  "func": "center",
+  "mode": "stub",
+  "patch": "prep/center.patch",
+  "symbols": [
+    "box_center",
+    "circle_center"
+  ],
+  "units": {
+    "box_center": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/*\t\tbox_center\t\t-\t\treturns the center point of the box.\n */\nDatum\nbox_center(PG_FUNCTION_ARGS)\n{\n\tBOX\t\t   *box = PG_GETARG_BOX_P(0);\n\tPoint\t   *result = (Point *) palloc(sizeof(Point));\n\n\tbox_cn(result, box);\n\n\tPG_RETURN_POINT_P(result);\n}\n\n"
+    },
+    "circle_center": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/*\t\tcircle_center\t-\t\treturns the center point of the circle.\n */\nDatum\ncircle_center(PG_FUNCTION_ARGS)\n{\n\tCIRCLE\t   *circle = PG_GETARG_CIRCLE_P(0);\n\tPoint\t   *result;\n\n\tresult = (Point *) palloc(sizeof(Point));\n\tresult->x = circle->center.x;\n\tresult->y = circle->center.y;\n\n\tPG_RETURN_POINT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "box",
+    "circle",
+    "constraints",
+    "create_index",
+    "geometry"
+  ],
+  "category": "geometric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 102,
+  "oracle_diff_by_file": {
+    "box": 9,
+    "circle": 12,
+    "geometry": 42,
+    "create_index": 28,
+    "constraints": 11
+  }
+}

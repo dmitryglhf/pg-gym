@@ -1,0 +1,25 @@
+{
+  "func": "power",
+  "variants": [
+    {
+      "arguments": "float8 float8",
+      "returns": "float8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "exponentiation"
+    },
+    {
+      "arguments": "numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "exponentiation"
+    }
+  ],
+  "description": "a raised to the power of b",
+  "examples": [
+    "power(9, 3) -> 729"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

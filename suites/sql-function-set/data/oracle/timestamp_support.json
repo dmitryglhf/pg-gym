@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_support",
+  "mode": "stub",
+  "patch": "prep/timestamp_support.patch",
+  "symbols": [
+    "timestamp_support"
+  ],
+  "units": {
+    "timestamp_support": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * timestamp_support()\n *\n * Planner support function for the timestamp_scale() and timestamptz_scale()\n * length coercion functions (we need not distinguish them here).\n */\nDatum\ntimestamp_support(PG_FUNCTION_ARGS)\n{\n\tNode\t   *rawreq = (Node *) PG_GETARG_POINTER(0);\n\tNode\t   *ret = NULL;\n\n\tif (IsA(rawreq, SupportRequestSimplify))\n\t{\n\t\tSupportRequestSimplify *req = (SupportRequestSimplify *) rawreq;\n\n\t\tret = TemporalSimplify(MAX_TIMESTAMP_PRECISION, (Node *) req->fcall);\n\t}\n\n\tPG_RETURN_POINTER(ret);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

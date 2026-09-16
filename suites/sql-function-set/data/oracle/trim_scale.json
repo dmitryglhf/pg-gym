@@ -1,0 +1,29 @@
+{
+  "func": "trim_scale",
+  "mode": "stub",
+  "patch": "prep/trim_scale.patch",
+  "symbols": [
+    "numeric_trim_scale"
+  ],
+  "units": {
+    "numeric_trim_scale": {
+      "file": "src/backend/utils/adt/numeric.c",
+      "code": "/*\n * Reduce scale of numeric value to represent supplied value without loss.\n */\nDatum\nnumeric_trim_scale(PG_FUNCTION_ARGS)\n{\n\tNumeric\t\tnum = PG_GETARG_NUMERIC(0);\n\tNumeric\t\tres;\n\tNumericVar\tresult;\n\n\tif (NUMERIC_IS_SPECIAL(num))\n\t\tPG_RETURN_NUMERIC(duplicate_numeric(num));\n\n\tinit_var_from_num(num, &result);\n\tresult.dscale = get_min_scale(&result);\n\tres = make_result(&result);\n\tfree_var(&result);\n\n\tPG_RETURN_NUMERIC(res);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "numeric",
+    "random"
+  ],
+  "category": "numeric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 110,
+  "oracle_diff_by_file": {
+    "numeric": 65,
+    "random": 45
+  }
+}

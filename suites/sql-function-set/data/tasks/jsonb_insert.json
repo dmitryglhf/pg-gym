@@ -1,0 +1,19 @@
+{
+  "func": "jsonb_insert",
+  "variants": [
+    {
+      "arguments": "jsonb _text jsonb bool",
+      "returns": "jsonb",
+      "kind": "f",
+      "volatile": "i",
+      "description": "Insert value into a jsonb"
+    }
+  ],
+  "description": "Returns target with new_value inserted. If the item designated by the path is an array element, new_value will be inserted before that item if insert_after is false (which is the default), or after it if insert_after is true. If the item designated by the path is an object field, new_value will be inserted only if the object does not already contain that key. All earlier steps in the path must exist, or the target is returned unchanged. As with the path oriented operators, negative integers that appear in the path count from the end of JSON arrays. If the last path step is an array index that is out of range, the new value is added at the beginning of the array if the index is negative, or at the end of the array if it is positive.",
+  "examples": [
+    "jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"') -> {\"a\": [0, \"new_value\", 1, 2]}",
+    "jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) -> {\"a\": [0, 1, \"new_value\", 2]}"
+  ],
+  "mode": "stub",
+  "category": "json"
+}

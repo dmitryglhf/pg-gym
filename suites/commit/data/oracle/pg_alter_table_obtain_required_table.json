@@ -1,0 +1,63 @@
+{
+  "func": "pg_alter_table_obtain_required_table",
+  "sha": "bbfcbc4cde4a9fb5b1d91acc3d8efc6f868c2684",
+  "parent": "07402e370e5b07d342a74025407f37a38fe9f064",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_alter_table_obtain_required_table.patch",
+  "test_files": [
+    "src/test/regress/sql/alter_table.sql",
+    "src/test/regress/expected/alter_table.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c\nindex a4e0fd06..81ab12df 100644\n--- a/src/backend/commands/tablecmds.c\n+++ b/src/backend/commands/tablecmds.c\n@@ -13854,9 +13854,12 @@ ATPostAlterTypeCleanup(List **wqueue, AlteredTableInfo *tab, LOCKMODE lockmode)\n \t/*\n \t * Re-parse the index and constraint definitions, and attach them to the\n \t * appropriate work queue entries.  We do this before dropping because in\n-\t * the case of a FOREIGN KEY constraint, we might not yet have exclusive\n-\t * lock on the table the constraint is attached to, and we need to get\n-\t * that before reparsing/dropping.\n+\t * the case of a constraint on another table, we might not yet have\n+\t * exclusive lock on the table the constraint is attached to, and we need\n+\t * to get that before reparsing/dropping.  (That's possible at least for\n+\t * FOREIGN KEY, CHECK, and EXCLUSION constraints; in non-FK cases it\n+\t * requires a dependency on the target table's composite type in the other\n+\t * table's constraint expressions.)\n \t *\n \t * We can't rely on the output of deparsing to tell us which relation to\n \t * operate on, because concurrent activity might have made the name\n@@ -13872,7 +13875,6 @@ ATPostAlterTypeCleanup(List **wqueue, AlteredTableInfo *tab, LOCKMODE lockmode)\n \t\tForm_pg_constraint con;\n \t\tOid\t\t\trelid;\n \t\tOid\t\t\tconfrelid;\n-\t\tchar\t\tcontype;\n \t\tbool\t\tconislocal;\n \n \t\ttup = SearchSysCache1(CONSTROID, ObjectIdGetDatum(oldId));\n@@ -13889,7 +13891,6 @@ ATPostAlterTypeCleanup(List **wqueue, AlteredTableInfo *tab, LOCKMODE lockmode)\n \t\t\t\telog(ERROR, \"could not identify relation associated with constraint %u\", oldId);\n \t\t}\n \t\tconfrelid = con->confrelid;\n-\t\tcontype = con->contype;\n \t\tconislocal = con->conislocal;\n \t\tReleaseSysCache(tup);\n \n@@ -13906,12 +13907,12 @@ ATPostAlterTypeCleanup(List **wqueue, AlteredTableInfo *tab, LOCKMODE lockmode)\n \t\t\tcontinue;\n \n \t\t/*\n-\t\t * When rebuilding an FK constraint that references the table we're\n-\t\t * modifying, we might not yet have any lock on the FK's table, so get\n-\t\t * one now.  We'll need AccessExclusiveLock for the DROP CONSTRAINT\n-\t\t * step, so there's no value in asking for anything weaker.\n+\t\t * When rebuilding another table's constraint that references the\n+\t\t * table we're modifying, we might not yet have any lock on the other\n+\t\t * table, so get one now.  We'll need AccessExclusiveLock for the DROP\n+\t\t * CONSTRAINT step, so there's no value in asking for anything weaker.\n \t\t */\n-\t\tif (relid != tab->relid && contype == CONSTRAINT_FOREIGN)\n+\t\tif (relid != tab->relid)\n \t\t\tLockRelationOid(relid, AccessExclusiveLock);\n \n \t\tATPostAlterTypeParse(oldId, relid, confrelid,\n",
+  "test": "diff --git a/src/test/regress/expected/alter_table.out b/src/test/regress/expected/alter_table.out\nindex 6de74a26..9d90d550 100644\n--- a/src/test/regress/expected/alter_table.out\n+++ b/src/test/regress/expected/alter_table.out\n@@ -4615,6 +4615,13 @@ alter table attbl alter column p1 set data type bigint;\n alter table atref alter column c1 set data type bigint;\n drop table attbl, atref;\n /* End test case for bug #17409 */\n+/* Test case for bug #18970 */\n+create table attbl(a int);\n+create table atref(b attbl check ((b).a is not null));\n+alter table attbl alter column a type numeric;  -- someday this should work\n+ERROR:  cannot alter table \"attbl\" because column \"atref.b\" uses its row type\n+drop table attbl, atref;\n+/* End test case for bug #18970 */\n -- Test that ALTER TABLE rewrite preserves a clustered index\n -- for normal indexes and indexes on constraints.\n create table alttype_cluster (a int);\ndiff --git a/src/test/regress/sql/alter_table.sql b/src/test/regress/sql/alter_table.sql\nindex da127244..df08e93b 100644\n--- a/src/test/regress/sql/alter_table.sql\n+++ b/src/test/regress/sql/alter_table.sql\n@@ -3027,6 +3027,15 @@ drop table attbl, atref;\n \n /* End test case for bug #17409 */\n \n+/* Test case for bug #18970 */\n+\n+create table attbl(a int);\n+create table atref(b attbl check ((b).a is not null));\n+alter table attbl alter column a type numeric;  -- someday this should work\n+drop table attbl, atref;\n+\n+/* End test case for bug #18970 */\n+\n -- Test that ALTER TABLE rewrite preserves a clustered index\n -- for normal indexes and indexes on constraints.\n create table alttype_cluster (a int);\n",
+  "oracle_command": "make -C src/test/regress check TESTS=alter_table",
+  "expected_tests": [
+    "alter_table"
+  ],
+  "failing_tests": [
+    "alter_table",
+    "compression",
+    "event_trigger",
+    "event_trigger_login",
+    "explain",
+    "fast_default",
+    "hash_part",
+    "indexing",
+    "memoize",
+    "oidjoins",
+    "partition_aggregate",
+    "partition_info",
+    "partition_join",
+    "partition_prune",
+    "predicate",
+    "reloptions",
+    "stats",
+    "tablespace",
+    "tuplesort"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 18155,
+  "oracle_diff_by_file": {
+    "alter_table": 75,
+    "partition_join": 4741,
+    "partition_prune": 3932,
+    "reloptions": 194,
+    "hash_part": 78,
+    "indexing": 1433,
+    "partition_aggregate": 1356,
+    "partition_info": 285,
+    "tuplesort": 581,
+    "explain": 629,
+    "compression_1": 310,
+    "memoize": 365,
+    "stats": 1283,
+    "predicate": 281,
+    "oidjoins": 267,
+    "event_trigger": 670,
+    "event_trigger_login": 35,
+    "fast_default": 820,
+    "tablespace": 820
+  }
+}

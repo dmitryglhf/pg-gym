@@ -1,0 +1,27 @@
+{
+  "func": "pg_subselect_treat_jsonconstructorexpr_as",
+  "sha": "d719e2ecb1886d8eae15bb46384751db783719a8",
+  "parent": "968141898777a484e6250b912b89289bd47e1340",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_subselect_treat_jsonconstructorexpr_as.patch",
+  "test_files": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/util/clauses.c b/src/backend/optimizer/util/clauses.c\nindex 2a599f84..12596602 100644\n--- a/src/backend/optimizer/util/clauses.c\n+++ b/src/backend/optimizer/util/clauses.c\n@@ -1111,6 +1111,8 @@ contain_nonstrict_functions_walker(Node *node, void *context)\n \t\treturn true;\n \tif (IsA(node, BooleanTest))\n \t\treturn true;\n+\tif (IsA(node, JsonConstructorExpr))\n+\t\treturn true;\n \n \t/* Check other function-containing nodes */\n \tif (check_functions_in_node(node, contain_nonstrict_functions_checker,\n",
+  "test": "diff --git a/src/test/regress/expected/subselect.out b/src/test/regress/expected/subselect.out\nindex e41d31b3..ec20ef25 100644\n--- a/src/test/regress/expected/subselect.out\n+++ b/src/test/regress/expected/subselect.out\n@@ -1741,6 +1741,34 @@ fetch backward all in c1;\n \n commit;\n --\n+-- Check that JsonConstructorExpr is treated as non-strict, and thus can be\n+-- wrapped in a PlaceHolderVar\n+--\n+begin;\n+create temp table json_tab (a int);\n+insert into json_tab values (1);\n+explain (verbose, costs off)\n+select * from json_tab t1 left join (select json_array(1, a) from json_tab t2) s on false;\n+                    QUERY PLAN                     \n+---------------------------------------------------\n+ Nested Loop Left Join\n+   Output: t1.a, (JSON_ARRAY(1, a RETURNING json))\n+   Join Filter: false\n+   ->  Seq Scan on pg_temp.json_tab t1\n+         Output: t1.a\n+   ->  Result\n+         Output: JSON_ARRAY(1, a RETURNING json)\n+         One-Time Filter: false\n+(8 rows)\n+\n+select * from json_tab t1 left join (select json_array(1, a) from json_tab t2) s on false;\n+ a | json_array \n+---+------------\n+ 1 | \n+(1 row)\n+\n+rollback;\n+--\n -- Verify that we correctly flatten cases involving a subquery output\n -- expression that doesn't need to be wrapped in a PlaceHolderVar\n --\ndiff --git a/src/test/regress/sql/subselect.sql b/src/test/regress/sql/subselect.sql\nindex fb0a901a..583cbd62 100644\n--- a/src/test/regress/sql/subselect.sql\n+++ b/src/test/regress/sql/subselect.sql\n@@ -899,6 +899,23 @@ fetch backward all in c1;\n \n commit;\n \n+--\n+-- Check that JsonConstructorExpr is treated as non-strict, and thus can be\n+-- wrapped in a PlaceHolderVar\n+--\n+\n+begin;\n+\n+create temp table json_tab (a int);\n+insert into json_tab values (1);\n+\n+explain (verbose, costs off)\n+select * from json_tab t1 left join (select json_array(1, a) from json_tab t2) s on false;\n+\n+select * from json_tab t1 left join (select json_array(1, a) from json_tab t2) s on false;\n+\n+rollback;\n+\n --\n -- Verify that we correctly flatten cases involving a subquery output\n -- expression that doesn't need to be wrapped in a PlaceHolderVar\n",
+  "oracle_command": "make -C src/test/regress check TESTS=subselect",
+  "expected_tests": [
+    "subselect"
+  ],
+  "failing_tests": [
+    "subselect"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 9,
+  "oracle_diff_by_file": {
+    "subselect": 9
+  }
+}

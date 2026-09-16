@@ -1,0 +1,27 @@
+{
+  "func": "uuid_extract_timestamp",
+  "mode": "stub",
+  "patch": "prep/uuid_extract_timestamp.patch",
+  "symbols": [
+    "uuid_extract_timestamp"
+  ],
+  "units": {
+    "uuid_extract_timestamp": {
+      "file": "src/backend/utils/adt/uuid.c",
+      "code": "/*\n * Extract timestamp from UUID.\n *\n * Returns null if not RFC 4122 variant or not a version that has a timestamp.\n */\nDatum\nuuid_extract_timestamp(PG_FUNCTION_ARGS)\n{\n\tpg_uuid_t  *uuid = PG_GETARG_UUID_P(0);\n\tint\t\t\tversion;\n\tuint64\t\ttms;\n\tTimestampTz ts;\n\n\t/* check if RFC 4122 variant */\n\tif ((uuid->data[8] & 0xc0) != 0x80)\n\t\tPG_RETURN_NULL();\n\n\tversion = uuid->data[6] >> 4;\n\n\tif (version == 1)\n\t{\n\t\ttms = ((uint64) uuid->data[0] << 24)\n\t\t\t+ ((uint64) uuid->data[1] << 16)\n\t\t\t+ ((uint64) uuid->data[2] << 8)\n\t\t\t+ ((uint64) uuid->data[3])\n\t\t\t+ ((uint64) uuid->data[4] << 40)\n\t\t\t+ ((uint64) uuid->data[5] << 32)\n\t\t\t+ (((uint64) uuid->data[6] & 0xf) << 56)\n\t\t\t+ ((uint64) uuid->data[7] << 48);\n\n\t\t/* convert 100-ns intervals to us, then adjust */\n\t\tts = (TimestampTz) (tms / 10) -\n\t\t\t((uint64) POSTGRES_EPOCH_JDATE - UUIDV1_EPOCH_JDATE) * SECS_PER_DAY * USECS_PER_SEC;\n\n\t\tPG_RETURN_TIMESTAMPTZ(ts);\n\t}\n\n\t/* not a timestamp-containing UUID version */\n\tPG_RETURN_NULL();\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "uuid"
+  ],
+  "category": "uuid",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 15,
+  "oracle_diff_by_file": {
+    "uuid": 15
+  }
+}

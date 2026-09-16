@@ -1,0 +1,55 @@
+{
+  "func": "array_length",
+  "mode": "stub",
+  "patch": "prep/array_length.patch",
+  "symbols": [
+    "array_length"
+  ],
+  "units": {
+    "array_length": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * array_length :\n *\t\treturns the length, of the dimension requested, for\n *\t\tthe array pointed to by \"v\", as an int4\n */\nDatum\narray_length(PG_FUNCTION_ARGS)\n{\n\tAnyArrayType *v = PG_GETARG_ANY_ARRAY_P(0);\n\tint\t\t\treqdim = PG_GETARG_INT32(1);\n\tint\t\t   *dimv;\n\tint\t\t\tresult;\n\n\t/* Sanity check: does it look like an array at all? */\n\tif (AARR_NDIM(v) <= 0 || AARR_NDIM(v) > MAXDIM)\n\t\tPG_RETURN_NULL();\n\n\t/* Sanity check: was the requested dim valid */\n\tif (reqdim <= 0 || reqdim > AARR_NDIM(v))\n\t\tPG_RETURN_NULL();\n\n\tdimv = AARR_DIMS(v);\n\n\tresult = dimv[reqdim - 1];\n\n\tPG_RETURN_INT32(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "arrays",
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "dependency",
+    "foreign_data",
+    "json",
+    "jsonb",
+    "largeobject",
+    "multirangetypes",
+    "oidjoins",
+    "opr_sanity",
+    "privileges",
+    "psql",
+    "rowsecurity"
+  ],
+  "category": "array",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 476,
+  "oracle_diff_by_file": {
+    "multirangetypes": 7,
+    "opr_sanity": 32,
+    "arrays": 35,
+    "brin": 2,
+    "privileges": 29,
+    "rowsecurity": 19,
+    "brin_bloom": 2,
+    "brin_multi": 2,
+    "psql": 30,
+    "dependency": 14,
+    "foreign_data": 49,
+    "json": 14,
+    "jsonb": 14,
+    "largeobject": 7,
+    "oidjoins": 220
+  }
+}

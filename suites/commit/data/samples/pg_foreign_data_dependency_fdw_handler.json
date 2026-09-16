@@ -1,0 +1,36 @@
+{
+  "name": "pg_foreign_data_dependency_fdw_handler",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "876fa84a275eea578b4a89bb910e184f98d991c2",
+  "parent": "8ee536c89517c0d2fc9df2177eb1e51e61367a68",
+  "date": "2026-03-19",
+  "subject": "Fix dependency on FDW handler.",
+  "area": "foreign-data wrappers, dependencies",
+  "licence": "PostgreSQL",
+  "goal": "ALTER FOREIGN DATA WRAPPER can lose the dependency on an existing handler when only another support function, such as the validator, is changed.\n\nCreate an FDW with both a handler and validator, alter just the validator, then attempt to drop the handler function. The drop must still be blocked because the FDW depends on it. Changing or removing one support function must preserve dependencies for every support function that remains configured, while intentional replacement and DROP ... CASCADE behavior stay unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/foreigncmds.c",
+      "added": 5,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/foreign_data.sql",
+    "src/test/regress/expected/foreign_data.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "foreign_data"
+    ],
+    "command": "make -C src/test/regress check TESTS=foreign_data"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

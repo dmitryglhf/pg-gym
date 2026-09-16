@@ -1,0 +1,56 @@
+{
+  "func": "interval_in",
+  "mode": "stub",
+  "patch": "prep/interval_in.patch",
+  "symbols": [
+    "interval_in"
+  ],
+  "units": {
+    "interval_in": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* interval_in()\n * Convert a string to internal form.\n *\n * External format(s):\n *\tUses the generic date/time parsing and decoding routines.\n */\nDatum\ninterval_in(PG_FUNCTION_ARGS)\n{\n\tchar\t   *str = PG_GETARG_CSTRING(0);\n#ifdef NOT_USED\n\tOid\t\t\ttypelem = PG_GETARG_OID(1);\n#endif\n\tint32\t\ttypmod = PG_GETARG_INT32(2);\n\tNode\t   *escontext = fcinfo->context;\n\tInterval   *result;\n\tstruct pg_itm_in tt,\n\t\t\t   *itm_in = &tt;\n\tint\t\t\tdtype;\n\tint\t\t\tnf;\n\tint\t\t\trange;\n\tint\t\t\tdterr;\n\tchar\t   *field[MAXDATEFIELDS];\n\tint\t\t\tftype[MAXDATEFIELDS];\n\tchar\t\tworkbuf[256];\n\tDateTimeErrorExtra extra;\n\n\titm_in->tm_year = 0;\n\titm_in->tm_mon = 0;\n\titm_in->tm_mday = 0;\n\titm_in->tm_usec = 0;\n\n\tif (typmod >= 0)\n\t\trange = INTERVAL_RANGE(typmod);\n\telse\n\t\trange = INTERVAL_FULL_RANGE;\n\n\tdterr = ParseDateTime(str, workbuf, sizeof(workbuf), field,\n\t\t\t\t\t\t  ftype, MAXDATEFIELDS, &nf);\n\tif (dterr == 0)\n\t\tdterr = DecodeInterval(field, ftype, nf, range,\n\t\t\t\t\t\t\t   &dtype, itm_in);\n\n\t/* if those functions think it's a bad format, try ISO8601 style */\n\tif (dterr == DTERR_BAD_FORMAT)\n\t\tdterr = DecodeISO8601Interval(str,\n\t\t\t\t\t\t\t\t\t  &dtype, itm_in);\n\n\tif (dterr != 0)\n\t{\n\t\tif (dterr == DTERR_FIELD_OVERFLOW)\n\t\t\tdterr = DTERR_INTERVAL_OVERFLOW;\n\t\tDateTimeParseError(dterr, &extra, str, \"interval\", escontext);\n\t\tPG_RETURN_NULL();\n\t}\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\tswitch (dtype)\n\t{\n\t\tcase DTK_DELTA:\n\t\t\tif (itmin2interval(itm_in, result) != 0)\n\t\t\t\tereturn(escontext, (Datum) 0,\n\t\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t\t errmsg(\"interval out of range\")));\n\t\t\tbreak;\n\n\t\tcase DTK_LATE:\n\t\t\tINTERVAL_NOEND(result);\n\t\t\tbreak;\n\n\t\tcase DTK_EARLY:\n\t\t\tINTERVAL_NOBEGIN(result);\n\t\t\tbreak;\n\n\t\tdefault:\n\t\t\telog(ERROR, \"unexpected dtype %d while parsing interval \\\"%s\\\"\",\n\t\t\t\t dtype, str);\n\t}\n\n\tAdjustIntervalForTypmod(result, typmod, escontext);\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "alter_table",
+    "arrays",
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "create_view",
+    "fast_default",
+    "hash_func",
+    "horology",
+    "interval",
+    "stats_ext",
+    "timestamp",
+    "timestamptz",
+    "timetz",
+    "type_sanity",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 4707,
+  "oracle_diff_by_file": {
+    "timetz": 46,
+    "timestamp": 192,
+    "timestamptz": 172,
+    "interval": 1923,
+    "horology": 1397,
+    "type_sanity": 9,
+    "create_view": 77,
+    "hash_func": 6,
+    "arrays": 14,
+    "brin": 19,
+    "brin_bloom": 11,
+    "brin_multi": 70,
+    "stats_ext": 3,
+    "window": 712,
+    "alter_table": 18,
+    "fast_default": 38
+  }
+}

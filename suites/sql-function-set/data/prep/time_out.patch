@@ -1,0 +1,25 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..157e263 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1500,18 +1500,8 @@ time2tm(TimeADT time, struct pg_tm *tm, fsec_t *fsec)
+ Datum
+ time_out(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time = PG_GETARG_TIMEADT(0);
+-	char	   *result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-	char		buf[MAXDATELEN + 1];
+-
+-	time2tm(time, tm, &fsec);
+-	EncodeTimeOnly(tm, fsec, false, 0, DateStyle, buf);
+-
+-	result = pstrdup(buf);
+-	PG_RETURN_CSTRING(result);
++	elog(ERROR, "time_out is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

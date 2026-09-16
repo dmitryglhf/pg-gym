@@ -1,0 +1,18 @@
+{
+  "func": "interval_avg_accum",
+  "mode": "stub",
+  "patch": "prep/interval_avg_accum.patch",
+  "symbols": [
+    "interval_avg_accum"
+  ],
+  "units": {
+    "interval_avg_accum": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * Transition function for sum() and avg() interval aggregates.\n */\nDatum\ninterval_avg_accum(PG_FUNCTION_ARGS)\n{\n\tIntervalAggState *state;\n\n\tstate = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);\n\n\t/* Create the state data on the first call */\n\tif (state == NULL)\n\t\tstate = makeIntervalAggState(fcinfo);\n\n\tif (!PG_ARGISNULL(1))\n\t\tdo_interval_accum(state, PG_GETARG_INTERVAL_P(1));\n\n\tPG_RETURN_POINTER(state);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

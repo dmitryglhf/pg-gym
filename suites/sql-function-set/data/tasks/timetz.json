@@ -1,0 +1,29 @@
+{
+  "func": "timetz",
+  "variants": [
+    {
+      "arguments": "timestamptz",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert timestamp with time zone to time with time zone"
+    },
+    {
+      "arguments": "timetz int4",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust time with time zone precision"
+    },
+    {
+      "arguments": "time",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert time to time with time zone"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

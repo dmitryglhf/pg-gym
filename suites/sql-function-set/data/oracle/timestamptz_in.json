@@ -1,0 +1,64 @@
+{
+  "func": "timestamptz_in",
+  "mode": "stub",
+  "patch": "prep/timestamptz_in.patch",
+  "symbols": [
+    "timestamptz_in"
+  ],
+  "units": {
+    "timestamptz_in": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_in()\n * Convert a string to internal form.\n */\nDatum\ntimestamptz_in(PG_FUNCTION_ARGS)\n{\n\tchar\t   *str = PG_GETARG_CSTRING(0);\n#ifdef NOT_USED\n\tOid\t\t\ttypelem = PG_GETARG_OID(1);\n#endif\n\tint32\t\ttypmod = PG_GETARG_INT32(2);\n\tNode\t   *escontext = fcinfo->context;\n\tTimestampTz result;\n\tfsec_t\t\tfsec;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tint\t\t\ttz;\n\tint\t\t\tdtype;\n\tint\t\t\tnf;\n\tint\t\t\tdterr;\n\tchar\t   *field[MAXDATEFIELDS];\n\tint\t\t\tftype[MAXDATEFIELDS];\n\tchar\t\tworkbuf[MAXDATELEN + MAXDATEFIELDS];\n\tDateTimeErrorExtra extra;\n\n\tdterr = ParseDateTime(str, workbuf, sizeof(workbuf),\n\t\t\t\t\t\t  field, ftype, MAXDATEFIELDS, &nf);\n\tif (dterr == 0)\n\t\tdterr = DecodeDateTime(field, ftype, nf,\n\t\t\t\t\t\t\t   &dtype, tm, &fsec, &tz, &extra);\n\tif (dterr != 0)\n\t{\n\t\tDateTimeParseError(dterr, &extra, str, \"timestamp with time zone\",\n\t\t\t\t\t\t   escontext);\n\t\tPG_RETURN_NULL();\n\t}\n\n\tswitch (dtype)\n\t{\n\t\tcase DTK_DATE:\n\t\t\tif (tm2timestamp(tm, fsec, &tz, &result) != 0)\n\t\t\t\tereturn(escontext, (Datum) 0,\n\t\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t\t errmsg(\"timestamp out of range: \\\"%s\\\"\", str)));\n\t\t\tbreak;\n\n\t\tcase DTK_EPOCH:\n\t\t\tresult = SetEpochTimestamp();\n\t\t\tbreak;\n\n\t\tcase DTK_LATE:\n\t\t\tTIMESTAMP_NOEND(result);\n\t\t\tbreak;\n\n\t\tcase DTK_EARLY:\n\t\t\tTIMESTAMP_NOBEGIN(result);\n\t\t\tbreak;\n\n\t\tdefault:\n\t\t\telog(ERROR, \"unexpected dtype %d while parsing timestamptz \\\"%s\\\"\",\n\t\t\t\t dtype, str);\n\t\t\tTIMESTAMP_NOEND(result);\n\t}\n\n\tAdjustTimestampForTypmod(&result, typmod, escontext);\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "arrays",
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "guc",
+    "horology",
+    "interval",
+    "json",
+    "jsonb",
+    "partition_prune",
+    "rangetypes",
+    "sqljson_queryfuncs",
+    "stats",
+    "stats_ext",
+    "subscription",
+    "timestamptz",
+    "type_sanity",
+    "uuid",
+    "window",
+    "xmlmap"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 5267,
+  "oracle_diff_by_file": {
+    "uuid": 7,
+    "rangetypes": 33,
+    "timestamptz": 3508,
+    "interval": 20,
+    "horology": 626,
+    "type_sanity": 9,
+    "arrays": 7,
+    "brin": 19,
+    "brin_bloom": 11,
+    "brin_multi": 25,
+    "stats_ext": 3,
+    "subscription": 7,
+    "guc": 280,
+    "window": 471,
+    "xmlmap_1": 3,
+    "json": 27,
+    "jsonb": 27,
+    "sqljson_queryfuncs": 58,
+    "partition_prune": 28,
+    "stats": 98
+  }
+}

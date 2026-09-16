@@ -1,0 +1,43 @@
+diff --git a/src/backend/utils/adt/xml.c b/src/backend/utils/adt/xml.c
+index e4a3e9e..b86dfbb 100644
+--- a/src/backend/utils/adt/xml.c
++++ b/src/backend/utils/adt/xml.c
+@@ -490,36 +490,8 @@ xmlBuffer_to_xmltype(xmlBufferPtr buf)
+ Datum
+ xmlcomment(PG_FUNCTION_ARGS)
+ {
+-#ifdef USE_LIBXML
+-	text	   *arg = PG_GETARG_TEXT_PP(0);
+-	char	   *argdata = VARDATA_ANY(arg);
+-	int			len = VARSIZE_ANY_EXHDR(arg);
+-	StringInfoData buf;
+-	int			i;
+-
+-	/* check for "--" in string or "-" at the end */
+-	for (i = 1; i < len; i++)
+-	{
+-		if (argdata[i] == '-' && argdata[i - 1] == '-')
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_XML_COMMENT),
+-					 errmsg("invalid XML comment")));
+-	}
+-	if (len > 0 && argdata[len - 1] == '-')
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_XML_COMMENT),
+-				 errmsg("invalid XML comment")));
+-
+-	initStringInfo(&buf);
+-	appendStringInfoString(&buf, "<!--");
+-	appendStringInfoText(&buf, arg);
+-	appendStringInfoString(&buf, "-->");
+-
+-	PG_RETURN_XML_P(stringinfo_to_xmltype(&buf));
+-#else
+-	NO_XML_SUPPORT();
+-	return 0;
+-#endif
++	elog(ERROR, "xmlcomment is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

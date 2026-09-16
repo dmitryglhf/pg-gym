@@ -1,0 +1,26 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..7f24d89 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2313,19 +2313,8 @@ timetz_in(PG_FUNCTION_ARGS)
+ Datum
+ timetz_out(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);
+-	char	   *result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-	int			tz;
+-	char		buf[MAXDATELEN + 1];
+-
+-	timetz2tm(time, tm, &fsec, &tz);
+-	EncodeTimeOnly(tm, fsec, true, tz, DateStyle, buf);
+-
+-	result = pstrdup(buf);
+-	PG_RETURN_CSTRING(result);
++	elog(ERROR, "timetz_out is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

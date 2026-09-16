@@ -1,0 +1,36 @@
+{
+  "name": "pg_publication_replica_identity_check",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "76f45be9315bb02b6f9f41b17e5a448c6241bb20",
+  "parent": "0b934d3994ffdd4b9d557a216a381cca4d6e6f11",
+  "date": "2025-09-04",
+  "subject": "Fix replica identity check for MERGE.",
+  "area": "logical replication, MERGE",
+  "licence": "PostgreSQL",
+  "goal": "MERGE does not apply the same replica-identity safety checks as UPDATE and DELETE when its target table is published.\n\nPublish a table that has no replica identity, then run MERGE commands containing reachable MATCHED UPDATE and MATCHED DELETE actions. They must be rejected with the existing update/delete replica-identity errors and hints. A MERGE containing only INSERT and DO NOTHING must remain legal, and UPDATE/DELETE actions against a published table with a valid primary-key replica identity must succeed. Non-published MERGE behavior must not change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/executor/execMain.c",
+      "added": 10,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/publication.sql",
+    "src/test/regress/expected/publication.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "publication"
+    ],
+    "command": "make -C src/test/regress check TESTS=publication"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

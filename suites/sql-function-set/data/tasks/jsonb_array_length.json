@@ -1,0 +1,18 @@
+{
+  "func": "jsonb_array_length",
+  "variants": [
+    {
+      "arguments": "jsonb",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "length of jsonb array"
+    }
+  ],
+  "description": "Returns the number of elements in the top-level JSON array.",
+  "examples": [
+    "jsonb_array_length('[]') -> 0"
+  ],
+  "mode": "stub",
+  "category": "json"
+}

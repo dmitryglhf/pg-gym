@@ -1,0 +1,39 @@
+{
+  "name": "pg_money_missing_money_overflow",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "1416f304d2c9514fe65f112514accc9b653902ad",
+  "parent": "cce758797f75c19080801ddad213f46d7900ec2b",
+  "date": "2026-08-04",
+  "subject": "Fix missing money overflow checks for INT64_MIN / -1",
+  "area": "money type, division",
+  "licence": "PostgreSQL",
+  "goal": "Dividing the smallest representable money value by -1 has no representable result on a two's complement machine. Nothing checks for it, so the answer depends on the machine and at worst the backend crashes. The integer types already refuse the same division.\n\n    SELECT '-92233720368547758.08'::money / -1;\n\nIt has to raise an error. Divisions with a representable result must be untouched.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/cash.c",
+      "added": 16,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/money.sql",
+    "src/test/regress/expected/money.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "money"
+    ],
+    "command": "make -C src/test/regress check TESTS=money"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true,
+  "contract": [
+    "money out of range"
+  ]
+}

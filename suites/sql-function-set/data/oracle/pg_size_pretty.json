@@ -1,0 +1,36 @@
+{
+  "func": "pg_size_pretty",
+  "mode": "stub",
+  "patch": "prep/pg_size_pretty.patch",
+  "symbols": [
+    "pg_size_pretty",
+    "pg_size_pretty_numeric"
+  ],
+  "units": {
+    "pg_size_pretty": {
+      "file": "src/backend/utils/adt/dbsize.c",
+      "code": "/*\n * formatting with size units\n */\nDatum\npg_size_pretty(PG_FUNCTION_ARGS)\n{\n\tint64\t\tsize = PG_GETARG_INT64(0);\n\tchar\t\tbuf[64];\n\tconst struct size_pretty_unit *unit;\n\n\tfor (unit = size_pretty_units; unit->name != NULL; unit++)\n\t{\n\t\tuint8\t\tbits;\n\t\tuint64\t\tabs_size = size < 0 ? 0 - (uint64) size : (uint64) size;\n\n\t\t/*\n\t\t * Use this unit if there are no more units or the absolute size is\n\t\t * below the limit for the current unit.\n\t\t */\n\t\tif (unit[1].name == NULL || abs_size < unit->limit)\n\t\t{\n\t\t\tif (unit->round)\n\t\t\t\tsize = half_rounded(size);\n\n\t\t\tsnprintf(buf, sizeof(buf), INT64_FORMAT \" %s\", size, unit->name);\n\t\t\tbreak;\n\t\t}\n\n\t\t/*\n\t\t * Determine the number of bits to use to build the divisor.  We may\n\t\t * need to use 1 bit less than the difference between this and the\n\t\t * next unit if the next unit uses half rounding.  Or we may need to\n\t\t * shift an extra bit if this unit uses half rounding and the next one\n\t\t * does not.  We use division rather than shifting right by this\n\t\t * number of bits to ensure positive and negative values are rounded\n\t\t * in the same way.\n\t\t */\n\t\tbits = (unit[1].unitbits - unit->unitbits - (unit[1].round == true)\n\t\t\t\t+ (unit->round == true));\n\t\tsize /= ((int64) 1) << bits;\n\t}\n\n\tPG_RETURN_TEXT_P(cstring_to_text(buf));\n}\n\n"
+    },
+    "pg_size_pretty_numeric": {
+      "file": "src/backend/utils/adt/dbsize.c",
+      "code": "Datum\npg_size_pretty_numeric(PG_FUNCTION_ARGS)\n{\n\tNumeric\t\tsize = PG_GETARG_NUMERIC(0);\n\tchar\t   *result = NULL;\n\tconst struct size_pretty_unit *unit;\n\n\tfor (unit = size_pretty_units; unit->name != NULL; unit++)\n\t{\n\t\tunsigned int shiftby;\n\n\t\t/* use this unit if there are no more units or we're below the limit */\n\t\tif (unit[1].name == NULL ||\n\t\t\tnumeric_is_less(numeric_absolute(size),\n\t\t\t\t\t\t\tint64_to_numeric(unit->limit)))\n\t\t{\n\t\t\tif (unit->round)\n\t\t\t\tsize = numeric_half_rounded(size);\n\n\t\t\tresult = psprintf(\"%s %s\", numeric_to_cstring(size), unit->name);\n\t\t\tbreak;\n\t\t}\n\n\t\t/*\n\t\t * Determine the number of bits to use to build the divisor.  We may\n\t\t * need to use 1 bit less than the difference between this and the\n\t\t * next unit if the next unit uses half rounding.  Or we may need to\n\t\t * shift an extra bit if this unit uses half rounding and the next one\n\t\t * does not.\n\t\t */\n\t\tshiftby = (unit[1].unitbits - unit->unitbits - (unit[1].round == true)\n\t\t\t\t   + (unit->round == true));\n\t\tsize = numeric_truncated_divide(size, ((int64) 1) << shiftby);\n\t}\n\n\tPG_RETURN_TEXT_P(cstring_to_text(result));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "dbsize",
+    "insert",
+    "psql"
+  ],
+  "category": "sysinfo",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 103,
+  "oracle_diff_by_file": {
+    "insert": 5,
+    "dbsize": 61,
+    "psql": 37
+  }
+}

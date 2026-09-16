@@ -1,0 +1,46 @@
+{
+  "func": "timetz_in",
+  "mode": "stub",
+  "patch": "prep/timetz_in.patch",
+  "symbols": [
+    "timetz_in"
+  ],
+  "units": {
+    "timetz_in": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntimetz_in(PG_FUNCTION_ARGS)\n{\n\tchar\t   *str = PG_GETARG_CSTRING(0);\n#ifdef NOT_USED\n\tOid\t\t\ttypelem = PG_GETARG_OID(1);\n#endif\n\tint32\t\ttypmod = PG_GETARG_INT32(2);\n\tNode\t   *escontext = fcinfo->context;\n\tTimeTzADT  *result;\n\tfsec_t\t\tfsec;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tint\t\t\ttz;\n\tint\t\t\tnf;\n\tint\t\t\tdterr;\n\tchar\t\tworkbuf[MAXDATELEN + 1];\n\tchar\t   *field[MAXDATEFIELDS];\n\tint\t\t\tdtype;\n\tint\t\t\tftype[MAXDATEFIELDS];\n\tDateTimeErrorExtra extra;\n\n\tdterr = ParseDateTime(str, workbuf, sizeof(workbuf),\n\t\t\t\t\t\t  field, ftype, MAXDATEFIELDS, &nf);\n\tif (dterr == 0)\n\t\tdterr = DecodeTimeOnly(field, ftype, nf,\n\t\t\t\t\t\t\t   &dtype, tm, &fsec, &tz, &extra);\n\tif (dterr != 0)\n\t{\n\t\tDateTimeParseError(dterr, &extra, str, \"time with time zone\",\n\t\t\t\t\t\t   escontext);\n\t\tPG_RETURN_NULL();\n\t}\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\ttm2timetz(tm, fsec, tz, result);\n\tAdjustTimeForTypmod(&(result->time), typmod);\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "hash_func",
+    "horology",
+    "interval",
+    "sqljson_queryfuncs",
+    "timetz",
+    "type_sanity",
+    "window",
+    "xmlmap"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 1236,
+  "oracle_diff_by_file": {
+    "timetz": 306,
+    "interval": 24,
+    "horology": 355,
+    "type_sanity": 9,
+    "hash_func": 6,
+    "brin": 19,
+    "brin_bloom": 11,
+    "brin_multi": 19,
+    "window": 463,
+    "xmlmap_1": 3,
+    "sqljson_queryfuncs": 21
+  }
+}

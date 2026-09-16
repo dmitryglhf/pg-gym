@@ -1,0 +1,14 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..072156a 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2318,7 +2318,8 @@ timestamp_hash(PG_FUNCTION_ARGS)
+ Datum
+ timestamp_hash_extended(PG_FUNCTION_ARGS)
+ {
+-	return hashint8extended(fcinfo);
++	elog(ERROR, "timestamp_hash_extended is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

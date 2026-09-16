@@ -1,0 +1,26 @@
+{
+  "func": "set_bit",
+  "variants": [
+    {
+      "arguments": "bytea int8 int4",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "set bit"
+    },
+    {
+      "arguments": "bit int4 int4",
+      "returns": "bit",
+      "kind": "f",
+      "volatile": "i",
+      "description": "set bit"
+    }
+  ],
+  "description": "Sets n'th bit in binary string to newvalue.\nSets n'th bit in bit string to newvalue; the first (leftmost) bit is bit 0.",
+  "examples": [
+    "set_bit('\\x1234567890'::bytea, 30, 0) -> \\x1234563890",
+    "set_bit(B'101010101010101010', 6, 0) -> 101010001010101010"
+  ],
+  "mode": "stub",
+  "category": "bit"
+}

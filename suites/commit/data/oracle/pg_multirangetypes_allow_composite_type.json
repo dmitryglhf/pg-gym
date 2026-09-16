@@ -1,0 +1,27 @@
+{
+  "func": "pg_multirangetypes_allow_composite_type",
+  "sha": "54343f6f9046caa31c71a72479fd567322d72591",
+  "parent": "9dda30dd3d4936e3d590fc319b08eaed41f1f748",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_multirangetypes_allow_composite_type.patch",
+  "test_files": [
+    "src/test/regress/sql/multirangetypes.sql",
+    "src/test/regress/expected/multirangetypes.out"
+  ],
+  "reference": "diff --git a/src/backend/catalog/heap.c b/src/backend/catalog/heap.c\nindex 2d66639a2..3780ed46a 100644\n--- a/src/backend/catalog/heap.c\n+++ b/src/backend/catalog/heap.c\n@@ -648,6 +648,16 @@ CheckAttributeType(const char *attname,\n \t\t\t\t\t\t   containing_rowtypes,\n \t\t\t\t\t\t   flags);\n \t}\n+\telse if (att_typtype == TYPTYPE_MULTIRANGE)\n+\t{\n+\t\t/*\n+\t\t * If it's a multirange, recurse to check its plain range type.\n+\t\t */\n+\t\tCheckAttributeType(attname, get_multirange_range(atttypid),\n+\t\t\t\t\t\t   InvalidOid,\t/* range types are not collatable */\n+\t\t\t\t\t\t   containing_rowtypes,\n+\t\t\t\t\t\t   flags);\n+\t}\n \telse if (OidIsValid((att_typelem = get_element_type(atttypid))))\n \t{\n \t\t/*\n",
+  "test": "diff --git a/src/test/regress/expected/multirangetypes.out b/src/test/regress/expected/multirangetypes.out\nindex c6363ebeb..8f70b1a34 100644\n--- a/src/test/regress/expected/multirangetypes.out\n+++ b/src/test/regress/expected/multirangetypes.out\n@@ -3297,6 +3297,9 @@ select *, row_to_json(upper(t)) as u from\n  {[\"(5,6)\",\"(7,8)\")} | {\"a\":7,\"b\":8}\n (2 rows)\n \n+-- this must be rejected to avoid self-inclusion issues:\n+alter type two_ints add attribute c two_ints_multirange;\n+ERROR:  composite type two_ints cannot be made a member of itself\n drop type two_ints cascade;\n NOTICE:  drop cascades to type two_ints_range\n --\ndiff --git a/src/test/regress/sql/multirangetypes.sql b/src/test/regress/sql/multirangetypes.sql\nindex 41d552428..7d10ddcef 100644\n--- a/src/test/regress/sql/multirangetypes.sql\n+++ b/src/test/regress/sql/multirangetypes.sql\n@@ -815,6 +815,9 @@ select *, row_to_json(upper(t)) as u from\n   (values (two_ints_multirange(two_ints_range(row(1,2), row(3,4)))),\n           (two_ints_multirange(two_ints_range(row(5,6), row(7,8))))) v(t);\n \n+-- this must be rejected to avoid self-inclusion issues:\n+alter type two_ints add attribute c two_ints_multirange;\n+\n drop type two_ints cascade;\n \n --\n",
+  "oracle_command": "make -C src/test/regress check TESTS=multirangetypes",
+  "expected_tests": [
+    "multirangetypes"
+  ],
+  "failing_tests": [
+    "multirangetypes"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 1,
+  "oracle_diff_by_file": {
+    "multirangetypes": 1
+  }
+}

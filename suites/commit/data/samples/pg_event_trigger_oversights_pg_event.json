@@ -1,0 +1,36 @@
+{
+  "name": "pg_event_trigger_oversights_pg_event",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "a220e40d11063cf2e43bdfb5e1ca872fe201f37d",
+  "parent": "a399db8d5988902da3f7bf55b78fd3511020fc66",
+  "date": "2025-09-12",
+  "subject": "Fix oversights in pg_event_trigger_dropped_objects() fixes.",
+  "area": "event triggers, dropped object reports",
+  "licence": "PostgreSQL",
+  "goal": "Rows returned by pg_event_trigger_dropped_objects() contain inconsistent secondary fields for several object classes. Dropped schemas lack their object_name, default values can claim an object_name they do not have, and triggers or row-level security policies on temporary tables can be reported as non-temporary.\n\nCapture unfiltered sql_drop output while dropping ordinary and temporary schemas, tables, defaults, triggers and policies. A schema row must name the schema, a default-value row must not invent an object name, and objects owned by temporary tables must have is_temporary true while their permanent counterparts remain false. Object identity, address fields, filtering of other sessions' temporary objects and all unaffected object classes must stay stable.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/event_trigger.c",
+      "added": 86,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/event_trigger.sql",
+    "src/test/regress/expected/event_trigger.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "event_trigger"
+    ],
+    "command": "make -C src/test/regress check TESTS=event_trigger"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

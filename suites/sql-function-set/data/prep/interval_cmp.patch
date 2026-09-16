@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..387663f 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2580,10 +2580,8 @@ interval_ge(PG_FUNCTION_ARGS)
+ Datum
+ interval_cmp(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval1 = PG_GETARG_INTERVAL_P(0);
+-	Interval   *interval2 = PG_GETARG_INTERVAL_P(1);
+-
+-	PG_RETURN_INT32(interval_cmp_internal(interval1, interval2));
++	elog(ERROR, "interval_cmp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

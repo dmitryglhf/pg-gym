@@ -1,0 +1,18 @@
+{
+  "func": "date_mii",
+  "mode": "stub",
+  "patch": "prep/date_mii.patch",
+  "symbols": [
+    "date_mii"
+  ],
+  "units": {
+    "date_mii": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* Subtract a number of days from a date, giving a new date.\n */\nDatum\ndate_mii(PG_FUNCTION_ARGS)\n{\n\tDateADT\t\tdateVal = PG_GETARG_DATEADT(0);\n\tint32\t\tdays = PG_GETARG_INT32(1);\n\tDateADT\t\tresult;\n\n\tif (DATE_NOT_FINITE(dateVal))\n\t\tPG_RETURN_DATEADT(dateVal); /* can't change infinity */\n\n\tresult = dateVal - days;\n\n\t/* Check for integer overflow and out-of-allowed-range */\n\tif ((days >= 0 ? (result > dateVal) : (result < dateVal)) ||\n\t\t!IS_VALID_DATE(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"date out of range\")));\n\n\tPG_RETURN_DATEADT(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

@@ -1,0 +1,50 @@
+{
+  "func": "interval_out",
+  "mode": "stub",
+  "patch": "prep/interval_out.patch",
+  "symbols": [
+    "interval_out"
+  ],
+  "units": {
+    "interval_out": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* interval_out()\n * Convert a time span to external form.\n */\nDatum\ninterval_out(PG_FUNCTION_ARGS)\n{\n\tInterval   *span = PG_GETARG_INTERVAL_P(0);\n\tchar\t   *result;\n\tstruct pg_itm tt,\n\t\t\t   *itm = &tt;\n\tchar\t\tbuf[MAXDATELEN + 1];\n\n\tif (INTERVAL_NOT_FINITE(span))\n\t\tEncodeSpecialInterval(span, buf);\n\telse\n\t{\n\t\tinterval2itm(*span, itm);\n\t\tEncodeInterval(itm, IntervalStyle, buf);\n\t}\n\n\tresult = pstrdup(buf);\n\tPG_RETURN_CSTRING(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "alter_table",
+    "arrays",
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "create_view",
+    "fast_default",
+    "horology",
+    "interval",
+    "timestamp",
+    "timestamptz",
+    "timetz",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2656,
+  "oracle_diff_by_file": {
+    "timetz": 43,
+    "timestamp": 163,
+    "timestamptz": 165,
+    "interval": 985,
+    "horology": 1018,
+    "create_view": 71,
+    "arrays": 10,
+    "brin": 2,
+    "brin_bloom": 2,
+    "brin_multi": 34,
+    "window": 121,
+    "alter_table": 10,
+    "fast_default": 32
+  }
+}

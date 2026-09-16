@@ -1,0 +1,36 @@
+{
+  "name": "pg_partition_prune_issue_range_s",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "31f2acde53d2b8c289614dcf47d40cad8daf7750",
+  "parent": "41f1cd1d2636003749b3197cec057fdf974491f6",
+  "date": "2026-07-31",
+  "subject": "Fix issue with RANGE's DEFAULT partition pruning",
+  "area": "partition pruning, default range partitions",
+  "licence": "PostgreSQL",
+  "goal": "Pruning a RANGE-partitioned table with a default partition can omit the default when an IN list mixes values inside explicit ranges with values in the gaps outside them.\n\nWith explicit partitions `[0,10)` and `[10,20)` plus a default, `a IN (5,15)` must scan only the two explicit partitions; `a IN (20,21)` and `a IN (-1,20)` must scan only the default; and `a IS NOT NULL AND a IN (-1,5,15,20)` must scan all three. No partition capable of a match may be omitted, and no impossible partition should be retained. Other scalar-array pruning must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/partitioning/partprune.c",
+      "added": 2,
+      "deleted": 8
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/partition_prune.sql",
+    "src/test/regress/expected/partition_prune.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "partition_prune"
+    ],
+    "command": "make -C src/test/regress check TESTS=partition_prune"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

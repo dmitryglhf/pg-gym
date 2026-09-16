@@ -1,0 +1,36 @@
+{
+  "name": "pg_event_trigger_report_correct_is",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "c0c8ee23c8967053d99d5799fe5812d259ebbea1",
+  "parent": "591aeb5068ae580fec423bd142641585d12d9537",
+  "date": "2025-09-11",
+  "subject": "Report the correct is_temporary flag for column defaults.",
+  "area": "event triggers, dropped object reports",
+  "licence": "PostgreSQL",
+  "goal": "pg_event_trigger_dropped_objects() returns one row per object removed by the DROP that fired the trigger, and each row carries an is_temporary flag. For a column default the flag is always false, even when the column belongs to a temporary table.\n\nAn event trigger on sql_drop that prints every row it is given, with no filtering, shows it at once.\n\n    CREATE TEMP TABLE a_temp_tbl (f1 int primary key, f2 int default 42);\n    DROP TABLE a_temp_tbl;\n\nThe table, its row type, its array type, its constraint and its index all come back marked temporary. The default value for f2 does not.\n\nA column default has to report the temp-ness of the table that owns it. Reports for a non-temporary table must stay entirely non-temporary, the identity, name and argument fields of every reported object must be what they are now, and objects living in another session's temporary schema must still not be reported at all.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/event_trigger.c",
+      "added": 79,
+      "deleted": 32
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/event_trigger.sql",
+    "src/test/regress/expected/event_trigger.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "event_trigger"
+    ],
+    "command": "make -C src/test/regress check TESTS=event_trigger"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

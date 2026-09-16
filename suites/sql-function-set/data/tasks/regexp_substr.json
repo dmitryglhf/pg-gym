@@ -1,0 +1,47 @@
+{
+  "func": "regexp_substr",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract substring that matches regexp"
+    },
+    {
+      "arguments": "text text int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract substring that matches regexp"
+    },
+    {
+      "arguments": "text text int4 int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract substring that matches regexp"
+    },
+    {
+      "arguments": "text text int4 int4 text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract substring that matches regexp"
+    },
+    {
+      "arguments": "text text int4 int4 text int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract substring that matches regexp"
+    }
+  ],
+  "description": "Returns the substring within string that matches the N'th occurrence of the POSIX regular expression pattern, or NULL if there is no such match.",
+  "examples": [
+    "regexp_substr('ABCDEF', 'c(.)(..)', 1, 1, 'i') -> CDEF",
+    "regexp_substr('ABCDEF', 'c(.)(..)', 1, 1, 'i', 2) -> EF"
+  ],
+  "mode": "stub",
+  "category": "pattern"
+}

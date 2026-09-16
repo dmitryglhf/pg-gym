@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..6d05410 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2390,9 +2390,8 @@ timetztypmodin(PG_FUNCTION_ARGS)
+ Datum
+ timetztypmodout(PG_FUNCTION_ARGS)
+ {
+-	int32		typmod = PG_GETARG_INT32(0);
+-
+-	PG_RETURN_CSTRING(anytime_typmodout(true, typmod));
++	elog(ERROR, "timetztypmodout is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

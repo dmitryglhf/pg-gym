@@ -1,0 +1,10 @@
+{
+  "name": "pg_create_table_like_attnum_remapping_generateclonedextstatsstmt",
+  "area": "CREATE TABLE LIKE, extended statistics",
+  "goal": "CREATE TABLE ... (LIKE source INCLUDING STATISTICS) copies the source table's extended statistics onto the new table. The columns an extended statistics object covers are recorded as attribute numbers, and those numbers belong to the source. The new table numbers its columns from one with no gaps, so if the source has dropped columns the two numberings disagree and the copy is made from the wrong numbers.\n\n    CREATE TABLE ctl_stats3_parent (a int, b int, c int);\n    ALTER TABLE ctl_stats3_parent DROP COLUMN b;\n    CREATE STATISTICS ctl_stats3_stat ON a, c FROM ctl_stats3_parent;\n    CREATE TABLE ctl_stats3_child (LIKE ctl_stats3_parent INCLUDING STATISTICS);\n\nHere the command fails with a cache lookup error, because the stale number matches no column of the new table. With one more column in the source it is worse than that, since the stale number does match a column and the copied statistics object silently covers the wrong one.\n\nThe cloned statistics object has to cover the same columns, by name, as the one it was cloned from. Cloning from a source with no dropped columns must be unaffected, and so must every other INCLUDING option.",
+  "func": "pg_create_table_like_attnum_remapping_generateclonedextstatsstmt",
+  "graded_by": [
+    "src/test/regress/sql/create_table_like.sql",
+    "src/test/regress/expected/create_table_like.out"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "func": "ts_filter",
+  "variants": [
+    {
+      "arguments": "tsvector _char",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "delete lexemes that do not have one of the given weights"
+    }
+  ],
+  "description": "Selects only elements with the given weights from the vector.",
+  "examples": [
+    "ts_filter('fat:2,4 cat:3b,7c rat:5A'::tsvector, '{a,b}') -> 'cat':3B 'rat':5A"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

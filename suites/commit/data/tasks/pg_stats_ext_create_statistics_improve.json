@@ -1,0 +1,14 @@
+{
+  "name": "pg_stats_ext_create_statistics_improve",
+  "area": "CREATE STATISTICS, diagnostics",
+  "goal": "CREATE STATISTICS on a query-like FROM item reports a generic or misleading error instead of explaining which relation kinds are supported.\n\nTry VALUES, a join, subquery, TABLESAMPLE, XMLTABLE, JSON_TABLE and a table function as the source. Each must report `cannot create statistics on the specified relation` with detail `CREATE STATISTICS only supports tables, foreign tables and materialized views.` The wording is part of the contract. Creating statistics on those supported relation kinds, and more specific errors that occur after a supported target is recognized, must remain unchanged.",
+  "contract": [
+    "CREATE STATISTICS only supports tables, foreign tables and materialized views.",
+    "cannot create statistics on the specified relation"
+  ],
+  "func": "pg_stats_ext_create_statistics_improve",
+  "graded_by": [
+    "src/test/regress/sql/stats_ext.sql",
+    "src/test/regress/expected/stats_ext.out"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "func": "timestamptz_mi_interval",
+  "mode": "stub",
+  "patch": "prep/timestamptz_mi_interval.patch",
+  "symbols": [
+    "timestamptz_mi_interval"
+  ],
+  "units": {
+    "timestamptz_mi_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamptz_mi_interval(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\n\tPG_RETURN_TIMESTAMP(timestamptz_mi_interval_internal(timestamp, span, NULL));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

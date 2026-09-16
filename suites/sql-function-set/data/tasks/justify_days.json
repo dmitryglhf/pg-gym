@@ -1,0 +1,17 @@
+{
+  "func": "justify_days",
+  "variants": [
+    {
+      "arguments": "interval",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "promote groups of 30 days to numbers of months"
+    }
+  ],
+  "description": "Adjust interval, converting 30-day time periods to months",
+  "examples": [
+    "justify_days(interval '1 year 65 days') -> 1 year 2 mons 5 days"
+  ],
+  "mode": "stub"
+}

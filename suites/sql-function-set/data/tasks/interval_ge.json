@@ -1,0 +1,15 @@
+{
+  "func": "interval_ge",
+  "variants": [
+    {
+      "arguments": "interval interval",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

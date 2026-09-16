@@ -1,0 +1,97 @@
+diff --git a/src/backend/utils/adt/tsvector_op.c b/src/backend/utils/adt/tsvector_op.c
+index 8fe02a5..e5b61f3 100644
+--- a/src/backend/utils/adt/tsvector_op.c
++++ b/src/backend/utils/adt/tsvector_op.c
+@@ -738,90 +738,11 @@ tsvector_to_array(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(array);
+ }
+ 
+-/*
+- * Build tsvector from array of lexemes.
+- */
+ Datum
+ array_to_tsvector(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *v = PG_GETARG_ARRAYTYPE_P(0);
+-	TSVector	tsout;
+-	Datum	   *dlexemes;
+-	WordEntry  *arrout;
+-	bool	   *nulls;
+-	int			nitems,
+-				i,
+-				tslen,
+-				datalen = 0;
+-	char	   *cur;
+-
+-	deconstruct_array_builtin(v, TEXTOID, &dlexemes, &nulls, &nitems);
+-
+-	/*
+-	 * Reject nulls and zero-length or over-length strings (maybe we should
+-	 * just ignore them, instead?)
+-	 */
+-	for (i = 0; i < nitems; i++)
+-	{
+-		int			toklen;
+-
+-		if (nulls[i])
+-			ereport(ERROR,
+-					(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+-					 errmsg("lexeme array may not contain nulls")));
+-
+-		toklen = VARSIZE(dlexemes[i]) - VARHDRSZ;
+-		if (toklen == 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_ZERO_LENGTH_CHARACTER_STRING),
+-					 errmsg("lexeme array may not contain empty strings")));
+-		if (toklen > MAXSTRLEN)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+-					 errmsg("word is too long (%d bytes, max %d bytes)",
+-							toklen,
+-							MAXSTRLEN)));
+-	}
+-
+-	/* Sort and de-dup, because this is required for a valid tsvector. */
+-	if (nitems > 1)
+-	{
+-		qsort(dlexemes, nitems, sizeof(Datum), compare_text_lexemes);
+-		nitems = qunique(dlexemes, nitems, sizeof(Datum),
+-						 compare_text_lexemes);
+-	}
+-
+-	/* Calculate space needed for surviving lexemes. */
+-	for (i = 0; i < nitems; i++)
+-		datalen += VARSIZE(dlexemes[i]) - VARHDRSZ;
+-	if (datalen > MAXSTRPOS)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+-				 errmsg("string is too long for tsvector (%zu bytes, max %zu bytes)",
+-						(size_t) datalen, (size_t) MAXSTRPOS)));
+-	tslen = CALCDATASIZE(nitems, datalen);
+-
+-	/* Allocate and fill tsvector. */
+-	tsout = (TSVector) palloc0(tslen);
+-	SET_VARSIZE(tsout, tslen);
+-	tsout->size = nitems;
+-
+-	arrout = ARRPTR(tsout);
+-	cur = STRPTR(tsout);
+-	for (i = 0; i < nitems; i++)
+-	{
+-		char	   *lex = VARDATA(dlexemes[i]);
+-		int			lex_len = VARSIZE(dlexemes[i]) - VARHDRSZ;
+-
+-		memcpy(cur, lex, lex_len);
+-		arrout[i].haspos = 0;
+-		arrout[i].len = lex_len;
+-		arrout[i].pos = cur - STRPTR(tsout);
+-		cur += lex_len;
+-	}
+-
+-	PG_FREE_IF_COPY(v, 0);
+-	PG_RETURN_POINTER(tsout);
++	elog(ERROR, "array_to_tsvector is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,90 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..fc2b72b 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2789,83 +2789,8 @@ timestamp_larger(PG_FUNCTION_ARGS)
+ Datum
+ timestamp_mi(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	dt1 = PG_GETARG_TIMESTAMP(0);
+-	Timestamp	dt2 = PG_GETARG_TIMESTAMP(1);
+-	Interval   *result;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	/*
+-	 * Handle infinities.
+-	 *
+-	 * We treat anything that amounts to "infinity - infinity" as an error,
+-	 * since the interval type has nothing equivalent to NaN.
+-	 */
+-	if (TIMESTAMP_NOT_FINITE(dt1) || TIMESTAMP_NOT_FINITE(dt2))
+-	{
+-		if (TIMESTAMP_IS_NOBEGIN(dt1))
+-		{
+-			if (TIMESTAMP_IS_NOBEGIN(dt2))
+-				ereport(ERROR,
+-						(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-						 errmsg("interval out of range")));
+-			else
+-				INTERVAL_NOBEGIN(result);
+-		}
+-		else if (TIMESTAMP_IS_NOEND(dt1))
+-		{
+-			if (TIMESTAMP_IS_NOEND(dt2))
+-				ereport(ERROR,
+-						(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-						 errmsg("interval out of range")));
+-			else
+-				INTERVAL_NOEND(result);
+-		}
+-		else if (TIMESTAMP_IS_NOBEGIN(dt2))
+-			INTERVAL_NOEND(result);
+-		else					/* TIMESTAMP_IS_NOEND(dt2) */
+-			INTERVAL_NOBEGIN(result);
+-
+-		PG_RETURN_INTERVAL_P(result);
+-	}
+-
+-	if (unlikely(pg_sub_s64_overflow(dt1, dt2, &result->time)))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("interval out of range")));
+-
+-	result->month = 0;
+-	result->day = 0;
+-
+-	/*----------
+-	 *	This is wrong, but removing it breaks a lot of regression tests.
+-	 *	For example:
+-	 *
+-	 *	test=> SET timezone = 'EST5EDT';
+-	 *	test=> SELECT
+-	 *	test-> ('2005-10-30 13:22:00-05'::timestamptz -
+-	 *	test(>	'2005-10-29 13:22:00-04'::timestamptz);
+-	 *	?column?
+-	 *	----------------
+-	 *	 1 day 01:00:00
+-	 *	 (1 row)
+-	 *
+-	 *	so adding that to the first timestamp gets:
+-	 *
+-	 *	 test=> SELECT
+-	 *	 test-> ('2005-10-29 13:22:00-04'::timestamptz +
+-	 *	 test(> ('2005-10-30 13:22:00-05'::timestamptz -
+-	 *	 test(>  '2005-10-29 13:22:00-04'::timestamptz)) at time zone 'EST';
+-	 *		timezone
+-	 *	--------------------
+-	 *	2005-10-30 14:22:00
+-	 *	(1 row)
+-	 *----------
+-	 */
+-	result = DatumGetIntervalP(DirectFunctionCall1(interval_justify_hours,
+-												   IntervalPGetDatum(result)));
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "timestamp_mi is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,32 @@
+diff --git a/src/backend/utils/adt/numeric.c b/src/backend/utils/adt/numeric.c
+index 14e8895..8162399 100644
+--- a/src/backend/utils/adt/numeric.c
++++ b/src/backend/utils/adt/numeric.c
+@@ -4222,25 +4222,11 @@ numeric_min_scale(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT32(min_scale);
+ }
+ 
+-/*
+- * Reduce scale of numeric value to represent supplied value without loss.
+- */
+ Datum
+ numeric_trim_scale(PG_FUNCTION_ARGS)
+ {
+-	Numeric		num = PG_GETARG_NUMERIC(0);
+-	Numeric		res;
+-	NumericVar	result;
+-
+-	if (NUMERIC_IS_SPECIAL(num))
+-		PG_RETURN_NUMERIC(duplicate_numeric(num));
+-
+-	init_var_from_num(num, &result);
+-	result.dscale = get_min_scale(&result);
+-	res = make_result(&result);
+-	free_var(&result);
+-
+-	PG_RETURN_NUMERIC(res);
++	elog(ERROR, "numeric_trim_scale is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

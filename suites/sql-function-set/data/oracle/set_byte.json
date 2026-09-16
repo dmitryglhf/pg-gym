@@ -1,0 +1,27 @@
+{
+  "func": "set_byte",
+  "mode": "stub",
+  "patch": "prep/set_byte.patch",
+  "symbols": [
+    "byteaSetByte"
+  ],
+  "units": {
+    "byteaSetByte": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*-------------------------------------------------------------\n * byteaSetByte\n *\n * Given an instance of type 'bytea' creates a new one with\n * the Nth byte set to the given value.\n *\n *-------------------------------------------------------------\n */\nDatum\nbyteaSetByte(PG_FUNCTION_ARGS)\n{\n\tbytea\t   *res = PG_GETARG_BYTEA_P_COPY(0);\n\tint32\t\tn = PG_GETARG_INT32(1);\n\tint32\t\tnewByte = PG_GETARG_INT32(2);\n\tint\t\t\tlen;\n\n\tlen = VARSIZE(res) - VARHDRSZ;\n\n\tif (n < 0 || n >= len)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),\n\t\t\t\t errmsg(\"index %d out of valid range, 0..%d\",\n\t\t\t\t\t\tn, len - 1)));\n\n\t/*\n\t * Now set the byte.\n\t */\n\t((unsigned char *) VARDATA(res))[n] = newByte;\n\n\tPG_RETURN_BYTEA_P(res);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "encoding",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 7,
+  "oracle_diff_by_file": {
+    "strings": 7
+  }
+}

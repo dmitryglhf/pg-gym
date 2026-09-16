@@ -1,0 +1,27 @@
+{
+  "func": "array_to_tsvector",
+  "mode": "stub",
+  "patch": "prep/array_to_tsvector.patch",
+  "symbols": [
+    "array_to_tsvector"
+  ],
+  "units": {
+    "array_to_tsvector": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "/*\n * Build tsvector from array of lexemes.\n */\nDatum\narray_to_tsvector(PG_FUNCTION_ARGS)\n{\n\tArrayType  *v = PG_GETARG_ARRAYTYPE_P(0);\n\tTSVector\ttsout;\n\tDatum\t   *dlexemes;\n\tWordEntry  *arrout;\n\tbool\t   *nulls;\n\tint\t\t\tnitems,\n\t\t\t\ti,\n\t\t\t\ttslen,\n\t\t\t\tdatalen = 0;\n\tchar\t   *cur;\n\n\tdeconstruct_array_builtin(v, TEXTOID, &dlexemes, &nulls, &nitems);\n\n\t/*\n\t * Reject nulls and zero-length or over-length strings (maybe we should\n\t * just ignore them, instead?)\n\t */\n\tfor (i = 0; i < nitems; i++)\n\t{\n\t\tint\t\t\ttoklen;\n\n\t\tif (nulls[i])\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),\n\t\t\t\t\t errmsg(\"lexeme array may not contain nulls\")));\n\n\t\ttoklen = VARSIZE(dlexemes[i]) - VARHDRSZ;\n\t\tif (toklen == 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_ZERO_LENGTH_CHARACTER_STRING),\n\t\t\t\t\t errmsg(\"lexeme array may not contain empty strings\")));\n\t\tif (toklen > MAXSTRLEN)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),\n\t\t\t\t\t errmsg(\"word is too long (%d bytes, max %d bytes)\",\n\t\t\t\t\t\t\ttoklen,\n\t\t\t\t\t\t\tMAXSTRLEN)));\n\t}\n\n\t/* Sort and de-dup, because this is required for a valid tsvector. */\n\tif (nitems > 1)\n\t{\n\t\tqsort(dlexemes, nitems, sizeof(Datum), compare_text_lexemes);\n\t\tnitems = qunique(dlexemes, nitems, sizeof(Datum),\n\t\t\t\t\t\t compare_text_lexemes);\n\t}\n\n\t/* Calculate space needed for surviving lexemes. */\n\tfor (i = 0; i < nitems; i++)\n\t\tdatalen += VARSIZE(dlexemes[i]) - VARHDRSZ;\n\tif (datalen > MAXSTRPOS)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),\n\t\t\t\t errmsg(\"string is too long for tsvector (%zu bytes, max %zu bytes)\",\n\t\t\t\t\t\t(size_t) datalen, (size_t) MAXSTRPOS)));\n\ttslen = CALCDATASIZE(nitems, datalen);\n\n\t/* Allocate and fill tsvector. */\n\ttsout = (TSVector) palloc0(tslen);\n\tSET_VARSIZE(tsout, tslen);\n\ttsout->size = nitems;\n\n\tarrout = ARRPTR(tsout);\n\tcur = STRPTR(tsout);\n\tfor (i = 0; i < nitems; i++)\n\t{\n\t\tchar\t   *lex = VARDATA(dlexemes[i]);\n\t\tint\t\t\tlex_len = VARSIZE(dlexemes[i]) - VARHDRSZ;\n\n\t\tmemcpy(cur, lex, lex_len);\n\t\tarrout[i].haspos = 0;\n\t\tarrout[i].len = lex_len;\n\t\tarrout[i].pos = cur - STRPTR(tsout);\n\t\tcur += lex_len;\n\t}\n\n\tPG_FREE_IF_COPY(v, 0);\n\tPG_RETURN_POINTER(tsout);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "tstypes"
+  ],
+  "category": "textsearch",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 14,
+  "oracle_diff_by_file": {
+    "tstypes": 14
+  }
+}

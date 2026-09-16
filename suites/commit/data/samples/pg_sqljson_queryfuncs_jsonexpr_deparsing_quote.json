@@ -1,0 +1,36 @@
+{
+  "name": "pg_sqljson_queryfuncs_jsonexpr_deparsing_quote",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "d037cc2af14ae59f0d1d0cfae826a2c7b0aa1a37",
+  "parent": "61b12135f5b71df3721e8f13eab812b38c0de11f",
+  "date": "2025-01-12",
+  "subject": "Fix JsonExpr deparsing to quote variable names in the PASSING clause.",
+  "area": "SQL/JSON, PASSING deparsing",
+  "licence": "PostgreSQL",
+  "goal": "Deparsing a SQL/JSON expression can omit required quoting around variable names in its PASSING clause. A stored expression using a case-sensitive name or a name colliding with a type keyword then changes meaning when printed and reparsed.\n\nCreate a constraint or view containing JSON_EXISTS with variables such as `AS \"int\"`, `AS \"TXT\"` and an ordinary `AS arr`, then inspect and replay its definition. Required quotes and case must be preserved, while names that are safe unquoted may remain unquoted. JSON_QUERY must continue to distinguish `$Xyz` from `$\"Xyz\"` according to the declared PASSING name.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/ruleutils.c",
+      "added": 1,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/sqljson_queryfuncs.sql",
+    "src/test/regress/expected/sqljson_queryfuncs.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "sqljson_queryfuncs"
+    ],
+    "command": "make -C src/test/regress check TESTS=sqljson_queryfuncs"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

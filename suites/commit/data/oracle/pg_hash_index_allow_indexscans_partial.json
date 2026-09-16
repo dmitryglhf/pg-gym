@@ -1,0 +1,27 @@
+{
+  "func": "pg_hash_index_allow_indexscans_partial",
+  "sha": "e79b2766216ab998080725323bcb4f4e87d639cc",
+  "parent": "d7977668eec65363012797302b492adff1578274",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_hash_index_allow_indexscans_partial.patch",
+  "test_files": [
+    "src/test/regress/sql/hash_index.sql",
+    "src/test/regress/expected/hash_index.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/path/indxpath.c b/src/backend/optimizer/path/indxpath.c\nindex c0fcc7d7..534b1d0c 100644\n--- a/src/backend/optimizer/path/indxpath.c\n+++ b/src/backend/optimizer/path/indxpath.c\n@@ -3353,6 +3353,16 @@ check_index_predicates(PlannerInfo *root, RelOptInfo *rel)\n \t\tif (is_target_rel)\n \t\t\tcontinue;\n \n+\t\t/*\n+\t\t * If index is !amoptionalkey, also leave indrestrictinfo as set\n+\t\t * above.  Otherwise we risk removing all quals for the first index\n+\t\t * key and then not being able to generate an indexscan at all.  It\n+\t\t * would be better to be more selective, but we've not yet identified\n+\t\t * which if any of the quals match the first index key.\n+\t\t */\n+\t\tif (!index->amoptionalkey)\n+\t\t\tcontinue;\n+\n \t\t/* Else compute indrestrictinfo as the non-implied quals */\n \t\tindex->indrestrictinfo = NIL;\n \t\tforeach(lcr, rel->baserestrictinfo)\n",
+  "test": "diff --git a/src/test/regress/expected/hash_index.out b/src/test/regress/expected/hash_index.out\nindex 0d4bdb2a..04035400 100644\n--- a/src/test/regress/expected/hash_index.out\n+++ b/src/test/regress/expected/hash_index.out\n@@ -40,6 +40,8 @@ CREATE INDEX hash_name_index ON hash_name_heap USING hash (random name_ops);\n CREATE INDEX hash_txt_index ON hash_txt_heap USING hash (random text_ops);\n CREATE INDEX hash_f8_index ON hash_f8_heap USING hash (random float8_ops)\n   WITH (fillfactor=60);\n+CREATE INDEX hash_i4_partial_index ON hash_i4_heap USING hash (seqno)\n+  WHERE seqno = 9999;\n --\n -- Also try building functional, expressional, and partial indexes on\n -- tables that already contain data.\n@@ -131,6 +133,25 @@ SELECT * FROM hash_f8_heap\n -------+--------\n (0 rows)\n \n+--\n+-- partial hash index\n+--\n+EXPLAIN (COSTS OFF)\n+SELECT * FROM hash_i4_heap\n+   WHERE seqno = 9999;\n+                       QUERY PLAN                       \n+--------------------------------------------------------\n+ Index Scan using hash_i4_partial_index on hash_i4_heap\n+   Index Cond: (seqno = 9999)\n+(2 rows)\n+\n+SELECT * FROM hash_i4_heap\n+   WHERE seqno = 9999;\n+ seqno |   random   \n+-------+------------\n+  9999 | 1227676208\n+(1 row)\n+\n --\n -- hash index\n -- grep '^90[^0-9]' hashovfl.data\ndiff --git a/src/test/regress/sql/hash_index.sql b/src/test/regress/sql/hash_index.sql\nindex 219da829..60571f6c 100644\n--- a/src/test/regress/sql/hash_index.sql\n+++ b/src/test/regress/sql/hash_index.sql\n@@ -53,6 +53,9 @@ CREATE INDEX hash_txt_index ON hash_txt_heap USING hash (random text_ops);\n CREATE INDEX hash_f8_index ON hash_f8_heap USING hash (random float8_ops)\n   WITH (fillfactor=60);\n \n+CREATE INDEX hash_i4_partial_index ON hash_i4_heap USING hash (seqno)\n+  WHERE seqno = 9999;\n+\n --\n -- Also try building functional, expressional, and partial indexes on\n -- tables that already contain data.\n@@ -117,6 +120,16 @@ SELECT * FROM hash_f8_heap\n SELECT * FROM hash_f8_heap\n    WHERE hash_f8_heap.random = '88888888'::float8;\n \n+--\n+-- partial hash index\n+--\n+EXPLAIN (COSTS OFF)\n+SELECT * FROM hash_i4_heap\n+   WHERE seqno = 9999;\n+\n+SELECT * FROM hash_i4_heap\n+   WHERE seqno = 9999;\n+\n --\n -- hash index\n -- grep '^90[^0-9]' hashovfl.data\n",
+  "oracle_command": "make -C src/test/regress check TESTS=hash_index",
+  "expected_tests": [
+    "hash_index"
+  ],
+  "failing_tests": [
+    "hash_index"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 7,
+  "oracle_diff_by_file": {
+    "hash_index": 7
+  }
+}

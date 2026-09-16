@@ -1,0 +1,10 @@
+{
+  "name": "pg_join_ignore_nullingrels_looking",
+  "area": "planner, extended statistics across outer joins",
+  "goal": "Estimating a grouped outer-join query can count nullability annotations as though they made separate expressions, causing expression statistics to be matched inconsistently. Planning may miss the applicable extended statistics or even report a corrupt multivariate-statistics entry.\n\nCreate multivariate statistics on expressions over two columns, then group a left join that exposes both a nullable column and an expression such as coalesce over it. EXPLAIN must succeed and produce stable, sensible estimates without treating logically identical statistics expressions as duplicates. Estimates for inner joins and expressions whose nullability genuinely differs must remain unchanged.",
+  "func": "pg_join_ignore_nullingrels_looking",
+  "graded_by": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ]
+}

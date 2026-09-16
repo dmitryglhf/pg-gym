@@ -1,0 +1,36 @@
+{
+  "func": "array_fill",
+  "mode": "stub",
+  "patch": "prep/array_fill.patch",
+  "symbols": [
+    "array_fill",
+    "array_fill_with_lower_bounds"
+  ],
+  "units": {
+    "array_fill": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * array_fill\n *\t\tCreate and fill array with default lower bounds.\n */\nDatum\narray_fill(PG_FUNCTION_ARGS)\n{\n\tArrayType  *dims;\n\tArrayType  *result;\n\tOid\t\t\telmtype;\n\tDatum\t\tvalue;\n\tbool\t\tisnull;\n\n\tif (PG_ARGISNULL(1))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),\n\t\t\t\t errmsg(\"dimension array or low bound array cannot be null\")));\n\n\tdims = PG_GETARG_ARRAYTYPE_P(1);\n\n\tif (!PG_ARGISNULL(0))\n\t{\n\t\tvalue = PG_GETARG_DATUM(0);\n\t\tisnull = false;\n\t}\n\telse\n\t{\n\t\tvalue = 0;\n\t\tisnull = true;\n\t}\n\n\telmtype = get_fn_expr_argtype(fcinfo->flinfo, 0);\n\tif (!OidIsValid(elmtype))\n\t\telog(ERROR, \"could not determine data type of input\");\n\n\tresult = array_fill_internal(dims, NULL, value, isnull, elmtype, fcinfo);\n\tPG_RETURN_ARRAYTYPE_P(result);\n}\n\n"
+    },
+    "array_fill_with_lower_bounds": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * array_fill_with_lower_bounds\n *\t\tCreate and fill array with defined lower bounds.\n */\nDatum\narray_fill_with_lower_bounds(PG_FUNCTION_ARGS)\n{\n\tArrayType  *dims;\n\tArrayType  *lbs;\n\tArrayType  *result;\n\tOid\t\t\telmtype;\n\tDatum\t\tvalue;\n\tbool\t\tisnull;\n\n\tif (PG_ARGISNULL(1) || PG_ARGISNULL(2))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),\n\t\t\t\t errmsg(\"dimension array or low bound array cannot be null\")));\n\n\tdims = PG_GETARG_ARRAYTYPE_P(1);\n\tlbs = PG_GETARG_ARRAYTYPE_P(2);\n\n\tif (!PG_ARGISNULL(0))\n\t{\n\t\tvalue = PG_GETARG_DATUM(0);\n\t\tisnull = false;\n\t}\n\telse\n\t{\n\t\tvalue = 0;\n\t\tisnull = true;\n\t}\n\n\telmtype = get_fn_expr_argtype(fcinfo->flinfo, 0);\n\tif (!OidIsValid(elmtype))\n\t\telog(ERROR, \"could not determine data type of input\");\n\n\tresult = array_fill_internal(dims, lbs, value, isnull, elmtype, fcinfo);\n\tPG_RETURN_ARRAYTYPE_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "aggregates",
+    "arrays",
+    "database"
+  ],
+  "category": "array",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 78,
+  "oracle_diff_by_file": {
+    "database": 2,
+    "aggregates": 6,
+    "arrays": 70
+  }
+}

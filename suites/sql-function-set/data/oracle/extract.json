@@ -1,0 +1,67 @@
+{
+  "func": "extract",
+  "mode": "stub",
+  "patch": "prep/extract.patch",
+  "symbols": [
+    "extract_date",
+    "extract_interval",
+    "extract_time",
+    "extract_timestamp",
+    "extract_timestamptz",
+    "extract_timetz"
+  ],
+  "units": {
+    "extract_date": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* extract_date()\n * Extract specified field from date type.\n */\nDatum\nextract_date(PG_FUNCTION_ARGS)\n{\n\ttext\t   *units = PG_GETARG_TEXT_PP(0);\n\tDateADT\t\tdate = PG_GETARG_DATEADT(1);\n\tint64\t\tintresult;\n\tint\t\t\ttype,\n\t\t\t\tval;\n\tchar\t   *lowunits;\n\tint\t\t\tyear,\n\t\t\t\tmon,\n\t\t\t\tmday;\n\n\tlowunits = downcase_truncate_identifier(VARDATA_ANY(units),\n\t\t\t\t\t\t\t\t\t\t\tVARSIZE_ANY_EXHDR(units),\n\t\t\t\t\t\t\t\t\t\t\tfalse);\n\n\ttype = DecodeUnits(0, lowunits, &val);\n\tif (type == UNKNOWN_FIELD)\n\t\ttype = DecodeSpecial(0, lowunits, &val);\n\n\tif (DATE_NOT_FINITE(date) && (type == UNITS || type == RESERV))\n\t{\n\t\tswitch (val)\n\t\t{\n\t\t\t\t/* Oscillating units */\n\t\t\tcase DTK_DAY:\n\t\t\tcase DTK_MONTH:\n\t\t\tcase DTK_QUARTER:\n\t\t\tcase DTK_WEEK:\n\t\t\tcase DTK_DOW:\n\t\t\tcase DTK_ISODOW:\n\t\t\tcase DTK_DOY:\n\t\t\t\tPG_RETURN_NULL();\n\t\t\t\tbreak;\n\n\t\t\t\t/* Monotonically-increasing units */\n\t\t\tcase DTK_YEAR:\n\t\t\tcase DTK_DECADE:\n\t\t\tcase DTK_CENTURY:\n\t\t\tcase DTK_MILLENNIUM:\n\t\t\tcase DTK_JULIAN:\n\t\t\tcase DTK_ISOYEAR:\n\t\t\tcase DTK_EPOCH:\n\t\t\t\tif (DATE_IS_NOBEGIN(date))\n\t\t\t\t\tPG_RETURN_NUMERIC(DatumGetNumeric(DirectFunctionCall3(numeric_in,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  CStringGetDatum(\"-Infinity\"),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  ObjectIdGetDatum(InvalidOid),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  Int32GetDatum(-1))));\n\t\t\t\telse\n\t\t\t\t\tPG_RETURN_NUMERIC(DatumGetNumeric(DirectFunctionCall3(numeric_in,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  CStringGetDatum(\"Infinity\"),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  ObjectIdGetDatum(InvalidOid),\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  Int32GetDatum(-1))));\n\t\t\tdefault:\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t\t\t errmsg(\"unit \\\"%s\\\" not supported for type %s\",\n\t\t\t\t\t\t\t\tlowunits, format_type_be(DATEOID))));\n\t\t}\n\t}\n\telse if (type == UNITS)\n\t{\n\t\tj2date(date + POSTGRES_EPOCH_JDATE, &year, &mon, &mday);\n\n\t\tswitch (val)\n\t\t{\n\t\t\tcase DTK_DAY:\n\t\t\t\tintresult = mday;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_MONTH:\n\t\t\t\tintresult = mon;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_QUARTER:\n\t\t\t\tintresult = (mon - 1) / 3 + 1;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_WEEK:\n\t\t\t\tintresult = date2isoweek(year, mon, mday);\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_YEAR:\n\t\t\t\tif (year > 0)\n\t\t\t\t\tintresult = year;\n\t\t\t\telse\n\t\t\t\t\t/* there is no year 0, just 1 BC and 1 AD */\n\t\t\t\t\tintresult = year - 1;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_DECADE:\n\t\t\t\t/* see comments in timestamp_part */\n\t\t\t\tif (year >= 0)\n\t\t\t\t\tintresult = year / 10;\n\t\t\t\telse\n\t\t\t\t\tintresult = -((8 - (year - 1)) / 10);\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_CENTURY:\n\t\t\t\t/* see comments in timestamp_part */\n\t\t\t\tif (year > 0)\n\t\t\t\t\tintresult = (year + 99) / 100;\n\t\t\t\telse\n\t\t\t\t\tintresult = -((99 - (year - 1)) / 100);\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_MILLENNIUM:\n\t\t\t\t/* see comments in timestamp_part */\n\t\t\t\tif (year > 0)\n\t\t\t\t\tintresult = (year + 999) / 1000;\n\t\t\t\telse\n\t\t\t\t\tintresult = -((999 - (year - 1)) / 1000);\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_JULIAN:\n\t\t\t\tintresult = date + POSTGRES_EPOCH_JDATE;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_ISOYEAR:\n\t\t\t\tintresult = date2isoyear(year, mon, mday);\n\t\t\t\t/* Adjust BC years */\n\t\t\t\tif (intresult <= 0)\n\t\t\t\t\tintresult -= 1;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_DOW:\n\t\t\tcase DTK_ISODOW:\n\t\t\t\tintresult = j2day(date + POSTGRES_EPOCH_JDATE);\n\t\t\t\tif (val == DTK_ISODOW && intresult == 0)\n\t\t\t\t\tintresult = 7;\n\t\t\t\tbreak;\n\n\t\t\tcase DTK_DOY:\n\t\t\t\tintresult = date2j(year, mon, mday) - date2j(year, 1, 1) + 1;\n\t\t\t\tbreak;\n\n\t\t\tdefault:\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t\t\t errmsg(\"unit \\\"%s\\\" not supported for type %s\",\n\t\t\t\t\t\t\t\tlowunits, format_type_be(DATEOID))));\n\t\t\t\tintresult = 0;\n\t\t}\n\t}\n\telse if (type == RESERV)\n\t{\n\t\tswitch (val)\n\t\t{\n\t\t\tcase DTK_EPOCH:\n\t\t\t\tintresult = ((int64) date + POSTGRES_EPOCH_JDATE - UNIX_EPOCH_JDATE) * SECS_PER_DAY;\n\t\t\t\tbreak;\n\n\t\t\tdefault:\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t\t\t errmsg(\"unit \\\"%s\\\" not supported for type %s\",\n\t\t\t\t\t\t\t\tlowunits, format_type_be(DATEOID))));\n\t\t\t\tintresult = 0;\n\t\t}\n\t}\n\telse\n\t{\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"unit \\\"%s\\\" not recognized for type %s\",\n\t\t\t\t\t\tlowunits, format_type_be(DATEOID))));\n\t\tintresult = 0;\n\t}\n\n\tPG_RETURN_NUMERIC(int64_to_numeric(intresult));\n}\n\n"
+    },
+    "extract_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nextract_interval(PG_FUNCTION_ARGS)\n{\n\treturn interval_part_common(fcinfo, true);\n}\n\n"
+    },
+    "extract_time": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\nextract_time(PG_FUNCTION_ARGS)\n{\n\treturn time_part_common(fcinfo, true);\n}\n\n"
+    },
+    "extract_timestamp": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nextract_timestamp(PG_FUNCTION_ARGS)\n{\n\treturn timestamp_part_common(fcinfo, true);\n}\n\n"
+    },
+    "extract_timestamptz": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nextract_timestamptz(PG_FUNCTION_ARGS)\n{\n\treturn timestamptz_part_common(fcinfo, true);\n}\n\n"
+    },
+    "extract_timetz": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\nextract_timetz(PG_FUNCTION_ARGS)\n{\n\treturn timetz_part_common(fcinfo, true);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "date",
+    "interval",
+    "psql_crosstab",
+    "stats",
+    "time",
+    "timestamp",
+    "timestamptz",
+    "timetz",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 684,
+  "oracle_diff_by_file": {
+    "date": 323,
+    "time": 36,
+    "timetz": 51,
+    "timestamp": 79,
+    "timestamptz": 80,
+    "interval": 65,
+    "psql_crosstab": 30,
+    "window": 14,
+    "stats": 6
+  }
+}

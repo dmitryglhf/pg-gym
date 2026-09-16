@@ -1,0 +1,12 @@
+**
+!src/
+!src/**
+!suites/
+!suites/*/
+!suites/*/src/
+!suites/*/src/**
+suites/*/data/
+suites/*/data/**
+!deploy/
+!deploy/task/
+!deploy/task/Dockerfile.rl

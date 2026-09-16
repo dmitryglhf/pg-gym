@@ -1,0 +1,36 @@
+{
+  "name": "pg_stats_honor_passed_database",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "a4fefb3e0dc5451166ebef6adcc082a57ddba039",
+  "parent": "93ed18720105ebacfd2a2bdeb55bf33feaf2ec80",
+  "date": "2026-04-11",
+  "subject": "Honor passed-in database OIDs in pgstat_database.c",
+  "area": "cumulative statistics, shared relations",
+  "licence": "PostgreSQL",
+  "goal": "Resetting counters for a shared relation can update the reset timestamp for the current database instead of the special shared-object database entry.\n\nRecord `stats_reset` from pg_stat_database where datid is zero, reset counters for a shared catalog such as pg_shdescription twice, and wait for statistics to flush. The datid-zero timestamp must advance. Per-database relation resets must continue to affect their own database entry, and resetting one database or shared object must not alter unrelated counters.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/activity/pgstat_database.c",
+      "added": 3,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/stats.sql",
+    "src/test/regress/expected/stats.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "stats"
+    ],
+    "command": "make -C src/test/regress check TESTS=stats"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

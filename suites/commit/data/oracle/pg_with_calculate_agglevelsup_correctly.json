@@ -1,0 +1,27 @@
+{
+  "func": "pg_with_calculate_agglevelsup_correctly",
+  "sha": "e830896c16ee9ea2ba4eaa8a49b6bb3079505003",
+  "parent": "0fb06e8933312e67398af9728a8eb98cafe9e742",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_with_calculate_agglevelsup_correctly.patch",
+  "test_files": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ],
+  "reference": "diff --git a/src/backend/parser/parse_agg.c b/src/backend/parser/parse_agg.c\nindex be88909d..cf449efd 100644\n--- a/src/backend/parser/parse_agg.c\n+++ b/src/backend/parser/parse_agg.c\n@@ -786,6 +786,32 @@ check_agg_arguments_walker(Node *node,\n \t\t\t\t\t parser_errposition(context->pstate,\n \t\t\t\t\t\t\t\t\t\t((WindowFunc *) node)->location)));\n \t}\n+\n+\tif (IsA(node, RangeTblEntry))\n+\t{\n+\t\t/*\n+\t\t * CTE references act similarly to Vars of the CTE's level.  Without\n+\t\t * this we might conclude that the Agg can be evaluated above the CTE,\n+\t\t * leading to trouble.\n+\t\t */\n+\t\tRangeTblEntry *rte = (RangeTblEntry *) node;\n+\n+\t\tif (rte->rtekind == RTE_CTE)\n+\t\t{\n+\t\t\tint\t\t\tctelevelsup = rte->ctelevelsup;\n+\n+\t\t\t/* convert levelsup to frame of reference of original query */\n+\t\t\tctelevelsup -= context->sublevels_up;\n+\t\t\t/* ignore local CTEs of subqueries */\n+\t\t\tif (ctelevelsup >= 0)\n+\t\t\t{\n+\t\t\t\tif (context->min_varlevel < 0 ||\n+\t\t\t\t\tcontext->min_varlevel > ctelevelsup)\n+\t\t\t\t\tcontext->min_varlevel = ctelevelsup;\n+\t\t\t}\n+\t\t}\n+\t\treturn false;\t\t\t/* allow range_table_walker to continue */\n+\t}\n \tif (IsA(node, Query))\n \t{\n \t\t/* Recurse into subselects */\n@@ -795,7 +821,7 @@ check_agg_arguments_walker(Node *node,\n \t\tresult = query_tree_walker((Query *) node,\n \t\t\t\t\t\t\t\t   check_agg_arguments_walker,\n \t\t\t\t\t\t\t\t   (void *) context,\n-\t\t\t\t\t\t\t\t   0);\n+\t\t\t\t\t\t\t\t   QTW_EXAMINE_RTES_BEFORE);\n \t\tcontext->sublevels_up--;\n \t\treturn result;\n \t}\n",
+  "test": "diff --git a/src/test/regress/expected/with.out b/src/test/regress/expected/with.out\nindex 0a8b48d5..2c55fa12 100644\n--- a/src/test/regress/expected/with.out\n+++ b/src/test/regress/expected/with.out\n@@ -2276,6 +2276,40 @@ from int4_tbl;\n  -2147483647\n (5 rows)\n \n+--\n+-- test for bug #19055: interaction of WITH with aggregates\n+--\n+-- The reference to cte1 must determine the aggregate's level,\n+-- even though it contains no Vars referencing cte1\n+explain (verbose, costs off)\n+select f1, (with cte1(x,y) as (select 1,2)\n+            select count((select i4.f1 from cte1))) as ss\n+from int4_tbl i4;\n+                 QUERY PLAN                 \n+--------------------------------------------\n+ Seq Scan on public.int4_tbl i4\n+   Output: i4.f1, (SubPlan 2)\n+   SubPlan 2\n+     ->  Aggregate\n+           Output: count((InitPlan 1).col1)\n+           InitPlan 1\n+             ->  Result\n+                   Output: i4.f1\n+           ->  Result\n+(9 rows)\n+\n+select f1, (with cte1(x,y) as (select 1,2)\n+            select count((select i4.f1 from cte1))) as ss\n+from int4_tbl i4;\n+     f1      | ss \n+-------------+----\n+           0 |  1\n+      123456 |  1\n+     -123456 |  1\n+  2147483647 |  1\n+ -2147483647 |  1\n+(5 rows)\n+\n --\n -- test for nested-recursive-WITH bug\n --\ndiff --git a/src/test/regress/sql/with.sql b/src/test/regress/sql/with.sql\nindex 6d55c773..1a1dfa7b 100644\n--- a/src/test/regress/sql/with.sql\n+++ b/src/test/regress/sql/with.sql\n@@ -1083,6 +1083,20 @@ select ( with cte(foo) as ( values(f1) )\n           values((select foo from cte)) )\n from int4_tbl;\n \n+--\n+-- test for bug #19055: interaction of WITH with aggregates\n+--\n+-- The reference to cte1 must determine the aggregate's level,\n+-- even though it contains no Vars referencing cte1\n+explain (verbose, costs off)\n+select f1, (with cte1(x,y) as (select 1,2)\n+            select count((select i4.f1 from cte1))) as ss\n+from int4_tbl i4;\n+\n+select f1, (with cte1(x,y) as (select 1,2)\n+            select count((select i4.f1 from cte1))) as ss\n+from int4_tbl i4;\n+\n --\n -- test for nested-recursive-WITH bug\n --\n",
+  "oracle_command": "make -C src/test/regress check TESTS=with",
+  "expected_tests": [
+    "with"
+  ],
+  "failing_tests": [
+    "with"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 26,
+  "oracle_diff_by_file": {
+    "with": 26
+  }
+}

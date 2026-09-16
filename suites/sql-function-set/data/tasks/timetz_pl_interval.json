@@ -1,0 +1,15 @@
+{
+  "func": "timetz_pl_interval",
+  "variants": [
+    {
+      "arguments": "timetz interval",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

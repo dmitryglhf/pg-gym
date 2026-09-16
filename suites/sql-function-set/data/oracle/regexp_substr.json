@@ -1,0 +1,47 @@
+{
+  "func": "regexp_substr",
+  "mode": "stub",
+  "patch": "prep/regexp_substr.patch",
+  "symbols": [
+    "regexp_substr",
+    "regexp_substr_no_flags",
+    "regexp_substr_no_n",
+    "regexp_substr_no_start",
+    "regexp_substr_no_subexpr"
+  ],
+  "units": {
+    "regexp_substr": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/*\n * regexp_substr()\n *\t\tReturn the substring that matches a regular expression pattern\n */\nDatum\nregexp_substr(PG_FUNCTION_ARGS)\n{\n\ttext\t   *str = PG_GETARG_TEXT_PP(0);\n\ttext\t   *pattern = PG_GETARG_TEXT_PP(1);\n\tint\t\t\tstart = 1;\n\tint\t\t\tn = 1;\n\ttext\t   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(4);\n\tint\t\t\tsubexpr = 0;\n\tint\t\t\tso,\n\t\t\t\teo,\n\t\t\t\tpos;\n\tpg_re_flags re_flags;\n\tregexp_matches_ctx *matchctx;\n\n\t/* Collect optional parameters */\n\tif (PG_NARGS() > 2)\n\t{\n\t\tstart = PG_GETARG_INT32(2);\n\t\tif (start <= 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"start\", start)));\n\t}\n\tif (PG_NARGS() > 3)\n\t{\n\t\tn = PG_GETARG_INT32(3);\n\t\tif (n <= 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"n\", n)));\n\t}\n\tif (PG_NARGS() > 5)\n\t{\n\t\tsubexpr = PG_GETARG_INT32(5);\n\t\tif (subexpr < 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"subexpr\", subexpr)));\n\t}\n\n\t/* Determine options */\n\tparse_re_flags(&re_flags, flags);\n\t/* User mustn't specify 'g' */\n\tif (re_flags.glob)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t/* translator: %s is a SQL function name */\n\t\t\t\t errmsg(\"%s does not support the \\\"global\\\" option\",\n\t\t\t\t\t\t\"regexp_substr()\")));\n\t/* But we find all the matches anyway */\n\tre_flags.glob = true;\n\n\t/* Do the matching */\n\tmatchctx = setup_regexp_matches(str, pattern, &re_flags, start - 1,\n\t\t\t\t\t\t\t\t\tPG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t\t(subexpr > 0),\t/* need submatches? */\n\t\t\t\t\t\t\t\t\tfalse, false);\n\n\t/* When n exceeds matches return NULL (includes case of no matches) */\n\tif (n > matchctx->nmatches)\n\t\tPG_RETURN_NULL();\n\n\t/* When subexpr exceeds number of subexpressions return NULL */\n\tif (subexpr > matchctx->npatterns)\n\t\tPG_RETURN_NULL();\n\n\t/* Select the appropriate match position to return */\n\tpos = (n - 1) * matchctx->npatterns;\n\tif (subexpr > 0)\n\t\tpos += subexpr - 1;\n\tpos *= 2;\n\tso = matchctx->match_locs[pos];\n\teo = matchctx->match_locs[pos + 1];\n\n\tif (so < 0 || eo < 0)\n\t\tPG_RETURN_NULL();\t\t/* unidentifiable location */\n\n\tPG_RETURN_DATUM(DirectFunctionCall3(text_substr,\n\t\t\t\t\t\t\t\t\t\tPointerGetDatum(matchctx->orig_str),\n\t\t\t\t\t\t\t\t\t\tInt32GetDatum(so + 1),\n\t\t\t\t\t\t\t\t\t\tInt32GetDatum(eo - so)));\n}\n\n"
+    },
+    "regexp_substr_no_flags": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_substr_no_flags(PG_FUNCTION_ARGS)\n{\n\treturn regexp_substr(fcinfo);\n}\n\n"
+    },
+    "regexp_substr_no_n": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_substr_no_n(PG_FUNCTION_ARGS)\n{\n\treturn regexp_substr(fcinfo);\n}\n\n"
+    },
+    "regexp_substr_no_start": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_substr_no_start(PG_FUNCTION_ARGS)\n{\n\treturn regexp_substr(fcinfo);\n}\n\n"
+    },
+    "regexp_substr_no_subexpr": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\nregexp_substr_no_subexpr(PG_FUNCTION_ARGS)\n{\n\treturn regexp_substr(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "pattern",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 78,
+  "oracle_diff_by_file": {
+    "strings": 78
+  }
+}

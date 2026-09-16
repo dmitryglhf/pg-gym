@@ -1,0 +1,27 @@
+{
+  "func": "pg_limit_deparsing_fetch_first",
+  "sha": "54c05292b1ffc8d7ad9305d224225161e4d3d412",
+  "parent": "7318f241d29c0b90e0b8b7e39ebd1914f68fd37a",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_limit_deparsing_fetch_first.patch",
+  "test_files": [
+    "src/test/regress/sql/limit.sql",
+    "src/test/regress/expected/limit.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/ruleutils.c b/src/backend/utils/adt/ruleutils.c\nindex c6293b20c..d1139a268 100644\n--- a/src/backend/utils/adt/ruleutils.c\n+++ b/src/backend/utils/adt/ruleutils.c\n@@ -5752,9 +5752,19 @@ get_select_query_def(Query *query, deparse_context *context)\n \t{\n \t\tif (query->limitOption == LIMIT_OPTION_WITH_TIES)\n \t\t{\n+\t\t\t/*\n+\t\t\t * The limitCount arg is a c_expr, so it needs parens. Simple\n+\t\t\t * literals and function expressions would not need parens, but\n+\t\t\t * unfortunately it's hard to tell if the expression will be\n+\t\t\t * printed as a simple literal like 123 or as a typecast\n+\t\t\t * expression, like '-123'::int4. The grammar accepts the former\n+\t\t\t * without quoting, but not the latter.\n+\t\t\t */\n \t\t\tappendContextKeyword(context, \" FETCH FIRST \",\n \t\t\t\t\t\t\t\t -PRETTYINDENT_STD, PRETTYINDENT_STD, 0);\n+\t\t\tappendStringInfoChar(buf, '(');\n \t\t\tget_rule_expr(query->limitCount, context, false);\n+\t\t\tappendStringInfoChar(buf, ')');\n \t\t\tappendStringInfoString(buf, \" ROWS WITH TIES\");\n \t\t}\n \t\telse\n",
+  "test": "diff --git a/src/test/regress/expected/limit.out b/src/test/regress/expected/limit.out\nindex a2cd0f9f5..d45427ac0 100644\n--- a/src/test/regress/expected/limit.out\n+++ b/src/test/regress/expected/limit.out\n@@ -643,7 +643,7 @@ View definition:\n   WHERE thousand < 995\n   ORDER BY thousand\n  OFFSET 10\n- FETCH FIRST 5 ROWS WITH TIES;\n+ FETCH FIRST (5) ROWS WITH TIES;\n \n CREATE VIEW limit_thousand_v_2 AS SELECT thousand FROM onek WHERE thousand < 995\n \t\tORDER BY thousand OFFSET 10 FETCH FIRST 5 ROWS ONLY;\n@@ -675,15 +675,29 @@ View definition:\n    FROM onek\n   WHERE thousand < 995\n   ORDER BY thousand\n- FETCH FIRST (NULL::integer + 1) ROWS WITH TIES;\n+ FETCH FIRST ((NULL::integer + 1)) ROWS WITH TIES;\n \n CREATE VIEW limit_thousand_v_4 AS SELECT thousand FROM onek WHERE thousand < 995\n-\t\tORDER BY thousand FETCH FIRST NULL ROWS ONLY;\n+\t\tORDER BY thousand FETCH FIRST (5::bigint) ROWS WITH TIES;\n \\d+ limit_thousand_v_4\n                       View \"public.limit_thousand_v_4\"\n   Column  |  Type   | Collation | Nullable | Default | Storage | Description \n ----------+---------+-----------+----------+---------+---------+-------------\n  thousand | integer |           |          |         | plain   | \n+View definition:\n+ SELECT thousand\n+   FROM onek\n+  WHERE thousand < 995\n+  ORDER BY thousand\n+ FETCH FIRST (5::bigint) ROWS WITH TIES;\n+\n+CREATE VIEW limit_thousand_v_5 AS SELECT thousand FROM onek WHERE thousand < 995\n+\t\tORDER BY thousand FETCH FIRST NULL ROWS ONLY;\n+\\d+ limit_thousand_v_5\n+                      View \"public.limit_thousand_v_5\"\n+  Column  |  Type   | Collation | Nullable | Default | Storage | Description \n+----------+---------+-----------+----------+---------+---------+-------------\n+ thousand | integer |           |          |         | plain   | \n View definition:\n  SELECT thousand\n    FROM onek\ndiff --git a/src/test/regress/sql/limit.sql b/src/test/regress/sql/limit.sql\nindex 6f0cda987..603910fe6 100644\n--- a/src/test/regress/sql/limit.sql\n+++ b/src/test/regress/sql/limit.sql\n@@ -196,6 +196,9 @@ CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995\n \t\tORDER BY thousand FETCH FIRST (NULL+1) ROWS WITH TIES;\n \\d+ limit_thousand_v_3\n CREATE VIEW limit_thousand_v_4 AS SELECT thousand FROM onek WHERE thousand < 995\n-\t\tORDER BY thousand FETCH FIRST NULL ROWS ONLY;\n+\t\tORDER BY thousand FETCH FIRST (5::bigint) ROWS WITH TIES;\n \\d+ limit_thousand_v_4\n+CREATE VIEW limit_thousand_v_5 AS SELECT thousand FROM onek WHERE thousand < 995\n+\t\tORDER BY thousand FETCH FIRST NULL ROWS ONLY;\n+\\d+ limit_thousand_v_5\n -- leave these views\n",
+  "oracle_command": "make -C src/test/regress check TESTS=limit",
+  "expected_tests": [
+    "limit"
+  ],
+  "failing_tests": [
+    "limit"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 6,
+  "oracle_diff_by_file": {
+    "limit": 6
+  }
+}

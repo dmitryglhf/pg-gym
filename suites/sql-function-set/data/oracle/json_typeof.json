@@ -1,0 +1,27 @@
+{
+  "func": "json_typeof",
+  "mode": "stub",
+  "patch": "prep/json_typeof.patch",
+  "symbols": [
+    "json_typeof"
+  ],
+  "units": {
+    "json_typeof": {
+      "file": "src/backend/utils/adt/json.c",
+      "code": "/*\n * SQL function json_typeof(json) -> text\n *\n * Returns the type of the outermost JSON value as TEXT.  Possible types are\n * \"object\", \"array\", \"string\", \"number\", \"boolean\", and \"null\".\n *\n * Performs a single call to json_lex() to get the first token of the supplied\n * value.  This initial token uniquely determines the value's type.  As our\n * input must already have been validated by json_in() or json_recv(), the\n * initial token should never be JSON_TOKEN_OBJECT_END, JSON_TOKEN_ARRAY_END,\n * JSON_TOKEN_COLON, JSON_TOKEN_COMMA, or JSON_TOKEN_END.\n */\nDatum\njson_typeof(PG_FUNCTION_ARGS)\n{\n\ttext\t   *json = PG_GETARG_TEXT_PP(0);\n\tJsonLexContext lex;\n\tchar\t   *type;\n\tJsonParseErrorType result;\n\n\t/* Lex exactly one token from the input and check its type. */\n\tmakeJsonLexContext(&lex, json, false);\n\tresult = json_lex(&lex);\n\tif (result != JSON_SUCCESS)\n\t\tjson_errsave_error(result, &lex, NULL);\n\n\tswitch (lex.token_type)\n\t{\n\t\tcase JSON_TOKEN_OBJECT_START:\n\t\t\ttype = \"object\";\n\t\t\tbreak;\n\t\tcase JSON_TOKEN_ARRAY_START:\n\t\t\ttype = \"array\";\n\t\t\tbreak;\n\t\tcase JSON_TOKEN_STRING:\n\t\t\ttype = \"string\";\n\t\t\tbreak;\n\t\tcase JSON_TOKEN_NUMBER:\n\t\t\ttype = \"number\";\n\t\t\tbreak;\n\t\tcase JSON_TOKEN_TRUE:\n\t\tcase JSON_TOKEN_FALSE:\n\t\t\ttype = \"boolean\";\n\t\t\tbreak;\n\t\tcase JSON_TOKEN_NULL:\n\t\t\ttype = \"null\";\n\t\t\tbreak;\n\t\tdefault:\n\t\t\telog(ERROR, \"unexpected json token: %d\", lex.token_type);\n\t}\n\n\tPG_RETURN_TEXT_P(cstring_to_text(type));\n}\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "json"
+  ],
+  "category": "json",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 15,
+  "oracle_diff_by_file": {
+    "json": 15
+  }
+}

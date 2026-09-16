@@ -1,0 +1,19 @@
+diff --git a/src/backend/commands/user.c b/src/backend/commands/user.c
+index e204eb5e..c75cde2e 100644
+--- a/src/backend/commands/user.c
++++ b/src/backend/commands/user.c
+@@ -817,12 +817,12 @@ AlterRole(ParseState *pstate, AlterRoleStmt *stmt)
+ 							   "BYPASSRLS", "BYPASSRLS")));
+ 	}
+ 
+-	/* To add or drop members, you need ADMIN OPTION. */
++	/* To add members to a role, you need ADMIN OPTION. */
+ 	if (drolemembers && !is_admin_of_role(currentUserId, roleid))
+ 		ereport(ERROR,
+ 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+ 				 errmsg("permission denied to alter role"),
+-				 errdetail("Only roles with the %s option on role \"%s\" may add or drop members.",
++				 errdetail("Only roles with the %s option on role \"%s\" may add members.",
+ 						   "ADMIN", rolename)));
+ 
+ 	/* Convert validuntil to internal form */

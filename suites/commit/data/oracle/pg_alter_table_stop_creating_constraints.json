@@ -1,0 +1,27 @@
+{
+  "func": "pg_alter_table_stop_creating_constraints",
+  "sha": "ea06f97eeb335ca8dd70be5f8c11a32ec4f3eb12",
+  "parent": "f9993ac646b9db202a2aa3d18444e0971b63e21f",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_alter_table_stop_creating_constraints.patch",
+  "test_files": [
+    "src/test/regress/sql/alter_table.sql",
+    "src/test/regress/expected/alter_table.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c\nindex fb64730a..0cd63f4e 100644\n--- a/src/backend/commands/tablecmds.c\n+++ b/src/backend/commands/tablecmds.c\n@@ -19144,13 +19144,14 @@ ATExecDetachPartition(List **wqueue, AlteredTableInfo *tab, Relation rel,\n \tRelation\tpartRel;\n \tObjectAddress address;\n \tOid\t\t\tdefaultPartOid;\n+\tPartitionDesc partdesc;\n \n \t/*\n \t * We must lock the default partition, because detaching this partition\n \t * will change its partition constraint.\n \t */\n-\tdefaultPartOid =\n-\t\tget_default_oid_from_partdesc(RelationGetPartitionDesc(rel, true));\n+\tpartdesc = RelationGetPartitionDesc(rel, true);\n+\tdefaultPartOid = get_default_oid_from_partdesc(partdesc);\n \tif (OidIsValid(defaultPartOid))\n \t{\n \t\t/*\n@@ -19217,10 +19218,13 @@ ATExecDetachPartition(List **wqueue, AlteredTableInfo *tab, Relation rel,\n \t\tchar\t   *partrelname;\n \n \t\t/*\n-\t\t * Add a new constraint to the partition being detached, which\n-\t\t * supplants the partition constraint (unless there is one already).\n+\t\t * For strategies other than hash, add a constraint to the partition\n+\t\t * being detached which supplants the partition constraint. For hash\n+\t\t * we cannot do that, because the constraint would reference the\n+\t\t * partitioned table OID, possibly causing problems later.\n \t\t */\n-\t\tDetachAddConstraintIfNeeded(wqueue, partRel);\n+\t\tif (partdesc->boundinfo->strategy != PARTITION_STRATEGY_HASH)\n+\t\t\tDetachAddConstraintIfNeeded(wqueue, partRel);\n \n \t\t/*\n \t\t * We're almost done now; the only traces that remain are the\n",
+  "test": "diff --git a/src/test/regress/expected/alter_table.out b/src/test/regress/expected/alter_table.out\nindex dca27658..f53f00c4 100644\n--- a/src/test/regress/expected/alter_table.out\n+++ b/src/test/regress/expected/alter_table.out\n@@ -4378,6 +4378,14 @@ Check constraints:\n     \"part_rp100_a_check\" CHECK (a >= 123 AND a < 133 AND a IS NOT NULL)\n \n DROP TABLE range_parted2;\n+-- Test that hash partitions continue to work after they're concurrently\n+-- detached (bugs #18371, #19070)\n+CREATE TABLE hash_parted2 (a int) PARTITION BY HASH(a);\n+CREATE TABLE part_hp PARTITION OF hash_parted2 FOR VALUES WITH (MODULUS 2, REMAINDER 0);\n+ALTER TABLE hash_parted2 DETACH PARTITION part_hp CONCURRENTLY;\n+DROP TABLE hash_parted2;\n+INSERT INTO part_hp VALUES (1);\n+DROP TABLE part_hp;\n -- Check ALTER TABLE commands for partitioned tables and partitions\n -- cannot add/drop column to/from *only* the parent\n ALTER TABLE ONLY list_parted2 ADD COLUMN c int;\ndiff --git a/src/test/regress/sql/alter_table.sql b/src/test/regress/sql/alter_table.sql\nindex 7e5a6767..ab23d80f 100644\n--- a/src/test/regress/sql/alter_table.sql\n+++ b/src/test/regress/sql/alter_table.sql\n@@ -2799,6 +2799,15 @@ ALTER TABLE range_parted2 DETACH PARTITION part_rp100 CONCURRENTLY;\n \\d part_rp100\n DROP TABLE range_parted2;\n \n+-- Test that hash partitions continue to work after they're concurrently\n+-- detached (bugs #18371, #19070)\n+CREATE TABLE hash_parted2 (a int) PARTITION BY HASH(a);\n+CREATE TABLE part_hp PARTITION OF hash_parted2 FOR VALUES WITH (MODULUS 2, REMAINDER 0);\n+ALTER TABLE hash_parted2 DETACH PARTITION part_hp CONCURRENTLY;\n+DROP TABLE hash_parted2;\n+INSERT INTO part_hp VALUES (1);\n+DROP TABLE part_hp;\n+\n -- Check ALTER TABLE commands for partitioned tables and partitions\n \n -- cannot add/drop column to/from *only* the parent\n",
+  "oracle_command": "make -C src/test/regress check TESTS=alter_table",
+  "expected_tests": [
+    "alter_table"
+  ],
+  "failing_tests": [
+    "alter_table"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 1,
+  "oracle_diff_by_file": {
+    "alter_table": 1
+  }
+}

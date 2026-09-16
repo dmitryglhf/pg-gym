@@ -1,0 +1,40 @@
+{
+  "func": "mod",
+  "variants": [
+    {
+      "arguments": "int2 int2",
+      "returns": "int2",
+      "kind": "f",
+      "volatile": "i",
+      "description": "modulus"
+    },
+    {
+      "arguments": "int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "modulus"
+    },
+    {
+      "arguments": "int8 int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "modulus"
+    },
+    {
+      "arguments": "numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "modulus"
+    }
+  ],
+  "description": "Remainder of y/x; available for smallint, integer, bigint, and numeric\nModulo (remainder)",
+  "examples": [
+    "mod(9, 4) -> 1",
+    "mod(54, 32) -> 22"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

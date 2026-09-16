@@ -1,0 +1,17 @@
+{
+  "func": "justify_hours",
+  "variants": [
+    {
+      "arguments": "interval",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "promote groups of 24 hours to numbers of days"
+    }
+  ],
+  "description": "Adjust interval, converting 24-hour time periods to days",
+  "examples": [
+    "justify_hours(interval '50 hours 10 minutes') -> 2 days 02:10:00"
+  ],
+  "mode": "stub"
+}

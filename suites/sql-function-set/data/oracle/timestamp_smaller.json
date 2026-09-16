@@ -1,0 +1,20 @@
+{
+  "func": "timestamp_smaller",
+  "mode": "stub",
+  "patch": "prep/timestamp_smaller.patch",
+  "symbols": [
+    "timestamp_smaller"
+  ],
+  "units": {
+    "timestamp_smaller": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*----------------------------------------------------------\n *\t\"Arithmetic\" operators on date/times.\n *---------------------------------------------------------*/\n\nDatum\ntimestamp_smaller(PG_FUNCTION_ARGS)\n{\n\tTimestamp\tdt1 = PG_GETARG_TIMESTAMP(0);\n\tTimestamp\tdt2 = PG_GETARG_TIMESTAMP(1);\n\tTimestamp\tresult;\n\n\t/* use timestamp_cmp_internal to be sure this agrees with comparisons */\n\tif (timestamp_cmp_internal(dt1, dt2) < 0)\n\t\tresult = dt1;\n\telse\n\t\tresult = dt2;\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [],
+  "usable": false,
+  "verify_status": "no_coverage"
+}

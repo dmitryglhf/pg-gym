@@ -1,0 +1,18 @@
+{
+  "func": "interval_recv",
+  "mode": "stub",
+  "patch": "prep/interval_recv.patch",
+  "symbols": [
+    "interval_recv"
+  ],
+  "units": {
+    "interval_recv": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n *\t\tinterval_recv\t\t\t- converts external binary format to interval\n */\nDatum\ninterval_recv(PG_FUNCTION_ARGS)\n{\n\tStringInfo\tbuf = (StringInfo) PG_GETARG_POINTER(0);\n\n#ifdef NOT_USED\n\tOid\t\t\ttypelem = PG_GETARG_OID(1);\n#endif\n\tint32\t\ttypmod = PG_GETARG_INT32(2);\n\tInterval   *interval;\n\n\tinterval = (Interval *) palloc(sizeof(Interval));\n\n\tinterval->time = pq_getmsgint64(buf);\n\tinterval->day = pq_getmsgint(buf, sizeof(interval->day));\n\tinterval->month = pq_getmsgint(buf, sizeof(interval->month));\n\n\tAdjustIntervalForTypmod(interval, typmod, NULL);\n\n\tPG_RETURN_INTERVAL_P(interval);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

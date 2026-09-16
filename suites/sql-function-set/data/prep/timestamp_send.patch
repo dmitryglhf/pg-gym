@@ -1,0 +1,25 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..33931ae 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -284,18 +284,11 @@ timestamp_recv(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(timestamp);
+ }
+ 
+-/*
+- *		timestamp_send			- converts timestamp to binary format
+- */
+ Datum
+ timestamp_send(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(0);
+-	StringInfoData buf;
+-
+-	pq_begintypsend(&buf);
+-	pq_sendint64(&buf, timestamp);
+-	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
++	elog(ERROR, "timestamp_send is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

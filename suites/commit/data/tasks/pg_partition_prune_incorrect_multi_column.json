@@ -1,0 +1,10 @@
+{
+  "name": "pg_partition_prune_incorrect_multi_column",
+  "area": "partition pruning, multicolumn range keys",
+  "goal": "Range partition pruning can skip or retain the wrong partitions when a condition constrains only a prefix of a multicolumn partition key.\n\nFor a table partitioned by RANGE `(a,b)`, a condition such as `a <= 1` must retain every partition whose bounds can contain that prefix, including the default partition, while pruning a partition wholly above it. In the complementary layout, `c1 > 7` must prune the explicit partition that cannot match and retain the default where needed. EXPLAIN and actual results must agree for inclusive and exclusive operators; fully constrained keys and single-column range pruning must not regress.",
+  "func": "pg_partition_prune_incorrect_multi_column",
+  "graded_by": [
+    "src/test/regress/sql/partition_prune.sql",
+    "src/test/regress/expected/partition_prune.out"
+  ]
+}

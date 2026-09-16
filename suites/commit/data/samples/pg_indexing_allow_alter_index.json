@@ -1,0 +1,36 @@
+{
+  "name": "pg_indexing_allow_alter_index",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "becf6d26961aabe26facebee2604ef5def9733e5",
+  "parent": "94f1409847e0eb9c6eaaefe3366e53b19641ccfe",
+  "date": "2026-04-22",
+  "subject": "Allow ALTER INDEX .. ATTACH PARTITION to validate a parent index",
+  "area": "partitioned indexes, ALTER INDEX ATTACH PARTITION",
+  "licence": "PostgreSQL",
+  "goal": "A partitioned index is valid only while every partition's index is valid. An index made with CREATE INDEX ONLY starts out invalid, and if an invalid child index is attached to it and the child is later made valid, the parent stays invalid with no way left to change that.\n\nThis is not cosmetic. ON CONFLICT on the partitioned table fails while the parent index that enforces the unique constraint is invalid.\n\nAttaching a child index that is already attached succeeds quietly today, and that command is the one that has to notice the parent can now be marked valid. Attaching a child that is still invalid must keep leaving the parent invalid.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 12,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/indexing.sql",
+    "src/test/regress/expected/indexing.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "indexing"
+    ],
+    "command": "make -C src/test/regress check TESTS=indexing"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

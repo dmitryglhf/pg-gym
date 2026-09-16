@@ -1,0 +1,40 @@
+{
+  "name": "pg_stats_ext_create_statistics_improve",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e9fb314c7ad89a25eade3c3ed918abab4c532fe2",
+  "parent": "00064302cbf2736d8eaf27ac068328981c6b0212",
+  "date": "2025-08-29",
+  "subject": "CREATE STATISTICS: improve misleading error message",
+  "area": "CREATE STATISTICS, diagnostics",
+  "licence": "PostgreSQL",
+  "goal": "CREATE STATISTICS on a query-like FROM item reports a generic or misleading error instead of explaining which relation kinds are supported.\n\nTry VALUES, a join, subquery, TABLESAMPLE, XMLTABLE, JSON_TABLE and a table function as the source. Each must report `cannot create statistics on the specified relation` with detail `CREATE STATISTICS only supports tables, foreign tables and materialized views.` The wording is part of the contract. Creating statistics on those supported relation kinds, and more specific errors that occur after a supported target is recognized, must remain unchanged.",
+  "contract": [
+    "CREATE STATISTICS only supports tables, foreign tables and materialized views.",
+    "cannot create statistics on the specified relation"
+  ],
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/tcop/utility.c",
+      "added": 2,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/stats_ext.sql",
+    "src/test/regress/expected/stats_ext.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "stats_ext"
+    ],
+    "command": "make -C src/test/regress check TESTS=stats_ext"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,16 @@
+diff --git a/src/backend/commands/foreigncmds.c b/src/backend/commands/foreigncmds.c
+index 99d1859e..17f40599 100644
+--- a/src/backend/commands/foreigncmds.c
++++ b/src/backend/commands/foreigncmds.c
+@@ -740,11 +740,6 @@ AlterForeignDataWrapper(ParseState *pstate, AlterFdwStmt *stmt)
+ 		ereport(WARNING,
+ 				(errmsg("changing the foreign-data wrapper handler can change behavior of existing foreign tables")));
+ 	}
+-	else
+-	{
+-		/* handler unchanged */
+-		fdwhandler = fdwForm->fdwhandler;
+-	}
+ 
+ 	if (validator_given)
+ 	{

@@ -1,0 +1,36 @@
+{
+  "name": "pg_with_assert_failure_recursive",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "7b8d45d278de62b23777b36e1515c34d2eaeaf66",
+  "parent": "04b86019818067b32ce51883a3322f875d573d15",
+  "date": "2024-12-19",
+  "subject": "Fix Assert failure in WITH RECURSIVE UNION queries",
+  "area": "recursive CTEs, duplicate elimination",
+  "licence": "PostgreSQL",
+  "goal": "A recursive CTE using UNION rather than UNION ALL can assert while removing duplicate rows from the non-recursive term when that term supplies a buffered heap tuple slot.\n\nCreate a temporary table containing duplicate integer rows and use it as the non-recursive term of `WITH RECURSIVE cte AS (SELECT ... UNION SELECT ... FROM cte)`. The query must terminate and return the single distinct value, without assertion or memory error. UNION ALL recursion and duplicate elimination for other input slot types must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/executor/execGrouping.c",
+      "added": 1,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "with"
+    ],
+    "command": "make -C src/test/regress check TESTS=with"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

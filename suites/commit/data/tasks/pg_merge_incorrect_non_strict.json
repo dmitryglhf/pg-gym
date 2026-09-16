@@ -1,0 +1,10 @@
+{
+  "name": "pg_merge_incorrect_non_strict",
+  "area": "MERGE, NOT MATCHED BY SOURCE",
+  "goal": "MERGE can choose the wrong action for a target row with no source row when the ON condition is non-strict, such as `IS NOT DISTINCT FROM`. The null-filled source side of the outer join can make the condition appear matched a second time.\n\nMerge a source containing a non-null key into a target containing a NULL key with `ON target.a IS NOT DISTINCT FROM source.a`, a MATCHED update, and a NOT MATCHED BY SOURCE delete. The unmatched target row must take the delete action, and RETURNING with merge_action() must describe the action and row values correctly. Strict ON conditions and genuinely matched NULL keys must retain their behavior.",
+  "func": "pg_merge_incorrect_non_strict",
+  "graded_by": [
+    "src/test/regress/sql/merge.sql",
+    "src/test/regress/expected/merge.out"
+  ]
+}

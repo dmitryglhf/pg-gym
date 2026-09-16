@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..22d5a19 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -309,9 +309,8 @@ timestamptypmodin(PG_FUNCTION_ARGS)
+ Datum
+ timestamptypmodout(PG_FUNCTION_ARGS)
+ {
+-	int32		typmod = PG_GETARG_INT32(0);
+-
+-	PG_RETURN_CSTRING(anytimestamp_typmodout(false, typmod));
++	elog(ERROR, "timestamptypmodout is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

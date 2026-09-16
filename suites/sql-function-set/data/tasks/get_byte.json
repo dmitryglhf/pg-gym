@@ -1,0 +1,18 @@
+{
+  "func": "get_byte",
+  "variants": [
+    {
+      "arguments": "bytea int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "get byte"
+    }
+  ],
+  "description": "Extracts n'th byte from binary string.",
+  "examples": [
+    "get_byte('\\x1234567890'::bytea, 4) -> 144"
+  ],
+  "mode": "stub",
+  "category": "encoding"
+}

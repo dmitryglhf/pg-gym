@@ -1,0 +1,26 @@
+{
+  "func": "make_time",
+  "mode": "stub",
+  "patch": "prep/make_time.patch",
+  "symbols": [
+    "make_time"
+  ],
+  "units": {
+    "make_time": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/*\n *\t\tmake_time\t\t\t- time constructor\n */\nDatum\nmake_time(PG_FUNCTION_ARGS)\n{\n\tint\t\t\ttm_hour = PG_GETARG_INT32(0);\n\tint\t\t\ttm_min = PG_GETARG_INT32(1);\n\tdouble\t\tsec = PG_GETARG_FLOAT8(2);\n\tTimeADT\t\ttime;\n\n\t/* Check for time overflow */\n\tif (float_time_overflows(tm_hour, tm_min, sec))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),\n\t\t\t\t errmsg(\"time field value out of range: %d:%02d:%02g\",\n\t\t\t\t\t\ttm_hour, tm_min, sec)));\n\n\t/* This should match tm2time */\n\ttime = (((tm_hour * MINS_PER_HOUR + tm_min) * SECS_PER_MINUTE)\n\t\t\t* USECS_PER_SEC) + (int64) rint(sec * USECS_PER_SEC);\n\n\tPG_RETURN_TIMEADT(time);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "date"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 9,
+  "oracle_diff_by_file": {
+    "date": 9
+  }
+}

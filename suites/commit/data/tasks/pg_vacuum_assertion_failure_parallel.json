@@ -1,0 +1,10 @@
+{
+  "name": "pg_vacuum_assertion_failure_parallel",
+  "area": "parallel VACUUM, memory limits",
+  "goal": "Parallel VACUUM can trip an assertion when maintenance_work_mem is set to its minimum and the table has multiple indexes. The failure occurs both before and after enough deletes create dead tuples.\n\nCreate a table with 1000 rows and two indexes, set maintenance_work_mem to 64 kB, and run `VACUUM (PARALLEL 2)` once with no dead tuples and again after deleting most rows. Both commands must finish normally and leave indexes usable. Serial VACUUM, larger memory settings and parallel VACUUM on other index counts must not regress.",
+  "func": "pg_vacuum_assertion_failure_parallel",
+  "graded_by": [
+    "src/test/regress/sql/vacuum.sql",
+    "src/test/regress/expected/vacuum.out"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "func": "time_smaller",
+  "variants": [
+    {
+      "arguments": "time time",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "smaller of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

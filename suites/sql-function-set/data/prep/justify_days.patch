@@ -1,0 +1,54 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..7a5eb5d 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2996,47 +2996,11 @@ interval_justify_hours(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(result);
+ }
+ 
+-/*
+- *	interval_justify_days()
+- *
+- *	Adjust interval so 'day' contains less than 30 days, adding
+- *	the excess to 'month'.
+- */
+ Datum
+ interval_justify_days(PG_FUNCTION_ARGS)
+ {
+-	Interval   *span = PG_GETARG_INTERVAL_P(0);
+-	Interval   *result;
+-	int32		wholemonth;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-	result->month = span->month;
+-	result->day = span->day;
+-	result->time = span->time;
+-
+-	/* do nothing for infinite intervals */
+-	if (INTERVAL_NOT_FINITE(result))
+-		PG_RETURN_INTERVAL_P(result);
+-
+-	wholemonth = result->day / DAYS_PER_MONTH;
+-	result->day -= wholemonth * DAYS_PER_MONTH;
+-	if (pg_add_s32_overflow(result->month, wholemonth, &result->month))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("interval out of range")));
+-
+-	if (result->month > 0 && result->day < 0)
+-	{
+-		result->day += DAYS_PER_MONTH;
+-		result->month--;
+-	}
+-	else if (result->month < 0 && result->day > 0)
+-	{
+-		result->day -= DAYS_PER_MONTH;
+-		result->month++;
+-	}
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_justify_days is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamp_pl_interval()

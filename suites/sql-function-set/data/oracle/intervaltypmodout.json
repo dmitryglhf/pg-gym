@@ -1,0 +1,18 @@
+{
+  "func": "intervaltypmodout",
+  "mode": "stub",
+  "patch": "prep/intervaltypmodout.patch",
+  "symbols": [
+    "intervaltypmodout"
+  ],
+  "units": {
+    "intervaltypmodout": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nintervaltypmodout(PG_FUNCTION_ARGS)\n{\n\tint32\t\ttypmod = PG_GETARG_INT32(0);\n\tchar\t   *res = (char *) palloc(64);\n\tint\t\t\tfields;\n\tint\t\t\tprecision;\n\tconst char *fieldstr;\n\n\tif (typmod < 0)\n\t{\n\t\t*res = '\\0';\n\t\tPG_RETURN_CSTRING(res);\n\t}\n\n\tfields = INTERVAL_RANGE(typmod);\n\tprecision = INTERVAL_PRECISION(typmod);\n\n\tswitch (fields)\n\t{\n\t\tcase INTERVAL_MASK(YEAR):\n\t\t\tfieldstr = \" year\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(MONTH):\n\t\t\tfieldstr = \" month\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(DAY):\n\t\t\tfieldstr = \" day\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(HOUR):\n\t\t\tfieldstr = \" hour\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(MINUTE):\n\t\t\tfieldstr = \" minute\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(SECOND):\n\t\t\tfieldstr = \" second\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):\n\t\t\tfieldstr = \" year to month\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):\n\t\t\tfieldstr = \" day to hour\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):\n\t\t\tfieldstr = \" day to minute\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):\n\t\t\tfieldstr = \" day to second\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):\n\t\t\tfieldstr = \" hour to minute\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):\n\t\t\tfieldstr = \" hour to second\";\n\t\t\tbreak;\n\t\tcase INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):\n\t\t\tfieldstr = \" minute to second\";\n\t\t\tbreak;\n\t\tcase INTERVAL_FULL_RANGE:\n\t\t\tfieldstr = \"\";\n\t\t\tbreak;\n\t\tdefault:\n\t\t\telog(ERROR, \"invalid INTERVAL typmod: 0x%x\", typmod);\n\t\t\tfieldstr = \"\";\n\t\t\tbreak;\n\t}\n\n\tif (precision != INTERVAL_FULL_PRECISION)\n\t\tsnprintf(res, 64, \"%s(%d)\", fieldstr, precision);\n\telse\n\t\tsnprintf(res, 64, \"%s\", fieldstr);\n\n\tPG_RETURN_CSTRING(res);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

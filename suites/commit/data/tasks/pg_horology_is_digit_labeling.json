@@ -1,0 +1,10 @@
+{
+  "name": "pg_horology_is_digit_labeling",
+  "area": "to_timestamp, fractional seconds",
+  "goal": "Every format code in a to_timestamp or to_date template is labelled with whether it deals in digits. That label decides whether the code before it should swallow all the digits available or stop at its own width. The FFn codes, which consume fractional-second digits, are not labelled as digit codes.\n\n    SELECT to_timestamp('12345', 'SSFF3');\n\nSS swallows all five digits and then complains that seconds are out of range. It has to take two and leave three for FF3. Templates with no FFn code in them must be unaffected.",
+  "func": "pg_horology_is_digit_labeling",
+  "graded_by": [
+    "src/test/regress/sql/horology.sql",
+    "src/test/regress/expected/horology.out"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "pg_sqljson_queryfuncs_error_reporting_sql",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "b5511fed500eb526a547f38597307552fa7acd08",
+  "parent": "2fc5c5062207a26b4ea4144a3d70099767eee523",
+  "date": "2025-11-27",
+  "subject": "Fix error reporting for SQL/JSON path type mismatches",
+  "area": "SQL/JSON, path type errors",
+  "licence": "PostgreSQL",
+  "goal": "SQL/JSON query functions report a misleading type or point at the wrong expression when the path expression is not jsonpath.\n\nFor JSON_QUERY with a constructed expression cast to date, the error must say `JSON path expression must be of type jsonpath, not of type date` and position the cursor at that path expression. A column of a domain or user-defined type named `jsonpaths` must be named as that actual type in the corresponding JSON_VALUE error. Valid jsonpath expressions, implicit coercions that are supported today and other argument errors must be unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/parser/parse_expr.c",
+      "added": 15,
+      "deleted": 8
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/sqljson_queryfuncs.sql",
+    "src/test/regress/expected/sqljson_queryfuncs.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "sqljson_queryfuncs"
+    ],
+    "command": "make -C src/test/regress check TESTS=sqljson_queryfuncs"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,27 @@
+{
+  "func": "pg_indexing_restore_partitions_exclusion",
+  "sha": "1d6c654c8189cf198bc4059a9a0c9a51502e4b5f",
+  "parent": "b308eb3661bf41fa97e27909bf008871f438894c",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_indexing_restore_partitions_exclusion.patch",
+  "test_files": [
+    "src/test/regress/sql/indexing.sql",
+    "src/test/regress/expected/indexing.out"
+  ],
+  "reference": "diff --git a/src/backend/catalog/index.c b/src/backend/catalog/index.c\nindex b625e8a3..813754f8 100644\n--- a/src/backend/catalog/index.c\n+++ b/src/backend/catalog/index.c\n@@ -2619,9 +2619,21 @@ CompareIndexInfo(const IndexInfo *info1, const IndexInfo *info2,\n \t\t\treturn false;\n \t}\n \n-\t/* No support currently for comparing exclusion indexes. */\n-\tif (info1->ii_ExclusionOps != NULL || info2->ii_ExclusionOps != NULL)\n+\t/* If they're exclusion indexes, their properties must be identical */\n+\tif ((info1->ii_ExclusionOps == NULL) != (info2->ii_ExclusionOps == NULL))\n \t\treturn false;\n+\tif (info1->ii_ExclusionOps != NULL)\n+\t{\n+\t\tfor (i = 0; i < info1->ii_NumIndexKeyAttrs; i++)\n+\t\t{\n+\t\t\tif (info1->ii_ExclusionOps[i] != info2->ii_ExclusionOps[i])\n+\t\t\t\treturn false;\n+\t\t\tif (info1->ii_ExclusionProcs[i] != info2->ii_ExclusionProcs[i])\n+\t\t\t\treturn false;\n+\t\t\tif (info1->ii_ExclusionStrats[i] != info2->ii_ExclusionStrats[i])\n+\t\t\t\treturn false;\n+\t\t}\n+\t}\n \n \treturn true;\n }\n",
+  "test": "diff --git a/src/test/regress/expected/indexing.out b/src/test/regress/expected/indexing.out\nindex ac606d8f..b7a2db44 100644\n--- a/src/test/regress/expected/indexing.out\n+++ b/src/test/regress/expected/indexing.out\n@@ -1745,3 +1745,18 @@ select indexrelid::regclass, indisvalid, indisreplident,\n (3 rows)\n \n drop table parted_replica_tab;\n+-- Test of a partitioned index attach, when there are exclusion constraints.\n+create table idx_excl_part (a int4range, b int4range) partition by list (a);\n+create table idx_excl_part_1 (a int4range, b int4range);\n+alter table only idx_excl_part attach partition idx_excl_part_1 for values in ('[0,1)'::int4range);\n+alter table only idx_excl_part add constraint idxpart_id_data_excl exclude using gist (a with =, b with &&);\n+alter table idx_excl_part_1 add constraint idxpart_1_id_data_excl exclude using gist (a with &&, b with &&);\n+-- This should be disallowed, because the constraints don't match.\n+alter index idxpart_id_data_excl attach partition idxpart_1_id_data_excl;\n+ERROR:  cannot attach index \"idxpart_1_id_data_excl\" as a partition of index \"idxpart_id_data_excl\"\n+DETAIL:  The index definitions do not match.\n+-- but if we recreate the constraint differently, it's allowed:\n+alter table idx_excl_part_1 drop constraint idxpart_1_id_data_excl;\n+alter table idx_excl_part_1 add constraint idxpart_1_id_data_excl exclude using gist (a with =, b with &&);\n+alter index idxpart_id_data_excl attach partition idxpart_1_id_data_excl;\n+-- leave these tables around, for pg_upgrade testing\ndiff --git a/src/test/regress/sql/indexing.sql b/src/test/regress/sql/indexing.sql\nindex 4b3b6f41..93704d60 100644\n--- a/src/test/regress/sql/indexing.sql\n+++ b/src/test/regress/sql/indexing.sql\n@@ -978,3 +978,17 @@ select indexrelid::regclass, indisvalid, indisreplident,\n   where indexrelid::regclass::text like 'parted_replica%'\n   order by indexrelid::regclass::text collate \"C\";\n drop table parted_replica_tab;\n+\n+-- Test of a partitioned index attach, when there are exclusion constraints.\n+create table idx_excl_part (a int4range, b int4range) partition by list (a);\n+create table idx_excl_part_1 (a int4range, b int4range);\n+alter table only idx_excl_part attach partition idx_excl_part_1 for values in ('[0,1)'::int4range);\n+alter table only idx_excl_part add constraint idxpart_id_data_excl exclude using gist (a with =, b with &&);\n+alter table idx_excl_part_1 add constraint idxpart_1_id_data_excl exclude using gist (a with &&, b with &&);\n+-- This should be disallowed, because the constraints don't match.\n+alter index idxpart_id_data_excl attach partition idxpart_1_id_data_excl;\n+-- but if we recreate the constraint differently, it's allowed:\n+alter table idx_excl_part_1 drop constraint idxpart_1_id_data_excl;\n+alter table idx_excl_part_1 add constraint idxpart_1_id_data_excl exclude using gist (a with =, b with &&);\n+alter index idxpart_id_data_excl attach partition idxpart_1_id_data_excl;\n+-- leave these tables around, for pg_upgrade testing\n",
+  "oracle_command": "make -C src/test/regress check TESTS=indexing",
+  "expected_tests": [
+    "indexing"
+  ],
+  "failing_tests": [
+    "indexing"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2,
+  "oracle_diff_by_file": {
+    "indexing": 2
+  }
+}

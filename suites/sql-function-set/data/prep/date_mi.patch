@@ -1,0 +1,27 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..dff33da 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -481,20 +481,11 @@ date_smaller(PG_FUNCTION_ARGS)
+ 	PG_RETURN_DATEADT((dateVal1 < dateVal2) ? dateVal1 : dateVal2);
+ }
+ 
+-/* Compute difference between two dates in days.
+- */
+ Datum
+ date_mi(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal1 = PG_GETARG_DATEADT(0);
+-	DateADT		dateVal2 = PG_GETARG_DATEADT(1);
+-
+-	if (DATE_NOT_FINITE(dateVal1) || DATE_NOT_FINITE(dateVal2))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("cannot subtract infinite dates")));
+-
+-	PG_RETURN_INT32((int32) (dateVal1 - dateVal2));
++	elog(ERROR, "date_mi is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* Add a number of days to a date, giving a new date.

@@ -1,0 +1,93 @@
+diff --git a/src/backend/utils/adt/arrayfuncs.c b/src/backend/utils/adt/arrayfuncs.c
+index 75cc4ee..d512058 100644
+--- a/src/backend/utils/adt/arrayfuncs.c
++++ b/src/backend/utils/adt/arrayfuncs.c
+@@ -5985,84 +5985,18 @@ generate_subscripts_nodir(PG_FUNCTION_ARGS)
+ 	return generate_subscripts(fcinfo);
+ }
+ 
+-/*
+- * array_fill_with_lower_bounds
+- *		Create and fill array with defined lower bounds.
+- */
+ Datum
+ array_fill_with_lower_bounds(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *dims;
+-	ArrayType  *lbs;
+-	ArrayType  *result;
+-	Oid			elmtype;
+-	Datum		value;
+-	bool		isnull;
+-
+-	if (PG_ARGISNULL(1) || PG_ARGISNULL(2))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+-				 errmsg("dimension array or low bound array cannot be null")));
+-
+-	dims = PG_GETARG_ARRAYTYPE_P(1);
+-	lbs = PG_GETARG_ARRAYTYPE_P(2);
+-
+-	if (!PG_ARGISNULL(0))
+-	{
+-		value = PG_GETARG_DATUM(0);
+-		isnull = false;
+-	}
+-	else
+-	{
+-		value = 0;
+-		isnull = true;
+-	}
+-
+-	elmtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+-	if (!OidIsValid(elmtype))
+-		elog(ERROR, "could not determine data type of input");
+-
+-	result = array_fill_internal(dims, lbs, value, isnull, elmtype, fcinfo);
+-	PG_RETURN_ARRAYTYPE_P(result);
++	elog(ERROR, "array_fill_with_lower_bounds is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * array_fill
+- *		Create and fill array with default lower bounds.
+- */
+ Datum
+ array_fill(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *dims;
+-	ArrayType  *result;
+-	Oid			elmtype;
+-	Datum		value;
+-	bool		isnull;
+-
+-	if (PG_ARGISNULL(1))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+-				 errmsg("dimension array or low bound array cannot be null")));
+-
+-	dims = PG_GETARG_ARRAYTYPE_P(1);
+-
+-	if (!PG_ARGISNULL(0))
+-	{
+-		value = PG_GETARG_DATUM(0);
+-		isnull = false;
+-	}
+-	else
+-	{
+-		value = 0;
+-		isnull = true;
+-	}
+-
+-	elmtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+-	if (!OidIsValid(elmtype))
+-		elog(ERROR, "could not determine data type of input");
+-
+-	result = array_fill_internal(dims, NULL, value, isnull, elmtype, fcinfo);
+-	PG_RETURN_ARRAYTYPE_P(result);
++	elog(ERROR, "array_fill is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ static ArrayType *

@@ -1,0 +1,10 @@
+{
+  "name": "pg_text_handle_pg_int32",
+  "area": "text functions, extreme lengths",
+  "goal": "right(text, n) can overflow while negating the most negative int32 length. The result then depends on undefined arithmetic rather than following the established rule for negative lengths.\n\n`left('ahoj', (-2147483648)::int4)` and `right('ahoj', (-2147483648)::int4)` must both return the empty string, just like any negative length whose absolute value exceeds the input length. Other negative values, zero, positive values, multibyte text and NULL inputs must keep their current behavior.",
+  "func": "pg_text_handle_pg_int32",
+  "graded_by": [
+    "src/test/regress/sql/text.sql",
+    "src/test/regress/expected/text.out"
+  ]
+}

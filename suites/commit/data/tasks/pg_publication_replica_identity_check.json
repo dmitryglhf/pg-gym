@@ -1,0 +1,10 @@
+{
+  "name": "pg_publication_replica_identity_check",
+  "area": "logical replication, MERGE",
+  "goal": "MERGE does not apply the same replica-identity safety checks as UPDATE and DELETE when its target table is published.\n\nPublish a table that has no replica identity, then run MERGE commands containing reachable MATCHED UPDATE and MATCHED DELETE actions. They must be rejected with the existing update/delete replica-identity errors and hints. A MERGE containing only INSERT and DO NOTHING must remain legal, and UPDATE/DELETE actions against a published table with a valid primary-key replica identity must succeed. Non-published MERGE behavior must not change.",
+  "func": "pg_publication_replica_identity_check",
+  "graded_by": [
+    "src/test/regress/sql/publication.sql",
+    "src/test/regress/expected/publication.out"
+  ]
+}

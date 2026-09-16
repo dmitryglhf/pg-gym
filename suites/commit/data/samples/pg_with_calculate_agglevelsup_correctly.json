@@ -1,0 +1,36 @@
+{
+  "name": "pg_with_calculate_agglevelsup_correctly",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e830896c16ee9ea2ba4eaa8a49b6bb3079505003",
+  "parent": "0fb06e8933312e67398af9728a8eb98cafe9e742",
+  "date": "2025-09-17",
+  "subject": "Calculate agglevelsup correctly when Aggref contains a CTE.",
+  "area": "aggregates, CTE scope",
+  "licence": "PostgreSQL",
+  "goal": "An aggregate containing a subquery over a CTE can be assigned to the wrong query level when the aggregate argument also references an outer query but contains no direct table column from the CTE.\n\nFor each row of int4_tbl, evaluate a scalar WITH that defines `cte1` and computes `count((SELECT outer.f1 FROM cte1))`. The query must plan as a correlated subplan and return count 1 for every outer row. Aggregate ownership and grouping errors for ordinary correlated subqueries must remain unchanged, as must legal CTE references at their own level.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/parser/parse_agg.c",
+      "added": 27,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "with"
+    ],
+    "command": "make -C src/test/regress check TESTS=with"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

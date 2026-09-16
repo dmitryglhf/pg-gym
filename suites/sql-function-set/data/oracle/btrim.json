@@ -1,0 +1,39 @@
+{
+  "func": "btrim",
+  "mode": "stub",
+  "patch": "prep/btrim.patch",
+  "symbols": [
+    "btrim",
+    "btrim1",
+    "byteatrim"
+  ],
+  "units": {
+    "btrim": {
+      "file": "src/backend/utils/adt/oracle_compat.c",
+      "code": "/********************************************************************\n *\n * btrim\n *\n * Syntax:\n *\n *\t text btrim(text string, text set)\n *\n * Purpose:\n *\n *\t Returns string with characters removed from the front and back\n *\t up to the first character not in set.\n *\n ********************************************************************/\n\nDatum\nbtrim(PG_FUNCTION_ARGS)\n{\n\ttext\t   *string = PG_GETARG_TEXT_PP(0);\n\ttext\t   *set = PG_GETARG_TEXT_PP(1);\n\ttext\t   *ret;\n\n\tret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),\n\t\t\t\t VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set),\n\t\t\t\t true, true);\n\n\tPG_RETURN_TEXT_P(ret);\n}\n\n"
+    },
+    "btrim1": {
+      "file": "src/backend/utils/adt/oracle_compat.c",
+      "code": "/********************************************************************\n *\n * btrim1 --- btrim with set fixed as ' '\n *\n ********************************************************************/\n\nDatum\nbtrim1(PG_FUNCTION_ARGS)\n{\n\ttext\t   *string = PG_GETARG_TEXT_PP(0);\n\ttext\t   *ret;\n\n\tret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string),\n\t\t\t\t \" \", 1,\n\t\t\t\t true, true);\n\n\tPG_RETURN_TEXT_P(ret);\n}\n\n"
+    },
+    "byteatrim": {
+      "file": "src/backend/utils/adt/oracle_compat.c",
+      "code": "/********************************************************************\n *\n * byteatrim\n *\n * Syntax:\n *\n *\t bytea byteatrim(bytea string, bytea set)\n *\n * Purpose:\n *\n *\t Returns string with characters removed from the front and back\n *\t up to the first character not in set.\n *\n * Cloned from btrim and modified as required.\n ********************************************************************/\n\nDatum\nbyteatrim(PG_FUNCTION_ARGS)\n{\n\tbytea\t   *string = PG_GETARG_BYTEA_PP(0);\n\tbytea\t   *set = PG_GETARG_BYTEA_PP(1);\n\tbytea\t   *ret;\n\n\tret = dobyteatrim(string, set, true, true);\n\n\tPG_RETURN_BYTEA_P(ret);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "plpgsql",
+    "strings"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 87,
+  "oracle_diff_by_file": {
+    "strings": 30,
+    "plpgsql": 57
+  }
+}

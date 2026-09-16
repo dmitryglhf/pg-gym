@@ -1,0 +1,28 @@
+{
+  "func": "enum_range",
+  "variants": [
+    {
+      "arguments": "anyenum anyenum",
+      "returns": "anyarray",
+      "kind": "f",
+      "volatile": "s",
+      "description": "range between the two given enum values, as an ordered array"
+    },
+    {
+      "arguments": "anyenum",
+      "returns": "anyarray",
+      "kind": "f",
+      "volatile": "s",
+      "description": "range of the given enum type, as an ordered array"
+    }
+  ],
+  "description": "Returns all values of the input enum type in an ordered array.\nReturns the range between the two given enum values, as an ordered array. The values must be from the same enum type. If the first parameter is null, the result will start with the first value of the enum type. If the second parameter is null, the result will end with the last value of the enum type.",
+  "examples": [
+    "enum_range(null::rainbow) -> {red,orange,yellow,&zwsp;green,blue,purple}",
+    "enum_range('orange'::rainbow, 'green'::rainbow) -> {orange,yellow,green}",
+    "enum_range(NULL, 'green'::rainbow) -> {red,orange,&zwsp;yellow,green}",
+    "enum_range('orange'::rainbow, NULL) -> {orange,yellow,green,&zwsp;blue,purple}"
+  ],
+  "mode": "stub",
+  "category": "enum"
+}

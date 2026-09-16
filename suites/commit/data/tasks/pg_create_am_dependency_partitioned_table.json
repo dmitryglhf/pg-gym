@@ -1,0 +1,10 @@
+{
+  "name": "pg_create_am_dependency_partitioned_table",
+  "area": "table access methods, dependencies",
+  "goal": "A partitioned table created with an explicitly selected, unpinned table access method does not retain the catalog dependency that an ordinary table does. The access method can then be dropped while the partitioned table still names it.\n\nCreate a non-default table access method, create a partitioned table with `USING` that method, and inspect dependency behavior. Dropping the access method without CASCADE must be refused while the table exists; after the table is dropped it must succeed. Default access methods and ordinary tables must keep their existing dependency behavior.",
+  "func": "pg_create_am_dependency_partitioned_table",
+  "graded_by": [
+    "src/test/regress/sql/create_am.sql",
+    "src/test/regress/expected/create_am.out"
+  ]
+}

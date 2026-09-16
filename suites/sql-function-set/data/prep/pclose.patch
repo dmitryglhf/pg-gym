@@ -1,0 +1,18 @@
+diff --git a/src/backend/utils/adt/geo_ops.c b/src/backend/utils/adt/geo_ops.c
+index 07d1649..00d7401 100644
+--- a/src/backend/utils/adt/geo_ops.c
++++ b/src/backend/utils/adt/geo_ops.c
+@@ -1626,11 +1626,8 @@ path_npoints(PG_FUNCTION_ARGS)
+ Datum
+ path_close(PG_FUNCTION_ARGS)
+ {
+-	PATH	   *path = PG_GETARG_PATH_P_COPY(0);
+-
+-	path->closed = true;
+-
+-	PG_RETURN_PATH_P(path);
++	elog(ERROR, "path_close is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

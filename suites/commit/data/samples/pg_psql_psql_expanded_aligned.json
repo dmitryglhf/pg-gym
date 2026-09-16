@@ -1,0 +1,36 @@
+{
+  "name": "pg_psql_psql_expanded_aligned",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "efd885d05b8beded386fbb5a9d737dc9e65289a9",
+  "parent": "4801610f7c66661f2b8722a2c5561273e210960b",
+  "date": "2026-06-08",
+  "subject": "psql: Fix expanded aligned output",
+  "area": "psql, expanded output",
+  "licence": "PostgreSQL",
+  "goal": "psql's expanded output draws a malformed or inconsistently sized right border in aligned and wrapped formats when all column names and values are short.\n\nWith border 2 and expanded mode enabled, select two integer columns from a two-row table under both `\\pset format aligned` and `wrapped`. Every record must use the same field width, the values must line up, and the closing border must span that width exactly. Non-expanded output, other border settings and rows that already require a wider field must retain their formatting.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/fe_utils/print.c",
+      "added": 4,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/psql.sql",
+    "src/test/regress/expected/psql.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "psql"
+    ],
+    "command": "make -C src/test/regress check TESTS=psql"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,18 @@
+{
+  "func": "clock_timestamp",
+  "mode": "stub",
+  "patch": "prep/clock_timestamp.patch",
+  "symbols": [
+    "clock_timestamp"
+  ],
+  "units": {
+    "clock_timestamp": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nclock_timestamp(PG_FUNCTION_ARGS)\n{\n\tPG_RETURN_TIMESTAMPTZ(GetCurrentTimestamp());\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

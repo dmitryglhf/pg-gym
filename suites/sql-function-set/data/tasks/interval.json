@@ -1,0 +1,22 @@
+{
+  "func": "interval",
+  "variants": [
+    {
+      "arguments": "interval int4",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust interval precision"
+    },
+    {
+      "arguments": "time",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert time to interval"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

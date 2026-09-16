@@ -1,0 +1,10 @@
+{
+  "name": "pg_window_integer_overflow_nodewindowagg",
+  "area": "window functions, frame offsets",
+  "goal": "Window frame boundary calculations can overflow signed integers when ROWS or GROUPS uses an offset near 9223372036854775807. This can select wrong rows or invoke undefined behavior.\n\nExercise frames from CURRENT ROW to that many FOLLOWING, from that many FOLLOWING to a smaller boundary, and the corresponding GROUPS cases, with and without EXCLUDE CURRENT ROW. sum() and last_value() must return the mathematically bounded frame results: an overlarge following boundary reaches the partition end, while a frame starting beyond it is empty. Normal offsets, RANGE frames and exclusion behavior must remain unchanged.",
+  "func": "pg_window_integer_overflow_nodewindowagg",
+  "graded_by": [
+    "src/test/regress/sql/window.sql",
+    "src/test/regress/expected/window.out"
+  ]
+}

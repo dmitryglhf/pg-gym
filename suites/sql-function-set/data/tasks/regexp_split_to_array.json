@@ -1,0 +1,25 @@
+{
+  "func": "regexp_split_to_array",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "_text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "split string by pattern"
+    },
+    {
+      "arguments": "text text text",
+      "returns": "_text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "split string by pattern"
+    }
+  ],
+  "description": "Splits string using a POSIX regular expression as the delimiter, producing an array of results.",
+  "examples": [
+    "regexp_split_to_array('hello world', '\\s+') -> {hello,world}"
+  ],
+  "mode": "stub",
+  "category": "pattern"
+}

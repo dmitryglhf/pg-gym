@@ -1,0 +1,36 @@
+{
+  "name": "pg_int4_integer_char_overflow",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "04c25af21c02bf2c5152c3c8ab2ba877c231a598",
+  "parent": "e96b27296bec1c6212874eceb394b4f8b7d06dcc",
+  "date": "2026-09-01",
+  "subject": "Fix integer to_char() overflow with V format",
+  "area": "to_char, integer overflow",
+  "licence": "PostgreSQL",
+  "goal": "to_char(int4, format) can overflow while applying a `V` scaling pattern, leading to platform-dependent output instead of the normal integer range error.\n\nExercise values around the int32 boundaries with formats such as `V9`, `9V999999999`, and multipliers at and beyond ten decimal places, including negative inputs. A representable scaled value must format correctly; any unrepresentable int4 product must raise `integer out of range`. Formatting without `V`, and supported numeric and int8 variants, must be unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/formatting.c",
+      "added": 9,
+      "deleted": 7
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/int4.sql",
+    "src/test/regress/expected/int4.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "int4"
+    ],
+    "command": "make -C src/test/regress check TESTS=int4"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

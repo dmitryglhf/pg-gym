@@ -1,0 +1,15 @@
+{
+  "func": "timestamptz_pl_interval",
+  "variants": [
+    {
+      "arguments": "timestamptz interval",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

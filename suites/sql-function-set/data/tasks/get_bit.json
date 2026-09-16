@@ -1,0 +1,26 @@
+{
+  "func": "get_bit",
+  "variants": [
+    {
+      "arguments": "bytea int8",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "get bit"
+    },
+    {
+      "arguments": "bit int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "get bit"
+    }
+  ],
+  "description": "Extracts n'th bit from binary string.\nExtracts n'th bit from bit string; the first (leftmost) bit is bit 0.",
+  "examples": [
+    "get_bit('\\x1234567890'::bytea, 30) -> 1",
+    "get_bit(B'101010101010101010', 6) -> 1"
+  ],
+  "mode": "stub",
+  "category": "bit"
+}

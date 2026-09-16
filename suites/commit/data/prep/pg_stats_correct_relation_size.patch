@@ -1,0 +1,21 @@
+diff --git a/src/backend/access/table/tableam.c b/src/backend/access/table/tableam.c
+index 3ec11fb5..e57a0b7e 100644
+--- a/src/backend/access/table/tableam.c
++++ b/src/backend/access/table/tableam.c
+@@ -24,7 +24,6 @@
+ #include "access/syncscan.h"
+ #include "access/tableam.h"
+ #include "access/xact.h"
+-#include "optimizer/optimizer.h"
+ #include "optimizer/plancat.h"
+ #include "port/pg_bitutils.h"
+ #include "storage/bufmgr.h"
+@@ -741,8 +740,6 @@ table_block_relation_estimate_size(Relation rel, int32 *attr_widths,
+ 		tuple_width += overhead_bytes_per_tuple;
+ 		/* note: integer division is intentional here */
+ 		density = (usable_bytes_per_page * fillfactor / 100) / tuple_width;
+-		/* There's at least one row on the page, even with low fillfactor. */
+-		density = clamp_row_est(density);
+ 	}
+ 	*tuples = rint(density * (double) curpages);
+ 

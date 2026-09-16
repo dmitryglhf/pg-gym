@@ -1,0 +1,35 @@
+{
+  "func": "date_subtract",
+  "mode": "stub",
+  "patch": "prep/date_subtract.patch",
+  "symbols": [
+    "timestamptz_mi_interval",
+    "timestamptz_mi_interval_at_zone"
+  ],
+  "units": {
+    "timestamptz_mi_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamptz_mi_interval(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\n\tPG_RETURN_TIMESTAMP(timestamptz_mi_interval_internal(timestamp, span, NULL));\n}\n\n"
+    },
+    "timestamptz_mi_interval_at_zone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamptz_mi_interval_at_zone(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\ttext\t   *zone = PG_GETARG_TEXT_PP(2);\n\tpg_tz\t   *attimezone = lookup_timezone(zone);\n\n\tPG_RETURN_TIMESTAMP(timestamptz_mi_interval_internal(timestamp, span, attimezone));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "horology",
+    "interval",
+    "timestamptz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 325,
+  "oracle_diff_by_file": {
+    "timestamptz": 10,
+    "interval": 15,
+    "horology": 300
+  }
+}

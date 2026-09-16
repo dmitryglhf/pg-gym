@@ -1,0 +1,41 @@
+{
+  "name": "pg_tsearch_overflows_ts_headline",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "3ed3dbbf440a81590ade81ac6553dc7380a26561",
+  "parent": "8c3426110934af82590eb212ad5a282a9c5f7070",
+  "date": "2026-05-11",
+  "subject": "Fix overflows with ts_headline()",
+  "area": "full-text search, ts_headline options",
+  "licence": "PostgreSQL",
+  "goal": "ts_headline() stores selection markers and fragment delimiters in a bounded representation but accepts oversized option values, allowing length arithmetic to overflow or memory to be mishandled.\n\nPass 32768-character values separately as StartSel, StopSel and FragmentDelimiter. Each call must fail cleanly with `value for \"%s\" is too long`, naming the option (`StartSel`, `StopSel` or `FragmentDelimiter`). Values within the supported limit, combinations of normal options and headline output itself must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/tsearch/wparser_def.c",
+      "added": 21,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/tsearch.sql",
+    "src/test/regress/expected/tsearch.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "tsearch"
+    ],
+    "command": "make -C src/test/regress check TESTS=tsearch"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true,
+  "contract": [
+    "FragmentDelimiter",
+    "StartSel",
+    "value for \"%s\" is too long"
+  ]
+}

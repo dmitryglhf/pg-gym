@@ -1,0 +1,36 @@
+{
+  "name": "pg_collate_linux_utf8_calculating_length_match",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "8acfaa12a4c795304c623bf62e7e07693ec14f50",
+  "parent": "9484169ba070e1a7fe5b9b1d7a5f6035a37af0a3",
+  "date": "2026-08-05",
+  "subject": "Fix calculating length of match to localized month/weekday names",
+  "area": "date parsing, localized names",
+  "licence": "PostgreSQL",
+  "goal": "to_date and to_timestamp can consume the wrong number of bytes after matching a localized month or weekday name case-insensitively. In locales where changing case changes the encoded length, the parser advances through the original input by the length of the case-folded text and misreads the fields that follow.\n\nUnder a suitable UTF-8 locale, parse Turkish month names in inputs such as `01 Aralık 2010` with `DD TMMONTH YYYY`, including lowercase and reordered variants. Localized names must consume exactly their original input span and produce the intended date. English names, exact-case localized names and unrelated format patterns must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/formatting.c",
+      "added": 117,
+      "deleted": 20
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/collate.linux.utf8.sql",
+    "src/test/regress/expected/collate.linux.utf8.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "collate.linux.utf8"
+    ],
+    "command": "make -C src/test/regress check TESTS=collate.linux.utf8"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

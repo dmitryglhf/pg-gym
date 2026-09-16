@@ -1,0 +1,36 @@
+{
+  "name": "pg_stats_correct_relation_size",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "587b6aa3f3cea5d30e65317c34d0cae288edaa6d",
+  "parent": "788baa9a25ae83b576621166367c868d3329b4d4",
+  "date": "2025-02-19",
+  "subject": "Correct relation size estimate with low fillfactor",
+  "area": "planner statistics, relation size estimates",
+  "licence": "PostgreSQL",
+  "goal": "Before ANALYZE, the estimated row count can be far too high for a table whose tuples are wider than the amount of each page nominally available under a low fillfactor.\n\nCreate a table with a wide inline `char(1000)` column, fillfactor 10 and autovacuum disabled, insert 1000 rows, then compare EXPLAIN's row estimate with the actual count before analyzing. The estimate must reflect approximately the rows that can physically fit, rather than applying the fillfactor in a way that makes tuple density impossible. Normal-width tables and post-ANALYZE estimates must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/access/table/tableam.c",
+      "added": 3,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/stats.sql",
+    "src/test/regress/expected/stats.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "stats"
+    ],
+    "command": "make -C src/test/regress check TESTS=stats"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,40 @@
+{
+  "func": "timetz_out",
+  "mode": "stub",
+  "patch": "prep/timetz_out.patch",
+  "symbols": [
+    "timetz_out"
+  ],
+  "units": {
+    "timetz_out": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntimetz_out(PG_FUNCTION_ARGS)\n{\n\tTimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);\n\tchar\t   *result;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tfsec_t\t\tfsec;\n\tint\t\t\ttz;\n\tchar\t\tbuf[MAXDATELEN + 1];\n\n\ttimetz2tm(time, tm, &fsec, &tz);\n\tEncodeTimeOnly(tm, fsec, true, tz, DateStyle, buf);\n\n\tresult = pstrdup(buf);\n\tPG_RETURN_CSTRING(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "expressions",
+    "horology",
+    "sqljson_queryfuncs",
+    "timetz",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 439,
+  "oracle_diff_by_file": {
+    "timetz": 104,
+    "horology": 234,
+    "expressions": 10,
+    "brin": 2,
+    "brin_bloom": 2,
+    "brin_multi": 2,
+    "window": 80,
+    "sqljson_queryfuncs": 5
+  }
+}

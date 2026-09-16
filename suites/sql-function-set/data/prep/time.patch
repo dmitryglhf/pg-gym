@@ -1,0 +1,147 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..23335ea 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1617,21 +1617,11 @@ time_support(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(ret);
+ }
+ 
+-/* time_scale()
+- * Adjust time type for specified scale factor.
+- * Used by PostgreSQL type system to stuff columns.
+- */
+ Datum
+ time_scale(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time = PG_GETARG_TIMEADT(0);
+-	int32		typmod = PG_GETARG_INT32(1);
+-	TimeADT		result;
+-
+-	result = time;
+-	AdjustTimeForTypmod(&result, typmod);
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "time_scale is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* AdjustTimeForTypmod()
+@@ -1898,65 +1888,18 @@ overlaps_time(PG_FUNCTION_ARGS)
+ #undef TIMEADT_LT
+ }
+ 
+-/* timestamp_time()
+- * Convert timestamp to time data type.
+- */
+ Datum
+ timestamp_time(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(0);
+-	TimeADT		result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		PG_RETURN_NULL();
+-
+-	if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("timestamp out of range")));
+-
+-	/*
+-	 * Could also do this with time = (timestamp / USECS_PER_DAY *
+-	 * USECS_PER_DAY) - timestamp;
+-	 */
+-	result = ((((tm->tm_hour * MINS_PER_HOUR + tm->tm_min) * SECS_PER_MINUTE) + tm->tm_sec) *
+-			  USECS_PER_SEC) + fsec;
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "timestamp_time is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* timestamptz_time()
+- * Convert timestamptz to time data type.
+- */
+ Datum
+ timestamptz_time(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMP(0);
+-	TimeADT		result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	int			tz;
+-	fsec_t		fsec;
+-
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		PG_RETURN_NULL();
+-
+-	if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("timestamp out of range")));
+-
+-	/*
+-	 * Could also do this with time = (timestamp / USECS_PER_DAY *
+-	 * USECS_PER_DAY) - timestamp;
+-	 */
+-	result = ((((tm->tm_hour * MINS_PER_HOUR + tm->tm_min) * SECS_PER_MINUTE) + tm->tm_sec) *
+-			  USECS_PER_SEC) + fsec;
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "timestamptz_time is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* datetime_timestamp()
+@@ -2000,30 +1943,11 @@ time_interval(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(result);
+ }
+ 
+-/* interval_time()
+- * Convert interval to time data type.
+- *
+- * This is defined as producing the fractional-day portion of the interval.
+- * Therefore, we can just ignore the months field.  It is not real clear
+- * what to do with negative intervals, but we choose to subtract the floor,
+- * so that, say, '-2 hours' becomes '22:00:00'.
+- */
+ Datum
+ interval_time(PG_FUNCTION_ARGS)
+ {
+-	Interval   *span = PG_GETARG_INTERVAL_P(0);
+-	TimeADT		result;
+-
+-	if (INTERVAL_NOT_FINITE(span))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("cannot convert infinite interval to time")));
+-
+-	result = span->time % USECS_PER_DAY;
+-	if (result < 0)
+-		result += USECS_PER_DAY;
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "interval_time is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* time_mi_time()
+@@ -2814,13 +2738,8 @@ overlaps_timetz(PG_FUNCTION_ARGS)
+ Datum
+ timetz_time(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *timetz = PG_GETARG_TIMETZADT_P(0);
+-	TimeADT		result;
+-
+-	/* swallow the time zone and just return the time */
+-	result = timetz->time;
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "timetz_time is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

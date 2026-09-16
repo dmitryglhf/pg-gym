@@ -1,0 +1,98 @@
+diff --git a/src/backend/utils/adt/dbsize.c b/src/backend/utils/adt/dbsize.c
+index f906fb7..f14c325 100644
+--- a/src/backend/utils/adt/dbsize.c
++++ b/src/backend/utils/adt/dbsize.c
+@@ -562,49 +562,11 @@ pg_total_relation_size(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT64(size);
+ }
+ 
+-/*
+- * formatting with size units
+- */
+ Datum
+ pg_size_pretty(PG_FUNCTION_ARGS)
+ {
+-	int64		size = PG_GETARG_INT64(0);
+-	char		buf[64];
+-	const struct size_pretty_unit *unit;
+-
+-	for (unit = size_pretty_units; unit->name != NULL; unit++)
+-	{
+-		uint8		bits;
+-		uint64		abs_size = size < 0 ? 0 - (uint64) size : (uint64) size;
+-
+-		/*
+-		 * Use this unit if there are no more units or the absolute size is
+-		 * below the limit for the current unit.
+-		 */
+-		if (unit[1].name == NULL || abs_size < unit->limit)
+-		{
+-			if (unit->round)
+-				size = half_rounded(size);
+-
+-			snprintf(buf, sizeof(buf), INT64_FORMAT " %s", size, unit->name);
+-			break;
+-		}
+-
+-		/*
+-		 * Determine the number of bits to use to build the divisor.  We may
+-		 * need to use 1 bit less than the difference between this and the
+-		 * next unit if the next unit uses half rounding.  Or we may need to
+-		 * shift an extra bit if this unit uses half rounding and the next one
+-		 * does not.  We use division rather than shifting right by this
+-		 * number of bits to ensure positive and negative values are rounded
+-		 * in the same way.
+-		 */
+-		bits = (unit[1].unitbits - unit->unitbits - (unit[1].round == true)
+-				+ (unit->round == true));
+-		size /= ((int64) 1) << bits;
+-	}
+-
+-	PG_RETURN_TEXT_P(cstring_to_text(buf));
++	elog(ERROR, "pg_size_pretty is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ static char *
+@@ -671,39 +633,8 @@ numeric_truncated_divide(Numeric n, int64 divisor)
+ Datum
+ pg_size_pretty_numeric(PG_FUNCTION_ARGS)
+ {
+-	Numeric		size = PG_GETARG_NUMERIC(0);
+-	char	   *result = NULL;
+-	const struct size_pretty_unit *unit;
+-
+-	for (unit = size_pretty_units; unit->name != NULL; unit++)
+-	{
+-		unsigned int shiftby;
+-
+-		/* use this unit if there are no more units or we're below the limit */
+-		if (unit[1].name == NULL ||
+-			numeric_is_less(numeric_absolute(size),
+-							int64_to_numeric(unit->limit)))
+-		{
+-			if (unit->round)
+-				size = numeric_half_rounded(size);
+-
+-			result = psprintf("%s %s", numeric_to_cstring(size), unit->name);
+-			break;
+-		}
+-
+-		/*
+-		 * Determine the number of bits to use to build the divisor.  We may
+-		 * need to use 1 bit less than the difference between this and the
+-		 * next unit if the next unit uses half rounding.  Or we may need to
+-		 * shift an extra bit if this unit uses half rounding and the next one
+-		 * does not.
+-		 */
+-		shiftby = (unit[1].unitbits - unit->unitbits - (unit[1].round == true)
+-				   + (unit->round == true));
+-		size = numeric_truncated_divide(size, ((int64) 1) << shiftby);
+-	}
+-
+-	PG_RETURN_TEXT_P(cstring_to_text(result));
++	elog(ERROR, "pg_size_pretty_numeric is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

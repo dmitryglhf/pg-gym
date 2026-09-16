@@ -1,0 +1,65 @@
+diff --git a/src/backend/utils/adt/enum.c b/src/backend/utils/adt/enum.c
+index 814c7fb..711dd3b 100644
+--- a/src/backend/utils/adt/enum.c
++++ b/src/backend/utils/adt/enum.c
+@@ -491,56 +491,18 @@ enum_last(PG_FUNCTION_ARGS)
+ 	PG_RETURN_OID(max);
+ }
+ 
+-/* 2-argument variant of enum_range */
+ Datum
+ enum_range_bounds(PG_FUNCTION_ARGS)
+ {
+-	Oid			lower;
+-	Oid			upper;
+-	Oid			enumtypoid;
+-
+-	if (PG_ARGISNULL(0))
+-		lower = InvalidOid;
+-	else
+-		lower = PG_GETARG_OID(0);
+-	if (PG_ARGISNULL(1))
+-		upper = InvalidOid;
+-	else
+-		upper = PG_GETARG_OID(1);
+-
+-	/*
+-	 * We rely on being able to get the specific enum type from the calling
+-	 * expression tree.  The generic type mechanism should have ensured that
+-	 * both are of the same type.
+-	 */
+-	enumtypoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+-	if (enumtypoid == InvalidOid)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+-				 errmsg("could not determine actual enum type")));
+-
+-	PG_RETURN_ARRAYTYPE_P(enum_range_internal(enumtypoid, lower, upper));
++	elog(ERROR, "enum_range_bounds is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* 1-argument variant of enum_range */
+ Datum
+ enum_range_all(PG_FUNCTION_ARGS)
+ {
+-	Oid			enumtypoid;
+-
+-	/*
+-	 * We rely on being able to get the specific enum type from the calling
+-	 * expression tree.  Notice that the actual value of the argument isn't
+-	 * examined at all; in particular it might be NULL.
+-	 */
+-	enumtypoid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+-	if (enumtypoid == InvalidOid)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+-				 errmsg("could not determine actual enum type")));
+-
+-	PG_RETURN_ARRAYTYPE_P(enum_range_internal(enumtypoid,
+-											  InvalidOid, InvalidOid));
++	elog(ERROR, "enum_range_all is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ static ArrayType *

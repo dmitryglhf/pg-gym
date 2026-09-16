@@ -1,0 +1,40 @@
+{
+  "func": "isfinite",
+  "variants": [
+    {
+      "arguments": "date",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "finite date?"
+    },
+    {
+      "arguments": "timestamptz",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "finite timestamp?"
+    },
+    {
+      "arguments": "interval",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "finite interval?"
+    },
+    {
+      "arguments": "timestamp",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "finite timestamp?"
+    }
+  ],
+  "description": "Test for finite date (not +/-infinity)\nTest for finite timestamp (not +/-infinity)\nTest for finite interval (not +/-infinity)",
+  "examples": [
+    "isfinite(date '2001-02-16') -> true",
+    "isfinite(timestamp 'infinity') -> false",
+    "isfinite(interval '4 hours') -> true"
+  ],
+  "mode": "stub"
+}

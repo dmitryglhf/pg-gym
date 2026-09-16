@@ -1,0 +1,13 @@
+diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c
+index 535c74fe..932cf549 100644
+--- a/src/backend/commands/tablecmds.c
++++ b/src/backend/commands/tablecmds.c
+@@ -7345,8 +7345,6 @@ ATExecAddColumn(List **wqueue, AlteredTableInfo *tab, Relation rel,
+ 				if (!missingIsNull)
+ 				{
+ 					StoreAttrMissingVal(rel, attribute->attnum, missingval);
+-					/* Make the additional catalog change visible */
+-					CommandCounterIncrement();
+ 					has_missing = true;
+ 				}
+ 				FreeExecutorState(estate);

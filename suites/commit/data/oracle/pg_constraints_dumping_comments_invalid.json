@@ -1,0 +1,23 @@
+{
+  "func": "pg_constraints_dumping_comments_invalid",
+  "sha": "d07bc7c2b3ca5454a036487f67870fa7fb73491c",
+  "parent": "c0a392c9e0ded5928e2767ae82c56c4760f9d114",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_constraints_dumping_comments_invalid.patch",
+  "test_files": [
+    "src/test/regress/sql/constraints.sql",
+    "src/test/regress/expected/constraints.out"
+  ],
+  "reference": "diff --git a/src/bin/pg_dump/pg_dump.c b/src/bin/pg_dump/pg_dump.c\nindex 9ed1a856f..06f630a91 100644\n--- a/src/bin/pg_dump/pg_dump.c\n+++ b/src/bin/pg_dump/pg_dump.c\n@@ -11623,8 +11623,13 @@ dumpDomain(Archive *fout, const TypeInfo *tyinfo)\n \tfor (i = 0; i < tyinfo->nDomChecks; i++)\n \t{\n \t\tConstraintInfo *domcheck = &(tyinfo->domChecks[i]);\n-\t\tPQExpBuffer conprefix = createPQExpBuffer();\n+\t\tPQExpBuffer conprefix;\n \n+\t\t/* but only if the constraint itself was dumped here */\n+\t\tif (domcheck->separate)\n+\t\t\tcontinue;\n+\n+\t\tconprefix = createPQExpBuffer();\n \t\tappendPQExpBuffer(conprefix, \"CONSTRAINT %s ON DOMAIN\",\n \t\t\t\t\t\t  fmtId(domcheck->dobj.name));\n \n@@ -17361,6 +17366,22 @@ dumpConstraint(Archive *fout, const ConstraintInfo *coninfo)\n \t\t\t\t\t\t\t\t\t\t  .section = SECTION_POST_DATA,\n \t\t\t\t\t\t\t\t\t\t  .createStmt = q->data,\n \t\t\t\t\t\t\t\t\t\t  .dropStmt = delq->data));\n+\n+\t\t\tif (coninfo->dobj.dump & DUMP_COMPONENT_COMMENT)\n+\t\t\t{\n+\t\t\t\tPQExpBuffer conprefix = createPQExpBuffer();\n+\t\t\t\tchar\t   *qtypname = pg_strdup(fmtId(tyinfo->dobj.name));\n+\n+\t\t\t\tappendPQExpBuffer(conprefix, \"CONSTRAINT %s ON DOMAIN\",\n+\t\t\t\t\t\t\t\t  fmtId(coninfo->dobj.name));\n+\n+\t\t\t\tdumpComment(fout, conprefix->data, qtypname,\n+\t\t\t\t\t\t\ttyinfo->dobj.namespace->dobj.name,\n+\t\t\t\t\t\t\ttyinfo->rolname,\n+\t\t\t\t\t\t\tconinfo->dobj.catId, 0, tyinfo->dobj.dumpId);\n+\t\t\t\tdestroyPQExpBuffer(conprefix);\n+\t\t\t\tfree(qtypname);\n+\t\t\t}\n \t\t}\n \t}\n \telse\n",
+  "test": "diff --git a/src/test/regress/expected/constraints.out b/src/test/regress/expected/constraints.out\nindex cf0b80d61..a5b5795e5 100644\n--- a/src/test/regress/expected/constraints.out\n+++ b/src/test/regress/expected/constraints.out\n@@ -830,3 +830,7 @@ DROP TABLE constraint_comments_tbl;\n DROP DOMAIN constraint_comments_dom;\n DROP ROLE regress_constraint_comments;\n DROP ROLE regress_constraint_comments_noaccess;\n+-- Leave some constraints for the pg_upgrade test to pick up\n+CREATE DOMAIN constraint_comments_dom AS int;\n+ALTER DOMAIN constraint_comments_dom ADD CONSTRAINT inv_ck CHECK (value > 0) NOT VALID;\n+COMMENT ON CONSTRAINT inv_ck ON DOMAIN constraint_comments_dom IS 'comment on invalid constraint';\ndiff --git a/src/test/regress/sql/constraints.sql b/src/test/regress/sql/constraints.sql\nindex e3e3bea70..c47db9469 100644\n--- a/src/test/regress/sql/constraints.sql\n+++ b/src/test/regress/sql/constraints.sql\n@@ -632,3 +632,9 @@ DROP DOMAIN constraint_comments_dom;\n \n DROP ROLE regress_constraint_comments;\n DROP ROLE regress_constraint_comments_noaccess;\n+\n+-- Leave some constraints for the pg_upgrade test to pick up\n+CREATE DOMAIN constraint_comments_dom AS int;\n+\n+ALTER DOMAIN constraint_comments_dom ADD CONSTRAINT inv_ck CHECK (value > 0) NOT VALID;\n+COMMENT ON CONSTRAINT inv_ck ON DOMAIN constraint_comments_dom IS 'comment on invalid constraint';\n",
+  "oracle_command": "make -C src/test/regress check TESTS=constraints",
+  "expected_tests": [
+    "constraints"
+  ],
+  "failing_tests": [],
+  "usable": false,
+  "verify_status": "no_coverage",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

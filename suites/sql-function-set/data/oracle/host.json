@@ -1,0 +1,27 @@
+{
+  "func": "host",
+  "mode": "stub",
+  "patch": "prep/host.patch",
+  "symbols": [
+    "network_host"
+  ],
+  "units": {
+    "network_host": {
+      "file": "src/backend/utils/adt/network.c",
+      "code": "/*\n * Extract data from a network datatype.\n */\nDatum\nnetwork_host(PG_FUNCTION_ARGS)\n{\n\tinet\t   *ip = PG_GETARG_INET_PP(0);\n\tchar\t   *ptr;\n\tchar\t\ttmp[sizeof(\"xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:255.255.255.255/128\")];\n\n\t/* force display of max bits, regardless of masklen... */\n\tif (pg_inet_net_ntop(ip_family(ip), ip_addr(ip), ip_maxbits(ip),\n\t\t\t\t\t\t tmp, sizeof(tmp)) == NULL)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_BINARY_REPRESENTATION),\n\t\t\t\t errmsg(\"could not format inet value: %m\")));\n\n\t/* Suppress /n if present (shouldn't happen now) */\n\tif ((ptr = strchr(tmp, '/')) != NULL)\n\t\t*ptr = '\\0';\n\n\tPG_RETURN_TEXT_P(cstring_to_text(tmp));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "inet"
+  ],
+  "category": "network",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 21,
+  "oracle_diff_by_file": {
+    "inet": 21
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "pg_join_assume_distinct_implies",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "a4eb938b33557193d90c1b396afd2c274e28b07e",
+  "parent": "aa14281fdde6b2cc7a794dd02bc128dd0cb20b45",
+  "date": "2026-08-25",
+  "subject": "Don't assume DISTINCT ON implies uniqueness when the tlist has SRFs",
+  "area": "planner, DISTINCT ON and set-returning functions",
+  "licence": "PostgreSQL",
+  "goal": "The planner can incorrectly treat DISTINCT ON output as unique when a set-returning expression in the target list expands each selected row afterward. A join may then be removed or costed as unique even though the subquery produces duplicates.\n\nUse a subquery such as `SELECT DISTINCT ON (id) id, generate_series(1,2) ... ORDER BY id` on the nullable side of a join. The outer query must preserve both rows generated for each id, and its plan must not rely on a false uniqueness proof. Plain DISTINCT, DISTINCT ON without delayed set-returning expressions, and genuinely unique subqueries must remain optimizable.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/plan/analyzejoins.c",
+      "added": 11,
+      "deleted": 5
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "join"
+    ],
+    "command": "make -C src/test/regress check TESTS=join"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

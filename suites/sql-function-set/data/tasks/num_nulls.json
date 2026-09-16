@@ -1,0 +1,18 @@
+{
+  "func": "num_nulls",
+  "variants": [
+    {
+      "arguments": "any",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "count the number of NULL arguments"
+    }
+  ],
+  "description": "Returns the number of null arguments.",
+  "examples": [
+    "num_nulls(1, NULL, 2) -> 1"
+  ],
+  "mode": "stub",
+  "category": "comparison"
+}

@@ -1,0 +1,27 @@
+{
+  "func": "broadcast",
+  "mode": "stub",
+  "patch": "prep/broadcast.patch",
+  "symbols": [
+    "network_broadcast"
+  ],
+  "units": {
+    "network_broadcast": {
+      "file": "src/backend/utils/adt/network.c",
+      "code": "Datum\nnetwork_broadcast(PG_FUNCTION_ARGS)\n{\n\tinet\t   *ip = PG_GETARG_INET_PP(0);\n\tinet\t   *dst;\n\tint\t\t\tbyte;\n\tint\t\t\tbits;\n\tint\t\t\tmaxbytes;\n\tunsigned char mask;\n\tunsigned char *a,\n\t\t\t   *b;\n\n\t/* make sure any unused bits are zeroed */\n\tdst = (inet *) palloc0(sizeof(inet));\n\n\tmaxbytes = ip_addrsize(ip);\n\tbits = ip_bits(ip);\n\ta = ip_addr(ip);\n\tb = ip_addr(dst);\n\n\tfor (byte = 0; byte < maxbytes; byte++)\n\t{\n\t\tif (bits >= 8)\n\t\t{\n\t\t\tmask = 0x00;\n\t\t\tbits -= 8;\n\t\t}\n\t\telse if (bits == 0)\n\t\t\tmask = 0xff;\n\t\telse\n\t\t{\n\t\t\tmask = 0xff >> bits;\n\t\t\tbits = 0;\n\t\t}\n\n\t\tb[byte] = a[byte] | mask;\n\t}\n\n\tip_family(dst) = ip_family(ip);\n\tip_bits(dst) = ip_bits(ip);\n\tSET_INET_VARSIZE(dst);\n\n\tPG_RETURN_INET_P(dst);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "inet"
+  ],
+  "category": "network",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 83,
+  "oracle_diff_by_file": {
+    "inet": 83
+  }
+}

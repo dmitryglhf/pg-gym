@@ -1,0 +1,12 @@
+FROM denoland/deno:2.9.6 AS build
+WORKDIR /app
+COPY web/ ./
+RUN deno install --frozen --allow-scripts=npm:esbuild && deno task build
+FROM denoland/deno:2.9.6
+WORKDIR /app
+COPY --from=build --chown=deno:deno /app /app
+COPY --from=build --chown=deno:deno /deno-dir /deno-dir
+USER deno
+ENV DENO_NO_UPDATE_CHECK=1
+EXPOSE 8000
+CMD ["serve", "--allow-net", "--allow-env", "--allow-read=/app,/deno-dir", "--port=8000", "_fresh/server.js"]

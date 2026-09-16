@@ -1,0 +1,14 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..5087886 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1617,7 +1617,8 @@ EncodeSpecialInterval(const Interval *interval, char *str)
+ Datum
+ now(PG_FUNCTION_ARGS)
+ {
+-	PG_RETURN_TIMESTAMPTZ(GetCurrentTransactionStartTimestamp());
++	elog(ERROR, "now is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

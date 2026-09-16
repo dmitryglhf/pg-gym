@@ -1,0 +1,18 @@
+{
+  "func": "timestamptz_gt_date",
+  "mode": "stub",
+  "patch": "prep/timestamptz_gt_date.patch",
+  "symbols": [
+    "timestamptz_gt_date"
+  ],
+  "units": {
+    "timestamptz_gt_date": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntimestamptz_gt_date(PG_FUNCTION_ARGS)\n{\n\tTimestampTz dt1 = PG_GETARG_TIMESTAMPTZ(0);\n\tDateADT\t\tdateVal = PG_GETARG_DATEADT(1);\n\n\tPG_RETURN_BOOL(date_cmp_timestamptz_internal(dateVal, dt1) < 0);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

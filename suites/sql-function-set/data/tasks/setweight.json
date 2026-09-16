@@ -1,0 +1,26 @@
+{
+  "func": "setweight",
+  "variants": [
+    {
+      "arguments": "tsvector char",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "set given weight for whole tsvector"
+    },
+    {
+      "arguments": "tsvector char _text",
+      "returns": "tsvector",
+      "kind": "f",
+      "volatile": "i",
+      "description": "set given weight for given lexemes"
+    }
+  ],
+  "description": "Assigns the specified weight to each element of the vector.\nAssigns the specified weight to elements of the vector that are listed in lexemes. The strings in lexemes are taken as lexemes as-is, without further processing. Strings that do not match any lexeme in vector are ignored.",
+  "examples": [
+    "setweight('fat:2,4 cat:3 rat:5B'::tsvector, 'A') -> 'cat':3A 'fat':2A,4A 'rat':5A",
+    "setweight('fat:2,4 cat:3 rat:5,6B'::tsvector, 'A', '{cat,rat}') -> 'cat':3A 'fat':2,4 'rat':5A,6A"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

@@ -1,0 +1,36 @@
+{
+  "name": "pg_partition_prune_setrefs_c_s",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "0671a71e0210f7a3be55af240e9e7bbbea3cb44d",
+  "parent": "149ed87e22ce70608cc584f2f54c2f12d3a96680",
+  "date": "2025-01-16",
+  "subject": "Fix setrefs.c's failure to do expression processing on prune steps.",
+  "area": "planner, run-time partition pruning",
+  "licence": "PostgreSQL",
+  "goal": "A subquery used in a run-time partition-pruning expression can leave the finished plan containing an internal placeholder that execution does not understand. Planning or running the query then fails with an unrecognized-node-type error.\n\n    create table asptab (id int primary key) partition by range (id);\n    create table asptab0 partition of asptab for values from (0) to (1);\n    create table asptab1 partition of asptab for values from (1) to (2);\n\n    explain (costs off)\n    select * from\n      (select exists (select 1 from int4_tbl tinner where f1 = touter.f1) as b\n       from int4_tbl touter) ss,\n      asptab\n    where asptab.id > ss.b::int;\n\nThat query has to plan and run. Its EXPLAIN output must contain executable SubPlans under both partition scans, and pruning has to keep selecting the same partitions it selects now. Existing partition-pruning plans must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/plan/setrefs.c",
+      "added": 12,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/partition_prune.sql",
+    "src/test/regress/expected/partition_prune.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "partition_prune"
+    ],
+    "command": "make -C src/test/regress check TESTS=partition_prune"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

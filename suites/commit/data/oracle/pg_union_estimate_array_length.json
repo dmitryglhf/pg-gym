@@ -1,0 +1,27 @@
+{
+  "func": "pg_union_estimate_array_length",
+  "sha": "93ed18720105ebacfd2a2bdeb55bf33feaf2ec80",
+  "parent": "c05c3baf169f353914ed34fcabd057be1d25f9b4",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_union_estimate_array_length.patch",
+  "test_files": [
+    "src/test/regress/sql/union.sql",
+    "src/test/regress/expected/union.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/selfuncs.c b/src/backend/utils/adt/selfuncs.c\nindex d5468edc..2c1daefc 100644\n--- a/src/backend/utils/adt/selfuncs.c\n+++ b/src/backend/utils/adt/selfuncs.c\n@@ -2165,6 +2165,18 @@ estimate_array_length(PlannerInfo *root, Node *arrayexpr)\n \t\tAttStatsSlot sslot;\n \t\tdouble\t\tnelem = 0;\n \n+\t\t/*\n+\t\t * Skip calling examine_variable for Var with varno 0, which has no\n+\t\t * valid relation entry and would error in find_base_rel.  Such a Var\n+\t\t * can appear when a nested set operation's output type doesn't match\n+\t\t * the parent's expected type, because recurse_set_operations builds a\n+\t\t * projection target list using generate_setop_tlist with varno 0, and\n+\t\t * if the required type coercion involves an ArrayCoerceExpr, we can\n+\t\t * be called on that Var.\n+\t\t */\n+\t\tif (IsA(arrayexpr, Var) && ((Var *) arrayexpr)->varno == 0)\n+\t\t\treturn 10;\t\t\t/* default guess, should match scalararraysel */\n+\n \t\texamine_variable(root, arrayexpr, 0, &vardata);\n \t\tif (HeapTupleIsValid(vardata.statsTuple))\n \t\t{\n",
+  "test": "diff --git a/src/test/regress/expected/union.out b/src/test/regress/expected/union.out\nindex 0fd0e1c3..882b075b 100644\n--- a/src/test/regress/expected/union.out\n+++ b/src/test/regress/expected/union.out\n@@ -1489,3 +1489,20 @@ on true limit 1;\n                ->  Result\n (6 rows)\n \n+-- Test handling of Vars with varno 0 in estimate_array_length\n+explain (verbose, costs off)\n+select null::int[] union all select null::int[] union all select null::bigint[];\n+                 QUERY PLAN                  \n+---------------------------------------------\n+ Append\n+   ->  Result\n+         Output: (NULL::integer[])\n+         ->  Append\n+               ->  Result\n+                     Output: NULL::integer[]\n+               ->  Result\n+                     Output: NULL::integer[]\n+   ->  Result\n+         Output: NULL::bigint[]\n+(10 rows)\n+\ndiff --git a/src/test/regress/sql/union.sql b/src/test/regress/sql/union.sql\nindex f8826514..c52ca012 100644\n--- a/src/test/regress/sql/union.sql\n+++ b/src/test/regress/sql/union.sql\n@@ -577,3 +577,7 @@ select * from tenk1 t1\n left join lateral\n   (select t1.tenthous from tenk2 t2 union all (values(1)))\n on true limit 1;\n+\n+-- Test handling of Vars with varno 0 in estimate_array_length\n+explain (verbose, costs off)\n+select null::int[] union all select null::int[] union all select null::bigint[];\n",
+  "oracle_command": "make -C src/test/regress check TESTS=union",
+  "expected_tests": [
+    "union"
+  ],
+  "failing_tests": [
+    "union"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 14,
+  "oracle_diff_by_file": {
+    "union": 14
+  }
+}

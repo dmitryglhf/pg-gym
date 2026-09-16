@@ -1,0 +1,15 @@
+{
+  "func": "pg_conf_load_time",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "configuration load time"
+    }
+  ],
+  "description": "Returns the time when the server configuration files were last loaded. If the current session was alive at the time, this will be the time when the session itself re-read the configuration files (so the reading will vary a little in different sessions). Otherwise it is the time when the postmaster process re-read the configuration files.",
+  "examples": [],
+  "mode": "stub"
+}

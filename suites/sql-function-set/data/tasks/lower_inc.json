@@ -1,0 +1,26 @@
+{
+  "func": "lower_inc",
+  "variants": [
+    {
+      "arguments": "anyrange",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "is the range's lower bound inclusive?"
+    },
+    {
+      "arguments": "anymultirange",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "is the multirange's lower bound inclusive?"
+    }
+  ],
+  "description": "Is the range's lower bound inclusive?\nIs the multirange's lower bound inclusive?",
+  "examples": [
+    "lower_inc(numrange(1.1,2.2)) -> t",
+    "lower_inc('{[1.1,2.2)}'::nummultirange) -> t"
+  ],
+  "mode": "stub",
+  "category": "range"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_merge_merge_into_plain",
+  "area": "executor, MERGE into inheritance parent",
+  "goal": "A MERGE whose target is the parent of a plain inheritance tree mishandles rows produced by WHEN NOT MATCHED ... INSERT. Depending on the table layout and the rest of the command it can crash, bypass checks on the inserted row, or fail to produce the promised RETURNING output.\n\nTake an ordinary table with inheritance children, remove any redirecting trigger so inserts really do land in the parent, and run a MERGE whose ON condition matches nothing and whose only action is WHEN NOT MATCHED THEN INSERT. The row has to appear in the parent alone, a FORCE ROW LEVEL SECURITY policy on the parent has to reject a row that violates it, and RETURNING merge_action(), m.* has to describe an accepted row accurately.\n\nMERGE into a partitioned table, into a plain table with no children, and MERGE with only MATCHED actions must all be unaffected, plan shapes included.",
+  "func": "pg_merge_merge_into_plain",
+  "graded_by": [
+    "src/test/regress/sql/merge.sql",
+    "src/test/regress/expected/merge.out"
+  ]
+}

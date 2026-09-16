@@ -1,0 +1,44 @@
+diff --git a/src/backend/commands/sequence.c b/src/backend/commands/sequence.c
+index d5aff5b..f298b37 100644
+--- a/src/backend/commands/sequence.c
++++ b/src/backend/commands/sequence.c
+@@ -1041,35 +1041,18 @@ do_setval(Oid relid, int64 next, bool iscalled)
+ 	sequence_close(seqrel, NoLock);
+ }
+ 
+-/*
+- * Implement the 2 arg setval procedure.
+- * See do_setval for discussion.
+- */
+ Datum
+ setval_oid(PG_FUNCTION_ARGS)
+ {
+-	Oid			relid = PG_GETARG_OID(0);
+-	int64		next = PG_GETARG_INT64(1);
+-
+-	do_setval(relid, next, true);
+-
+-	PG_RETURN_INT64(next);
++	elog(ERROR, "setval_oid is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * Implement the 3 arg setval procedure.
+- * See do_setval for discussion.
+- */
+ Datum
+ setval3_oid(PG_FUNCTION_ARGS)
+ {
+-	Oid			relid = PG_GETARG_OID(0);
+-	int64		next = PG_GETARG_INT64(1);
+-	bool		iscalled = PG_GETARG_BOOL(2);
+-
+-	do_setval(relid, next, iscalled);
+-
+-	PG_RETURN_INT64(next);
++	elog(ERROR, "setval3_oid is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

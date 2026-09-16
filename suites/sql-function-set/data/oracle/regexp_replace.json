@@ -1,0 +1,43 @@
+{
+  "func": "regexp_replace",
+  "mode": "stub",
+  "patch": "prep/regexp_replace.patch",
+  "symbols": [
+    "textregexreplace",
+    "textregexreplace_extended",
+    "textregexreplace_extended_no_flags",
+    "textregexreplace_extended_no_n",
+    "textregexreplace_noopt"
+  ],
+  "units": {
+    "textregexreplace": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/*\n * textregexreplace()\n *\t\tReturn a string matched by a regular expression, with replacement.\n */\nDatum\ntextregexreplace(PG_FUNCTION_ARGS)\n{\n\ttext\t   *s = PG_GETARG_TEXT_PP(0);\n\ttext\t   *p = PG_GETARG_TEXT_PP(1);\n\ttext\t   *r = PG_GETARG_TEXT_PP(2);\n\ttext\t   *opt = PG_GETARG_TEXT_PP(3);\n\tpg_re_flags flags;\n\n\t/*\n\t * regexp_replace() with four arguments will be preferentially resolved as\n\t * this form when the fourth argument is of type UNKNOWN.  However, the\n\t * user might have intended to call textregexreplace_extended_no_n.  If we\n\t * see flags that look like an integer, emit the same error that\n\t * parse_re_flags would, but add a HINT about how to fix it.\n\t */\n\tif (VARSIZE_ANY_EXHDR(opt) > 0)\n\t{\n\t\tchar\t   *opt_p = VARDATA_ANY(opt);\n\t\tconst char *end_p = opt_p + VARSIZE_ANY_EXHDR(opt);\n\n\t\tif (*opt_p >= '0' && *opt_p <= '9')\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid regular expression option: \\\"%.*s\\\"\",\n\t\t\t\t\t\t\tpg_mblen_range(opt_p, end_p), opt_p),\n\t\t\t\t\t errhint(\"If you meant to use regexp_replace() with a start parameter, cast the fourth argument to integer explicitly.\")));\n\t}\n\n\tparse_re_flags(&flags, opt);\n\n\tPG_RETURN_TEXT_P(replace_text_regexp(s, p, r,\n\t\t\t\t\t\t\t\t\t\t flags.cflags, PG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t\t\t 0, flags.glob ? 0 : 1));\n}\n\n"
+    },
+    "textregexreplace_extended": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/*\n * textregexreplace_extended()\n *\t\tReturn a string matched by a regular expression, with replacement.\n *\t\tExtends textregexreplace by allowing a start position and the\n *\t\tchoice of the occurrence to replace (0 means all occurrences).\n */\nDatum\ntextregexreplace_extended(PG_FUNCTION_ARGS)\n{\n\ttext\t   *s = PG_GETARG_TEXT_PP(0);\n\ttext\t   *p = PG_GETARG_TEXT_PP(1);\n\ttext\t   *r = PG_GETARG_TEXT_PP(2);\n\tint\t\t\tstart = 1;\n\tint\t\t\tn = 1;\n\ttext\t   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(5);\n\tpg_re_flags re_flags;\n\n\t/* Collect optional parameters */\n\tif (PG_NARGS() > 3)\n\t{\n\t\tstart = PG_GETARG_INT32(3);\n\t\tif (start <= 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"start\", start)));\n\t}\n\tif (PG_NARGS() > 4)\n\t{\n\t\tn = PG_GETARG_INT32(4);\n\t\tif (n < 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid value for parameter \\\"%s\\\": %d\",\n\t\t\t\t\t\t\t\"n\", n)));\n\t}\n\n\t/* Determine options */\n\tparse_re_flags(&re_flags, flags);\n\n\t/* If N was not specified, deduce it from the 'g' flag */\n\tif (PG_NARGS() <= 4)\n\t\tn = re_flags.glob ? 0 : 1;\n\n\t/* Do the replacement(s) */\n\tPG_RETURN_TEXT_P(replace_text_regexp(s, p, r,\n\t\t\t\t\t\t\t\t\t\t re_flags.cflags, PG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t\t\t start - 1, n));\n}\n\n"
+    },
+    "textregexreplace_extended_no_flags": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\ntextregexreplace_extended_no_flags(PG_FUNCTION_ARGS)\n{\n\treturn textregexreplace_extended(fcinfo);\n}\n\n"
+    },
+    "textregexreplace_extended_no_n": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/* This is separate to keep the opr_sanity regression test from complaining */\nDatum\ntextregexreplace_extended_no_n(PG_FUNCTION_ARGS)\n{\n\treturn textregexreplace_extended(fcinfo);\n}\n\n"
+    },
+    "textregexreplace_noopt": {
+      "file": "src/backend/utils/adt/regexp.c",
+      "code": "/*\n * textregexreplace_noopt()\n *\t\tReturn a string matched by a regular expression, with replacement.\n *\n * This version doesn't have an option argument: we default to case\n * sensitive match, replace the first instance only.\n */\nDatum\ntextregexreplace_noopt(PG_FUNCTION_ARGS)\n{\n\ttext\t   *s = PG_GETARG_TEXT_PP(0);\n\ttext\t   *p = PG_GETARG_TEXT_PP(1);\n\ttext\t   *r = PG_GETARG_TEXT_PP(2);\n\n\tPG_RETURN_TEXT_P(replace_text_regexp(s, p, r,\n\t\t\t\t\t\t\t\t\t\t REG_ADVANCED, PG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t\t\t 0, 1));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null,
+  "category": "pattern",
+  "usable": false,
+  "verify_status": "check_did_not_run",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

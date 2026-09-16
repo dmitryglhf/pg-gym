@@ -1,0 +1,27 @@
+{
+  "func": "pg_generated_disallow_generated_columns",
+  "sha": "07f787e57399ad6108c181b020723db24fa1dbe0",
+  "parent": "726e77d7a94fd6d6ad99e439351ae6d4a48d3441",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_generated_disallow_generated_columns.patch",
+  "test_files": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/copy.c b/src/backend/commands/copy.c\nindex e5579820..da7164e6 100644\n--- a/src/backend/commands/copy.c\n+++ b/src/backend/commands/copy.c\n@@ -133,6 +133,9 @@ DoCopy(ParseState *pstate, const CopyStmt *stmt,\n \n \t\tif (stmt->whereClause)\n \t\t{\n+\t\t\tBitmapset  *expr_attrs = NULL;\n+\t\t\tint\t\t\ti;\n+\n \t\t\t/* add nsitem to query namespace */\n \t\t\taddNSItemToQuery(pstate, nsitem, false, true, true);\n \n@@ -145,6 +148,40 @@ DoCopy(ParseState *pstate, const CopyStmt *stmt,\n \t\t\t/* we have to fix its collations too */\n \t\t\tassign_expr_collations(pstate, whereClause);\n \n+\t\t\t/*\n+\t\t\t * Examine all the columns in the WHERE clause expression.  When\n+\t\t\t * the whole-row reference is present, examine all the columns of\n+\t\t\t * the table.\n+\t\t\t */\n+\t\t\tpull_varattnos(whereClause, 1, &expr_attrs);\n+\t\t\tif (bms_is_member(0 - FirstLowInvalidHeapAttributeNumber, expr_attrs))\n+\t\t\t{\n+\t\t\t\texpr_attrs = bms_add_range(expr_attrs,\n+\t\t\t\t\t\t\t\t\t\t   1 - FirstLowInvalidHeapAttributeNumber,\n+\t\t\t\t\t\t\t\t\t\t   RelationGetNumberOfAttributes(rel) - FirstLowInvalidHeapAttributeNumber);\n+\t\t\t\texpr_attrs = bms_del_member(expr_attrs, 0 - FirstLowInvalidHeapAttributeNumber);\n+\t\t\t}\n+\n+\t\t\ti = -1;\n+\t\t\twhile ((i = bms_next_member(expr_attrs, i)) >= 0)\n+\t\t\t{\n+\t\t\t\tAttrNumber\tattno = i + FirstLowInvalidHeapAttributeNumber;\n+\n+\t\t\t\tAssert(attno != 0);\n+\n+\t\t\t\t/*\n+\t\t\t\t * Prohibit generated columns in the WHERE clause.  Stored\n+\t\t\t\t * generated columns are not yet computed when the filtering\n+\t\t\t\t * happens.\n+\t\t\t\t */\n+\t\t\t\tif (TupleDescAttr(RelationGetDescr(rel), attno - 1)->attgenerated)\n+\t\t\t\t\tereport(ERROR,\n+\t\t\t\t\t\t\terrcode(ERRCODE_INVALID_COLUMN_REFERENCE),\n+\t\t\t\t\t\t\terrmsg(\"generated columns are not supported in COPY FROM WHERE conditions\"),\n+\t\t\t\t\t\t\terrdetail(\"Column \\\"%s\\\" is a generated column.\",\n+\t\t\t\t\t\t\t\t\t  get_attname(RelationGetRelid(rel), attno, false)));\n+\t\t\t}\n+\n \t\t\twhereClause = eval_const_expressions(NULL, whereClause);\n \n \t\t\twhereClause = (Node *) canonicalize_qual((Expr *) whereClause, false);\n",
+  "test": "diff --git a/src/test/regress/expected/generated.out b/src/test/regress/expected/generated.out\nindex 33472059..7d7f7fb7 100644\n--- a/src/test/regress/expected/generated.out\n+++ b/src/test/regress/expected/generated.out\n@@ -432,6 +432,12 @@ COPY gtest1 FROM stdin;\n COPY gtest1 (a, b) FROM stdin;\n ERROR:  column \"b\" is a generated column\n DETAIL:  Generated columns cannot be used in COPY.\n+COPY gtest1 FROM stdin WHERE b <> 10;\n+ERROR:  generated columns are not supported in COPY FROM WHERE conditions\n+DETAIL:  Column \"b\" is a generated column.\n+COPY gtest1 FROM stdin WHERE gtest1 IS NULL;\n+ERROR:  generated columns are not supported in COPY FROM WHERE conditions\n+DETAIL:  Column \"b\" is a generated column.\n SELECT * FROM gtest1 ORDER BY a;\n  a | b \n ---+---\ndiff --git a/src/test/regress/sql/generated.sql b/src/test/regress/sql/generated.sql\nindex 76e40c98..9152e191 100644\n--- a/src/test/regress/sql/generated.sql\n+++ b/src/test/regress/sql/generated.sql\n@@ -199,6 +199,10 @@ COPY gtest1 FROM stdin;\n \n COPY gtest1 (a, b) FROM stdin;\n \n+COPY gtest1 FROM stdin WHERE b <> 10;\n+\n+COPY gtest1 FROM stdin WHERE gtest1 IS NULL;\n+\n SELECT * FROM gtest1 ORDER BY a;\n \n TRUNCATE gtest3;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=generated",
+  "expected_tests": [
+    "generated"
+  ],
+  "failing_tests": [
+    "generated"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 35,
+  "oracle_diff_by_file": {
+    "generated": 35
+  }
+}

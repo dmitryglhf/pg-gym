@@ -1,0 +1,10 @@
+{
+  "name": "pg_subselect_mislabeling_lateral_references",
+  "area": "planner, lateral subquery pull-up",
+  "goal": "Pulling up a lateral subquery can assign the wrong outer-join nullability to an expression that combines an outer reference with a column from the subquery. Aggregation above the join then receives a differently nullable expression and can produce a wrong plan or result.\n\nLeft join a table to a lateral subquery projecting `t1.ten + t2.ten`, group by the outer key and sum that expression. The ten grouped sums must match direct left-join semantics, including zero and the expected multiples for the other groups, and EXPLAIN must attribute each input correctly. Non-lateral subqueries and lateral expressions that reference only one side must remain unchanged.",
+  "func": "pg_subselect_mislabeling_lateral_references",
+  "graded_by": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ]
+}

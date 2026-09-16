@@ -1,0 +1,18 @@
+{
+  "func": "array_positions",
+  "variants": [
+    {
+      "arguments": "anycompatiblearray anycompatible",
+      "returns": "_int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "returns an array of offsets of some value in array"
+    }
+  ],
+  "description": "Returns an array of the subscripts of all occurrences of the second argument in the array given as first argument. The array must be one-dimensional. Comparisons are done using IS NOT DISTINCT FROM semantics, so it is possible to search for NULL. NULL is returned only if the array is NULL; if the value is not found in the array, an empty array is returned.",
+  "examples": [
+    "array_positions(ARRAY['A','A','B','A'], 'A') -> {1,2,4}"
+  ],
+  "mode": "stub",
+  "category": "array"
+}

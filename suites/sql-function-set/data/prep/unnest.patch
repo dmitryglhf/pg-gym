@@ -1,0 +1,284 @@
+diff --git a/src/backend/utils/adt/arrayfuncs.c b/src/backend/utils/adt/arrayfuncs.c
+index 75cc4ee..42e3754 100644
+--- a/src/backend/utils/adt/arrayfuncs.c
++++ b/src/backend/utils/adt/arrayfuncs.c
+@@ -6248,92 +6248,11 @@ array_fill_internal(ArrayType *dims, ArrayType *lbs,
+ }
+ 
+ 
+-/*
+- * UNNEST
+- */
+ Datum
+ array_unnest(PG_FUNCTION_ARGS)
+ {
+-	typedef struct
+-	{
+-		array_iter	iter;
+-		int			nextelem;
+-		int			numelems;
+-		int16		elmlen;
+-		bool		elmbyval;
+-		char		elmalign;
+-	} array_unnest_fctx;
+-
+-	FuncCallContext *funcctx;
+-	array_unnest_fctx *fctx;
+-	MemoryContext oldcontext;
+-
+-	/* stuff done only on the first call of the function */
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		AnyArrayType *arr;
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * switch to memory context appropriate for multiple function calls
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/*
+-		 * Get the array value and detoast if needed.  We can't do this
+-		 * earlier because if we have to detoast, we want the detoasted copy
+-		 * to be in multi_call_memory_ctx, so it will go away when we're done
+-		 * and not before.  (If no detoast happens, we assume the originally
+-		 * passed array will stick around till then.)
+-		 */
+-		arr = PG_GETARG_ANY_ARRAY_P(0);
+-
+-		/* allocate memory for user context */
+-		fctx = (array_unnest_fctx *) palloc(sizeof(array_unnest_fctx));
+-
+-		/* initialize state */
+-		array_iter_setup(&fctx->iter, arr);
+-		fctx->nextelem = 0;
+-		fctx->numelems = ArrayGetNItems(AARR_NDIM(arr), AARR_DIMS(arr));
+-
+-		if (VARATT_IS_EXPANDED_HEADER(arr))
+-		{
+-			/* we can just grab the type data from expanded array */
+-			fctx->elmlen = arr->xpn.typlen;
+-			fctx->elmbyval = arr->xpn.typbyval;
+-			fctx->elmalign = arr->xpn.typalign;
+-		}
+-		else
+-			get_typlenbyvalalign(AARR_ELEMTYPE(arr),
+-								 &fctx->elmlen,
+-								 &fctx->elmbyval,
+-								 &fctx->elmalign);
+-
+-		funcctx->user_fctx = fctx;
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-	fctx = funcctx->user_fctx;
+-
+-	if (fctx->nextelem < fctx->numelems)
+-	{
+-		int			offset = fctx->nextelem++;
+-		Datum		elem;
+-
+-		elem = array_iter_next(&fctx->iter, &fcinfo->isnull, offset,
+-							   fctx->elmlen, fctx->elmbyval, fctx->elmalign);
+-
+-		SRF_RETURN_NEXT(funcctx, elem);
+-	}
+-	else
+-	{
+-		/* do when there is no more left */
+-		SRF_RETURN_DONE(funcctx);
+-	}
++	elog(ERROR, "array_unnest is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+diff --git a/src/backend/utils/adt/multirangetypes.c b/src/backend/utils/adt/multirangetypes.c
+index 7f14f7e..21277ff 100644
+--- a/src/backend/utils/adt/multirangetypes.c
++++ b/src/backend/utils/adt/multirangetypes.c
+@@ -2710,76 +2710,11 @@ range_merge_from_multirange(PG_FUNCTION_ARGS)
+ 	PG_RETURN_RANGE_P(result);
+ }
+ 
+-/* Turn multirange into a set of ranges */
+ Datum
+ multirange_unnest(PG_FUNCTION_ARGS)
+ {
+-	typedef struct
+-	{
+-		MultirangeType *mr;
+-		TypeCacheEntry *typcache;
+-		int			index;
+-	} multirange_unnest_fctx;
+-
+-	FuncCallContext *funcctx;
+-	multirange_unnest_fctx *fctx;
+-	MemoryContext oldcontext;
+-
+-	/* stuff done only on the first call of the function */
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		MultirangeType *mr;
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * switch to memory context appropriate for multiple function calls
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/*
+-		 * Get the multirange value and detoast if needed.  We can't do this
+-		 * earlier because if we have to detoast, we want the detoasted copy
+-		 * to be in multi_call_memory_ctx, so it will go away when we're done
+-		 * and not before.  (If no detoast happens, we assume the originally
+-		 * passed multirange will stick around till then.)
+-		 */
+-		mr = PG_GETARG_MULTIRANGE_P(0);
+-
+-		/* allocate memory for user context */
+-		fctx = (multirange_unnest_fctx *) palloc(sizeof(multirange_unnest_fctx));
+-
+-		/* initialize state */
+-		fctx->mr = mr;
+-		fctx->index = 0;
+-		fctx->typcache = lookup_type_cache(MultirangeTypeGetOid(mr),
+-										   TYPECACHE_MULTIRANGE_INFO);
+-
+-		funcctx->user_fctx = fctx;
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-	fctx = funcctx->user_fctx;
+-
+-	if (fctx->index < fctx->mr->rangeCount)
+-	{
+-		RangeType  *range;
+-
+-		range = multirange_get_range(fctx->typcache->rngtype,
+-									 fctx->mr,
+-									 fctx->index);
+-		fctx->index++;
+-
+-		SRF_RETURN_NEXT(funcctx, RangeTypePGetDatum(range));
+-	}
+-	else
+-	{
+-		/* do when there is no more left */
+-		SRF_RETURN_DONE(funcctx);
+-	}
++	elog(ERROR, "multirange_unnest is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* Hash support */
+diff --git a/src/backend/utils/adt/tsvector_op.c b/src/backend/utils/adt/tsvector_op.c
+index 8fe02a5..0ddd601 100644
+--- a/src/backend/utils/adt/tsvector_op.c
++++ b/src/backend/utils/adt/tsvector_op.c
+@@ -620,95 +620,11 @@ tsvector_delete_arr(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(tsout);
+ }
+ 
+-/*
+- * Expand tsvector as table with following columns:
+- *	   lexeme: lexeme text
+- *	   positions: integer array of lexeme positions
+- *	   weights: char array of weights corresponding to positions
+- */
+ Datum
+ tsvector_unnest(PG_FUNCTION_ARGS)
+ {
+-	FuncCallContext *funcctx;
+-	TSVector	tsin;
+-
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		MemoryContext oldcontext;
+-		TupleDesc	tupdesc;
+-
+-		funcctx = SRF_FIRSTCALL_INIT();
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		tupdesc = CreateTemplateTupleDesc(3);
+-		TupleDescInitEntry(tupdesc, (AttrNumber) 1, "lexeme",
+-						   TEXTOID, -1, 0);
+-		TupleDescInitEntry(tupdesc, (AttrNumber) 2, "positions",
+-						   INT2ARRAYOID, -1, 0);
+-		TupleDescInitEntry(tupdesc, (AttrNumber) 3, "weights",
+-						   TEXTARRAYOID, -1, 0);
+-		if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
+-			elog(ERROR, "return type must be a row type");
+-		funcctx->tuple_desc = tupdesc;
+-
+-		funcctx->user_fctx = PG_GETARG_TSVECTOR_COPY(0);
+-
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	funcctx = SRF_PERCALL_SETUP();
+-	tsin = (TSVector) funcctx->user_fctx;
+-
+-	if (funcctx->call_cntr < tsin->size)
+-	{
+-		WordEntry  *arrin = ARRPTR(tsin);
+-		char	   *data = STRPTR(tsin);
+-		HeapTuple	tuple;
+-		int			j,
+-					i = funcctx->call_cntr;
+-		bool		nulls[] = {false, false, false};
+-		Datum		values[3];
+-
+-		values[0] = PointerGetDatum(cstring_to_text_with_len(data + arrin[i].pos, arrin[i].len));
+-
+-		if (arrin[i].haspos)
+-		{
+-			WordEntryPosVector *posv;
+-			Datum	   *positions;
+-			Datum	   *weights;
+-			char		weight;
+-
+-			/*
+-			 * Internally tsvector stores position and weight in the same
+-			 * uint16 (2 bits for weight, 14 for position). Here we extract
+-			 * that in two separate arrays.
+-			 */
+-			posv = _POSVECPTR(tsin, arrin + i);
+-			positions = palloc(posv->npos * sizeof(Datum));
+-			weights = palloc(posv->npos * sizeof(Datum));
+-			for (j = 0; j < posv->npos; j++)
+-			{
+-				positions[j] = Int16GetDatum(WEP_GETPOS(posv->pos[j]));
+-				weight = 'D' - WEP_GETWEIGHT(posv->pos[j]);
+-				weights[j] = PointerGetDatum(cstring_to_text_with_len(&weight,
+-																	  1));
+-			}
+-
+-			values[1] = PointerGetDatum(construct_array_builtin(positions, posv->npos, INT2OID));
+-			values[2] = PointerGetDatum(construct_array_builtin(weights, posv->npos, TEXTOID));
+-		}
+-		else
+-		{
+-			nulls[1] = nulls[2] = true;
+-		}
+-
+-		tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+-		SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
+-	}
+-	else
+-	{
+-		SRF_RETURN_DONE(funcctx);
+-	}
++	elog(ERROR, "tsvector_unnest is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

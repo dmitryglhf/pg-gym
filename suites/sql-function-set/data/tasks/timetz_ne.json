@@ -1,0 +1,15 @@
+{
+  "func": "timetz_ne",
+  "variants": [
+    {
+      "arguments": "timetz timetz",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

@@ -1,0 +1,18 @@
+{
+  "func": "family",
+  "variants": [
+    {
+      "arguments": "inet",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "address family (4 for IPv4, 6 for IPv6)"
+    }
+  ],
+  "description": "Returns the address's family: 4 for IPv4, 6 for IPv6.",
+  "examples": [
+    "family(inet '::1') -> 6"
+  ],
+  "mode": "stub",
+  "category": "network"
+}

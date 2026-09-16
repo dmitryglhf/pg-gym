@@ -1,0 +1,51 @@
+diff --git a/src/backend/utils/adt/multirangetypes.c b/src/backend/utils/adt/multirangetypes.c
+index 7f14f7e..4cdcabe 100644
+--- a/src/backend/utils/adt/multirangetypes.c
++++ b/src/backend/utils/adt/multirangetypes.c
+@@ -1562,23 +1562,11 @@ multirange_empty(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BOOL(MultirangeIsEmpty(mr));
+ }
+ 
+-/* is lower bound inclusive? */
+ Datum
+ multirange_lower_inc(PG_FUNCTION_ARGS)
+ {
+-	MultirangeType *mr = PG_GETARG_MULTIRANGE_P(0);
+-	TypeCacheEntry *typcache;
+-	RangeBound	lower;
+-	RangeBound	upper;
+-
+-	if (MultirangeIsEmpty(mr))
+-		PG_RETURN_BOOL(false);
+-
+-	typcache = multirange_get_typcache(fcinfo, MultirangeTypeGetOid(mr));
+-	multirange_get_bounds(typcache->rngtype, mr, 0,
+-						  &lower, &upper);
+-
+-	PG_RETURN_BOOL(lower.inclusive);
++	elog(ERROR, "multirange_lower_inc is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* is upper bound inclusive? */
+diff --git a/src/backend/utils/adt/rangetypes.c b/src/backend/utils/adt/rangetypes.c
+index 2d94a6b..6fc7ba5 100644
+--- a/src/backend/utils/adt/rangetypes.c
++++ b/src/backend/utils/adt/rangetypes.c
+@@ -496,14 +496,11 @@ range_empty(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BOOL(flags & RANGE_EMPTY);
+ }
+ 
+-/* is lower bound inclusive? */
+ Datum
+ range_lower_inc(PG_FUNCTION_ARGS)
+ {
+-	RangeType  *r1 = PG_GETARG_RANGE_P(0);
+-	char		flags = range_get_flags(r1);
+-
+-	PG_RETURN_BOOL(flags & RANGE_LB_INC);
++	elog(ERROR, "range_lower_inc is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* is upper bound inclusive? */

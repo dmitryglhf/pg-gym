@@ -1,0 +1,17 @@
+{
+  "func": "justify_interval",
+  "variants": [
+    {
+      "arguments": "interval",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "promote groups of 24 hours to numbers of days and promote groups of 30 days to numbers of months"
+    }
+  ],
+  "description": "Adjust interval using justify_days and justify_hours, with additional sign adjustments",
+  "examples": [
+    "justify_interval(interval '1 mon -1 hour') -> 29 days 23:00:00"
+  ],
+  "mode": "stub"
+}

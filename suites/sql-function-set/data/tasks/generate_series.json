@@ -1,0 +1,72 @@
+{
+  "func": "generate_series",
+  "variants": [
+    {
+      "arguments": "int4 int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "int8 int8 int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "int8 int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "numeric numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "timestamp timestamp interval",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "timestamptz timestamptz interval",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "non-persistent series generator"
+    },
+    {
+      "arguments": "timestamptz timestamptz interval text",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "non-persistent series generator"
+    }
+  ],
+  "description": "Generates a series of values from start to stop, with a step size of step. step defaults to 1.\nGenerates a series of values from start to stop, with a step size of step. In the timezone-aware form, times of day and daylight-savings adjustments are computed according to the time zone named by the timezone argument, or the current setting if that is omitted.",
+  "examples": [],
+  "mode": "stub",
+  "category": "srf"
+}

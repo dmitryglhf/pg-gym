@@ -1,0 +1,10 @@
+{
+  "name": "pg_indexing_restore_partitions_exclusion",
+  "area": "partitioned indexes, exclusion constraints",
+  "goal": "A partitioned table can carry an exclusion constraint. The comparison that decides whether a child index may be attached to a partitioned index refuses outright any index belonging to an exclusion constraint, however well the two match. pg_restore reconstructs partitioned tables by creating the parent constraint, creating each child constraint, and then attaching, so a dump containing a partitioned exclusion constraint cannot be restored.\n\n    create table idx_excl_part (a int4range, b int4range) partition by list (a);\n    create table idx_excl_part_1 (a int4range, b int4range);\n    alter table only idx_excl_part attach partition idx_excl_part_1 for values in ('[0,1)'::int4range);\n    alter table only idx_excl_part add constraint idxpart_id_data_excl exclude using gist (a with =, b with &&);\n    alter table idx_excl_part_1 add constraint idxpart_1_id_data_excl exclude using gist (a with =, b with &&);\n    alter index idxpart_id_data_excl attach partition idxpart_1_id_data_excl;\n\nThe last command has to succeed. A child whose exclusion operators are not the parent's, say a with && where the parent has a with =, still has to be rejected with the complaint it gets today. One side being an exclusion index and the other not is still a mismatch, and every other reason two index definitions are held to differ must go on working.",
+  "func": "pg_indexing_restore_partitions_exclusion",
+  "graded_by": [
+    "src/test/regress/sql/indexing.sql",
+    "src/test/regress/expected/indexing.out"
+  ]
+}

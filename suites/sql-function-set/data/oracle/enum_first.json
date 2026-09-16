@@ -1,0 +1,27 @@
+{
+  "func": "enum_first",
+  "mode": "stub",
+  "patch": "prep/enum_first.patch",
+  "symbols": [
+    "enum_first"
+  ],
+  "units": {
+    "enum_first": {
+      "file": "src/backend/utils/adt/enum.c",
+      "code": "Datum\nenum_first(PG_FUNCTION_ARGS)\n{\n\tOid\t\t\tenumtypoid;\n\tOid\t\t\tmin;\n\n\t/*\n\t * We rely on being able to get the specific enum type from the calling\n\t * expression tree.  Notice that the actual value of the argument isn't\n\t * examined at all; in particular it might be NULL.\n\t */\n\tenumtypoid = get_fn_expr_argtype(fcinfo->flinfo, 0);\n\tif (enumtypoid == InvalidOid)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t errmsg(\"could not determine actual enum type\")));\n\n\t/* Get the OID using the index */\n\tmin = enum_endpoint(enumtypoid, ForwardScanDirection);\n\n\tif (!OidIsValid(min))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),\n\t\t\t\t errmsg(\"enum %s contains no values\",\n\t\t\t\t\t\tformat_type_be(enumtypoid))));\n\n\tPG_RETURN_OID(min);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "enum"
+  ],
+  "category": "enum",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 13,
+  "oracle_diff_by_file": {
+    "enum": 13
+  }
+}

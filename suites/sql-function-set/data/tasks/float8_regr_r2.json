@@ -1,0 +1,16 @@
+{
+  "func": "float8_regr_r2",
+  "variants": [
+    {
+      "arguments": "_float8",
+      "returns": "float8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "aggregate final function"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub",
+  "category": "aggregate"
+}

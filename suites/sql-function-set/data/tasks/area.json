@@ -1,0 +1,32 @@
+{
+  "func": "area",
+  "variants": [
+    {
+      "arguments": "box",
+      "returns": "float8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "box area"
+    },
+    {
+      "arguments": "path",
+      "returns": "float8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "area of a closed path"
+    },
+    {
+      "arguments": "circle",
+      "returns": "float8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "area of circle"
+    }
+  ],
+  "description": "Computes area. Available for box, path, circle. A path input must be closed, else NULL is returned. Also, if the path is self-intersecting, the result may be meaningless.",
+  "examples": [
+    "area(box '(2,2),(0,0)') -> 4"
+  ],
+  "mode": "stub",
+  "category": "geometric"
+}

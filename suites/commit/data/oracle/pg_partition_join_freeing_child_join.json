@@ -1,0 +1,47 @@
+{
+  "func": "pg_partition_join_freeing_child_join",
+  "sha": "727bc6ac33f63245167b34e553c452c65c7c6d7d",
+  "parent": "a68a7594ca3adc22899a5d06629fb2d0fa6724bc",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_partition_join_freeing_child_join.patch",
+  "test_files": [
+    "src/test/regress/sql/partition_join.sql",
+    "src/test/regress/expected/partition_join.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/path/joinrels.c b/src/backend/optimizer/path/joinrels.c\nindex db475e25..d4c5738e 100644\n--- a/src/backend/optimizer/path/joinrels.c\n+++ b/src/backend/optimizer/path/joinrels.c\n@@ -45,7 +45,8 @@ static void try_partitionwise_join(PlannerInfo *root, RelOptInfo *rel1,\n static SpecialJoinInfo *build_child_join_sjinfo(PlannerInfo *root,\n \t\t\t\t\t\t\t\t\t\t\t\tSpecialJoinInfo *parent_sjinfo,\n \t\t\t\t\t\t\t\t\t\t\t\tRelids left_relids, Relids right_relids);\n-static void free_child_join_sjinfo(SpecialJoinInfo *sjinfo);\n+static void free_child_join_sjinfo(SpecialJoinInfo *child_sjinfo,\n+\t\t\t\t\t\t\t\t   SpecialJoinInfo *parent_sjinfo);\n static void compute_partition_bounds(PlannerInfo *root, RelOptInfo *rel1,\n \t\t\t\t\t\t\t\t\t RelOptInfo *rel2, RelOptInfo *joinrel,\n \t\t\t\t\t\t\t\t\t SpecialJoinInfo *parent_sjinfo,\n@@ -1677,7 +1678,7 @@ try_partitionwise_join(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,\n \t\t\t\t\t\t\t\t\tchild_restrictlist);\n \n \t\tpfree(appinfos);\n-\t\tfree_child_join_sjinfo(child_sjinfo);\n+\t\tfree_child_join_sjinfo(child_sjinfo, parent_sjinfo);\n \t}\n }\n \n@@ -1744,18 +1745,33 @@ build_child_join_sjinfo(PlannerInfo *root, SpecialJoinInfo *parent_sjinfo,\n  * SpecialJoinInfo are freed here.\n  */\n static void\n-free_child_join_sjinfo(SpecialJoinInfo *sjinfo)\n+free_child_join_sjinfo(SpecialJoinInfo *child_sjinfo,\n+\t\t\t\t\t   SpecialJoinInfo *parent_sjinfo)\n {\n \t/*\n \t * Dummy SpecialJoinInfos of inner joins do not have any translated fields\n \t * and hence no fields that to be freed.\n \t */\n-\tif (sjinfo->jointype != JOIN_INNER)\n+\tif (child_sjinfo->jointype != JOIN_INNER)\n \t{\n-\t\tbms_free(sjinfo->min_lefthand);\n-\t\tbms_free(sjinfo->min_righthand);\n-\t\tbms_free(sjinfo->syn_lefthand);\n-\t\tbms_free(sjinfo->syn_righthand);\n+\t\tif (child_sjinfo->min_lefthand != parent_sjinfo->min_lefthand)\n+\t\t\tbms_free(child_sjinfo->min_lefthand);\n+\n+\t\tif (child_sjinfo->min_righthand != parent_sjinfo->min_righthand)\n+\t\t\tbms_free(child_sjinfo->min_righthand);\n+\n+\t\tif (child_sjinfo->syn_lefthand != parent_sjinfo->syn_lefthand)\n+\t\t\tbms_free(child_sjinfo->syn_lefthand);\n+\n+\t\tif (child_sjinfo->syn_righthand != parent_sjinfo->syn_righthand)\n+\t\t\tbms_free(child_sjinfo->syn_righthand);\n+\n+\t\tAssert(child_sjinfo->commute_above_l == parent_sjinfo->commute_above_l);\n+\t\tAssert(child_sjinfo->commute_above_r == parent_sjinfo->commute_above_r);\n+\t\tAssert(child_sjinfo->commute_below_l == parent_sjinfo->commute_below_l);\n+\t\tAssert(child_sjinfo->commute_below_r == parent_sjinfo->commute_below_r);\n+\n+\t\tAssert(child_sjinfo->semi_operators == parent_sjinfo->semi_operators);\n \n \t\t/*\n \t\t * semi_rhs_exprs may in principle be freed, but a simple pfree() does\n@@ -1763,7 +1779,7 @@ free_child_join_sjinfo(SpecialJoinInfo *sjinfo)\n \t\t */\n \t}\n \n-\tpfree(sjinfo);\n+\tpfree(child_sjinfo);\n }\n \n /*\n",
+  "test": "diff --git a/src/test/regress/expected/partition_join.out b/src/test/regress/expected/partition_join.out\nindex 6d07f86b..b9b41340 100644\n--- a/src/test/regress/expected/partition_join.out\n+++ b/src/test/regress/expected/partition_join.out\n@@ -674,6 +674,41 @@ SELECT a, b FROM prt1 FULL JOIN prt2 p2(b,a,c) USING(a,b)\n \n RESET enable_partitionwise_aggregate;\n RESET enable_hashjoin;\n+-- bug in freeing the SpecialJoinInfo of a child-join\n+EXPLAIN (COSTS OFF)\n+SELECT * FROM prt1 t1 JOIN prt1 t2 ON t1.a = t2.a WHERE t1.a IN (SELECT a FROM prt1 t3);\n+                    QUERY PLAN                    \n+--------------------------------------------------\n+ Append\n+   ->  Hash Semi Join\n+         Hash Cond: (t1_1.a = t3_1.a)\n+         ->  Hash Join\n+               Hash Cond: (t1_1.a = t2_1.a)\n+               ->  Seq Scan on prt1_p1 t1_1\n+               ->  Hash\n+                     ->  Seq Scan on prt1_p1 t2_1\n+         ->  Hash\n+               ->  Seq Scan on prt1_p1 t3_1\n+   ->  Hash Semi Join\n+         Hash Cond: (t1_2.a = t3_2.a)\n+         ->  Hash Join\n+               Hash Cond: (t1_2.a = t2_2.a)\n+               ->  Seq Scan on prt1_p2 t1_2\n+               ->  Hash\n+                     ->  Seq Scan on prt1_p2 t2_2\n+         ->  Hash\n+               ->  Seq Scan on prt1_p2 t3_2\n+   ->  Hash Semi Join\n+         Hash Cond: (t1_3.a = t3_3.a)\n+         ->  Hash Join\n+               Hash Cond: (t1_3.a = t2_3.a)\n+               ->  Seq Scan on prt1_p3 t1_3\n+               ->  Hash\n+                     ->  Seq Scan on prt1_p3 t2_3\n+         ->  Hash\n+               ->  Seq Scan on prt1_p3 t3_3\n+(28 rows)\n+\n --\n -- partitioned by expression\n --\ndiff --git a/src/test/regress/sql/partition_join.sql b/src/test/regress/sql/partition_join.sql\nindex 128ce837..afadefd5 100644\n--- a/src/test/regress/sql/partition_join.sql\n+++ b/src/test/regress/sql/partition_join.sql\n@@ -138,6 +138,10 @@ SELECT a, b FROM prt1 FULL JOIN prt2 p2(b,a,c) USING(a,b)\n RESET enable_partitionwise_aggregate;\n RESET enable_hashjoin;\n \n+-- bug in freeing the SpecialJoinInfo of a child-join\n+EXPLAIN (COSTS OFF)\n+SELECT * FROM prt1 t1 JOIN prt1 t2 ON t1.a = t2.a WHERE t1.a IN (SELECT a FROM prt1 t3);\n+\n --\n -- partitioned by expression\n --\n",
+  "oracle_command": "make -C src/test/regress check TESTS=partition_join",
+  "expected_tests": [
+    "partition_join"
+  ],
+  "failing_tests": [
+    "event_trigger",
+    "event_trigger_login",
+    "fast_default",
+    "indexing",
+    "oidjoins",
+    "partition_aggregate",
+    "partition_join",
+    "partition_prune",
+    "stats",
+    "tablespace",
+    "tuplesort"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 10597,
+  "oracle_diff_by_file": {
+    "partition_join": 4119,
+    "partition_prune": 1789,
+    "indexing": 791,
+    "partition_aggregate": 231,
+    "tuplesort": 348,
+    "stats": 765,
+    "oidjoins": 266,
+    "event_trigger": 669,
+    "event_trigger_login": 35,
+    "fast_default": 764,
+    "tablespace": 820
+  }
+}

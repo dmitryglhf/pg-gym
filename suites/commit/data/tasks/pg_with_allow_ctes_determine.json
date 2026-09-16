@@ -1,0 +1,14 @@
+{
+  "name": "pg_with_allow_ctes_determine",
+  "area": "aggregates, nested CTEs",
+  "goal": "Aggregate semantic-level analysis can assign an aggregate to an invalid query level when its arguments contain a nested CTE reference. Some such shapes must be rejected, while a broader rejection also breaks legal nested aggregates.\n\nReject an outer-level aggregate that uses a CTE defined below the aggregate's semantic level with `outer-level aggregate cannot use a nested CTE` and detail `CTE \"%s\" is below the aggregate's semantic level.` At the same time, a legal query where an inner aggregate reads an earlier CTE and an outer aggregate consumes that scalar subquery must still plan and return 3. Ordinary correlated aggregates and CTE scoping must not change.",
+  "contract": [
+    "CTE \"%s\" is below the aggregate's semantic level.",
+    "outer-level aggregate cannot use a nested CTE"
+  ],
+  "func": "pg_with_allow_ctes_determine",
+  "graded_by": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ]
+}

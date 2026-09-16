@@ -1,0 +1,63 @@
+diff --git a/src/backend/utils/adt/encode.c b/src/backend/utils/adt/encode.c
+index 7e85d87..ba006ae 100644
+--- a/src/backend/utils/adt/encode.c
++++ b/src/backend/utils/adt/encode.c
+@@ -40,56 +40,11 @@ struct pg_encoding
+ 
+ static const struct pg_encoding *pg_find_encoding(const char *name);
+ 
+-/*
+- * SQL functions.
+- */
+-
+ Datum
+ binary_encode(PG_FUNCTION_ARGS)
+ {
+-	bytea	   *data = PG_GETARG_BYTEA_PP(0);
+-	Datum		name = PG_GETARG_DATUM(1);
+-	text	   *result;
+-	char	   *namebuf;
+-	char	   *dataptr;
+-	size_t		datalen;
+-	uint64		resultlen;
+-	uint64		res;
+-	const struct pg_encoding *enc;
+-
+-	namebuf = TextDatumGetCString(name);
+-
+-	enc = pg_find_encoding(namebuf);
+-	if (enc == NULL)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("unrecognized encoding: \"%s\"", namebuf)));
+-
+-	dataptr = VARDATA_ANY(data);
+-	datalen = VARSIZE_ANY_EXHDR(data);
+-
+-	resultlen = enc->encode_len(dataptr, datalen);
+-
+-	/*
+-	 * resultlen possibly overflows uint32, therefore on 32-bit machines it's
+-	 * unsafe to rely on palloc's internal check.
+-	 */
+-	if (resultlen > MaxAllocSize - VARHDRSZ)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+-				 errmsg("result of encoding conversion is too large")));
+-
+-	result = palloc(VARHDRSZ + resultlen);
+-
+-	res = enc->encode(dataptr, datalen, VARDATA(result));
+-
+-	/* Make this FATAL 'cause we've trodden on memory ... */
+-	if (res > resultlen)
+-		elog(FATAL, "overflow - encode estimate too small");
+-
+-	SET_VARSIZE(result, VARHDRSZ + res);
+-
+-	PG_RETURN_TEXT_P(result);
++	elog(ERROR, "binary_encode is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

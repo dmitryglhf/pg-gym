@@ -1,0 +1,17 @@
+{
+  "func": "to_date",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert text to date"
+    }
+  ],
+  "description": "Converts string to date according to the given format.",
+  "examples": [
+    "to_date('05 Dec 2000', 'DD Mon YYYY') -> 2000-12-05"
+  ],
+  "mode": "stub"
+}

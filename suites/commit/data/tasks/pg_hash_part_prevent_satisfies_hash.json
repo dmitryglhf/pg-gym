@@ -1,0 +1,10 @@
+{
+  "name": "pg_hash_part_prevent_satisfies_hash",
+  "area": "hash partitioning, satisfies_hash_partition",
+  "goal": "satisfies_hash_partition() is variadic in its last argument. Passing VARIADIC NULL in place of a list of values crashes the backend.\n\n    SELECT satisfies_hash_partition('mchash'::regclass, 4, 0, VARIADIC NULL::int[]);\n\nIt has to answer instead, and answer what the same call written without VARIADIC answers for all-NULL values, which is false. Calls with real values must keep returning what they return now, and the existing errors for a wrong number of arguments must stay.",
+  "func": "pg_hash_part_prevent_satisfies_hash",
+  "graded_by": [
+    "src/test/regress/sql/hash_part.sql",
+    "src/test/regress/expected/hash_part.out"
+  ]
+}

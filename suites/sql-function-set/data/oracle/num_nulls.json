@@ -1,0 +1,27 @@
+{
+  "func": "num_nulls",
+  "mode": "stub",
+  "patch": "prep/num_nulls.patch",
+  "symbols": [
+    "pg_num_nulls"
+  ],
+  "units": {
+    "pg_num_nulls": {
+      "file": "src/backend/utils/adt/misc.c",
+      "code": "/*\n * num_nulls()\n *\tCount the number of NULL arguments\n */\nDatum\npg_num_nulls(PG_FUNCTION_ARGS)\n{\n\tint32\t\tnargs,\n\t\t\t\tnulls;\n\n\tif (!count_nulls(fcinfo, &nargs, &nulls))\n\t\tPG_RETURN_NULL();\n\n\tPG_RETURN_INT32(nulls);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "misc_functions"
+  ],
+  "category": "comparison",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 50,
+  "oracle_diff_by_file": {
+    "misc_functions": 50
+  }
+}

@@ -1,0 +1,35 @@
+diff --git a/src/backend/utils/cache/syscache.c b/src/backend/utils/cache/syscache.c
+index 88c47a99..50c9440f 100644
+--- a/src/backend/utils/cache/syscache.c
++++ b/src/backend/utils/cache/syscache.c
+@@ -287,9 +287,11 @@ HeapTuple
+ SearchSysCacheLocked1(int cacheId,
+ 					  Datum key1)
+ {
+-	CatCache   *cache = SysCache[cacheId];
+ 	ItemPointerData tid;
+ 	LOCKTAG		tag;
++	Oid			dboid =
++		SysCache[cacheId]->cc_relisshared ? InvalidOid : MyDatabaseId;
++	Oid			reloid = cacheinfo[cacheId].reloid;
+ 
+ 	/*----------
+ 	 * Since inplace updates may happen just before our LockTuple(), we must
+@@ -341,15 +343,8 @@ SearchSysCacheLocked1(int cacheId,
+ 
+ 		tid = tuple->t_self;
+ 		ReleaseSysCache(tuple);
+-
+-		/*
+-		 * Do like LockTuple(rel, &tid, lockmode).  While cc_relisshared won't
+-		 * change from one iteration to another, it may have been a temporary
+-		 * "false" until our first SearchSysCache1().
+-		 */
+-		SET_LOCKTAG_TUPLE(tag,
+-						  cache->cc_relisshared ? InvalidOid : MyDatabaseId,
+-						  cache->cc_reloid,
++		/* like: LockTuple(rel, &tid, lockmode) */
++		SET_LOCKTAG_TUPLE(tag, dboid, reloid,
+ 						  ItemPointerGetBlockNumber(&tid),
+ 						  ItemPointerGetOffsetNumber(&tid));
+ 		(void) LockAcquire(&tag, lockmode, false, false);

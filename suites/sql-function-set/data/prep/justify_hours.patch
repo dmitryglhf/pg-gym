@@ -1,0 +1,55 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..15bca22 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2952,48 +2952,11 @@ interval_justify_interval(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(result);
+ }
+ 
+-/*
+- *	interval_justify_hours()
+- *
+- *	Adjust interval so 'time' contains less than a whole day, adding
+- *	the excess to 'day'.  This is useful for
+- *	situations (such as non-TZ) where '1 day' = '24 hours' is valid,
+- *	e.g. interval subtraction and division.
+- */
+ Datum
+ interval_justify_hours(PG_FUNCTION_ARGS)
+ {
+-	Interval   *span = PG_GETARG_INTERVAL_P(0);
+-	Interval   *result;
+-	TimeOffset	wholeday;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-	result->month = span->month;
+-	result->day = span->day;
+-	result->time = span->time;
+-
+-	/* do nothing for infinite intervals */
+-	if (INTERVAL_NOT_FINITE(result))
+-		PG_RETURN_INTERVAL_P(result);
+-
+-	TMODULO(result->time, wholeday, USECS_PER_DAY);
+-	if (pg_add_s32_overflow(result->day, wholeday, &result->day))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("interval out of range")));
+-
+-	if (result->day > 0 && result->time < 0)
+-	{
+-		result->time += USECS_PER_DAY;
+-		result->day--;
+-	}
+-	else if (result->day < 0 && result->time > 0)
+-	{
+-		result->time -= USECS_PER_DAY;
+-		result->day++;
+-	}
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_justify_hours is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

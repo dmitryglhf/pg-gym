@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..9a8b9a1 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -391,10 +391,8 @@ date_eq(PG_FUNCTION_ARGS)
+ Datum
+ date_ne(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal1 = PG_GETARG_DATEADT(0);
+-	DateADT		dateVal2 = PG_GETARG_DATEADT(1);
+-
+-	PG_RETURN_BOOL(dateVal1 != dateVal2);
++	elog(ERROR, "date_ne is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

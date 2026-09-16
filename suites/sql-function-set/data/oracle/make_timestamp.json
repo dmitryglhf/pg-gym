@@ -1,0 +1,26 @@
+{
+  "func": "make_timestamp",
+  "mode": "stub",
+  "patch": "prep/make_timestamp.patch",
+  "symbols": [
+    "make_timestamp"
+  ],
+  "units": {
+    "make_timestamp": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * make_timestamp() - timestamp constructor\n */\nDatum\nmake_timestamp(PG_FUNCTION_ARGS)\n{\n\tint32\t\tyear = PG_GETARG_INT32(0);\n\tint32\t\tmonth = PG_GETARG_INT32(1);\n\tint32\t\tmday = PG_GETARG_INT32(2);\n\tint32\t\thour = PG_GETARG_INT32(3);\n\tint32\t\tmin = PG_GETARG_INT32(4);\n\tfloat8\t\tsec = PG_GETARG_FLOAT8(5);\n\tTimestamp\tresult;\n\n\tresult = make_timestamp_internal(year, month, mday,\n\t\t\t\t\t\t\t\t\t hour, min, sec);\n\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "timestamp"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 12,
+  "oracle_diff_by_file": {
+    "timestamp": 12
+  }
+}

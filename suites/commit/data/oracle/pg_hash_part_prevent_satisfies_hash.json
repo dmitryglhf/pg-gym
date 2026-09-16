@@ -1,0 +1,53 @@
+{
+  "func": "pg_hash_part_prevent_satisfies_hash",
+  "sha": "52af6fef43755de40472149c9d7f1adc9bf77b5e",
+  "parent": "a240e8cd23532931ca1e5216f4f42e91fac36dfe",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_hash_part_prevent_satisfies_hash.patch",
+  "test_files": [
+    "src/test/regress/sql/hash_part.sql",
+    "src/test/regress/expected/hash_part.out"
+  ],
+  "reference": "diff --git a/src/backend/partitioning/partbounds.c b/src/backend/partitioning/partbounds.c\nindex c28639d2e..63e89fd4e 100644\n--- a/src/backend/partitioning/partbounds.c\n+++ b/src/backend/partitioning/partbounds.c\n@@ -4868,6 +4868,12 @@ satisfies_hash_partition(PG_FUNCTION_ARGS)\n \t\t\t\t\t\t\t   fcinfo->flinfo->fn_mcxt);\n \t\t\t}\n \t\t}\n+\t\telse if (PG_ARGISNULL(3))\n+\t\t{\n+\t\t\t/* Special case for VARIADIC NULL::sometype[] */\n+\t\t\trelation_close(parent, NoLock);\n+\t\t\tPG_RETURN_BOOL(false);\n+\t\t}\n \t\telse\n \t\t{\n \t\t\tArrayType  *variadic_array = PG_GETARG_ARRAYTYPE_P(3);\n@@ -4938,12 +4944,18 @@ satisfies_hash_partition(PG_FUNCTION_ARGS)\n \t}\n \telse\n \t{\n-\t\tArrayType  *variadic_array = PG_GETARG_ARRAYTYPE_P(3);\n+\t\tArrayType  *variadic_array;\n \t\tint\t\t\ti;\n \t\tint\t\t\tnelems;\n \t\tDatum\t   *datum;\n \t\tbool\t   *isnull;\n \n+\t\t/* Special case for VARIADIC NULL::sometype[] */\n+\t\tif (PG_ARGISNULL(3))\n+\t\t\tPG_RETURN_BOOL(false);\n+\n+\t\tvariadic_array = PG_GETARG_ARRAYTYPE_P(3);\n+\n \t\tdeconstruct_array(variadic_array,\n \t\t\t\t\t\t  my_extra->variadic_type,\n \t\t\t\t\t\t  my_extra->variadic_typlen,\n",
+  "test": "diff --git a/src/test/regress/expected/hash_part.out b/src/test/regress/expected/hash_part.out\nindex cb39161f8..44b6e461f 100644\n--- a/src/test/regress/expected/hash_part.out\n+++ b/src/test/regress/expected/hash_part.out\n@@ -40,6 +40,13 @@ SELECT satisfies_hash_partition('mchash'::regclass, 4, NULL, NULL);\n  f\n (1 row)\n \n+-- variadic null\n+SELECT satisfies_hash_partition('mchash'::regclass, 4, 0, VARIADIC NULL::int[]);\n+ satisfies_hash_partition \n+--------------------------\n+ f\n+(1 row)\n+\n -- too many arguments\n SELECT satisfies_hash_partition('mchash'::regclass, 4, 0, NULL::int, NULL::text, NULL::json);\n ERROR:  number of partitioning columns (2) does not match number of partition keys provided (3)\ndiff --git a/src/test/regress/sql/hash_part.sql b/src/test/regress/sql/hash_part.sql\nindex 6e2c1f21b..7243299d9 100644\n--- a/src/test/regress/sql/hash_part.sql\n+++ b/src/test/regress/sql/hash_part.sql\n@@ -35,6 +35,9 @@ SELECT satisfies_hash_partition('mchash'::regclass, NULL, 0, NULL);\n -- remainder is null\n SELECT satisfies_hash_partition('mchash'::regclass, 4, NULL, NULL);\n \n+-- variadic null\n+SELECT satisfies_hash_partition('mchash'::regclass, 4, 0, VARIADIC NULL::int[]);\n+\n -- too many arguments\n SELECT satisfies_hash_partition('mchash'::regclass, 4, 0, NULL::int, NULL::text, NULL::json);\n \n",
+  "oracle_command": "make -C src/test/regress check TESTS=hash_part",
+  "expected_tests": [
+    "hash_part"
+  ],
+  "failing_tests": [
+    "compression",
+    "compression_pglz",
+    "event_trigger",
+    "event_trigger_login",
+    "fast_default",
+    "hash_part",
+    "indexing",
+    "oidjoins",
+    "partition_aggregate",
+    "partition_join",
+    "partition_prune",
+    "stats",
+    "tablespace",
+    "tuplesort"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 10374,
+  "oracle_diff_by_file": {
+    "partition_join": 2696,
+    "partition_prune": 2044,
+    "hash_part": 59,
+    "indexing": 1025,
+    "partition_aggregate": 337,
+    "tuplesort": 374,
+    "stats": 789,
+    "compression_1": 310,
+    "compression_pglz": 55,
+    "oidjoins": 267,
+    "event_trigger": 743,
+    "event_trigger_login": 35,
+    "fast_default": 820,
+    "tablespace": 820
+  }
+}

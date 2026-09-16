@@ -1,0 +1,32 @@
+{
+  "func": "gcd",
+  "variants": [
+    {
+      "arguments": "int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "greatest common divisor"
+    },
+    {
+      "arguments": "int8 int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "greatest common divisor"
+    },
+    {
+      "arguments": "numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "greatest common divisor"
+    }
+  ],
+  "description": "Greatest common divisor (the largest positive number that divides both inputs with no remainder); returns 0 if both inputs are zero; available for integer, bigint, and numeric",
+  "examples": [
+    "gcd(1071, 462) -> 21"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

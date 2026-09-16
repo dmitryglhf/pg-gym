@@ -1,0 +1,44 @@
+{
+  "func": "time_out",
+  "mode": "stub",
+  "patch": "prep/time_out.patch",
+  "symbols": [
+    "time_out"
+  ],
+  "units": {
+    "time_out": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntime_out(PG_FUNCTION_ARGS)\n{\n\tTimeADT\t\ttime = PG_GETARG_TIMEADT(0);\n\tchar\t   *result;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tfsec_t\t\tfsec;\n\tchar\t\tbuf[MAXDATELEN + 1];\n\n\ttime2tm(time, tm, &fsec);\n\tEncodeTimeOnly(tm, fsec, false, 0, DateStyle, buf);\n\n\tresult = pstrdup(buf);\n\tPG_RETURN_CSTRING(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "date",
+    "expressions",
+    "fast_default",
+    "horology",
+    "sqljson_queryfuncs",
+    "time",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 435,
+  "oracle_diff_by_file": {
+    "date": 5,
+    "time": 66,
+    "horology": 231,
+    "expressions": 10,
+    "brin": 2,
+    "brin_bloom": 2,
+    "brin_multi": 2,
+    "window": 80,
+    "sqljson_queryfuncs": 5,
+    "fast_default": 32
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "func": "pg_timezone_names",
+  "mode": "stub",
+  "patch": "prep/pg_timezone_names.patch",
+  "symbols": [
+    "pg_timezone_names"
+  ],
+  "units": {
+    "pg_timezone_names": {
+      "file": "src/backend/utils/adt/datetime.c",
+      "code": "/*\n * This set-returning function reads all the available full time zones\n * and returns a set of (name, abbrev, utc_offset, is_dst).\n */\nDatum\npg_timezone_names(PG_FUNCTION_ARGS)\n{\n\tReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;\n\tpg_tzenum  *tzenum;\n\tpg_tz\t   *tz;\n\tDatum\t\tvalues[4];\n\tbool\t\tnulls[4] = {0};\n\tint\t\t\ttzoff;\n\tstruct pg_tm tm;\n\tfsec_t\t\tfsec;\n\tconst char *tzn;\n\tInterval   *resInterval;\n\tstruct pg_itm_in itm_in;\n\n\tInitMaterializedSRF(fcinfo, 0);\n\n\t/* initialize timezone scanning code */\n\ttzenum = pg_tzenumerate_start();\n\n\t/* search for another zone to display */\n\tfor (;;)\n\t{\n\t\ttz = pg_tzenumerate_next(tzenum);\n\t\tif (!tz)\n\t\t\tbreak;\n\n\t\t/* Convert now() to local time in this zone */\n\t\tif (timestamp2tm(GetCurrentTransactionStartTimestamp(),\n\t\t\t\t\t\t &tzoff, &tm, &fsec, &tzn, tz) != 0)\n\t\t\tcontinue;\t\t\t/* ignore if conversion fails */\n\n\t\t/*\n\t\t * IANA's rather silly \"Factory\" time zone used to emit ridiculously\n\t\t * long \"abbreviations\" such as \"Local time zone must be set--see zic\n\t\t * manual page\" or \"Local time zone must be set--use tzsetup\".  While\n\t\t * modern versions of tzdb emit the much saner \"-00\", it seems some\n\t\t * benighted packagers are hacking the IANA data so that it continues\n\t\t * to produce these strings.  To prevent producing a weirdly wide\n\t\t * abbrev column, reject ridiculously long abbreviations.\n\t\t */\n\t\tif (tzn && strlen(tzn) > 31)\n\t\t\tcontinue;\n\n\t\tvalues[0] = CStringGetTextDatum(pg_get_timezone_name(tz));\n\t\tvalues[1] = CStringGetTextDatum(tzn ? tzn : \"\");\n\n\t\t/* Convert tzoff to an interval; can't overflow */\n\t\tMemSet(&itm_in, 0, sizeof(struct pg_itm_in));\n\t\titm_in.tm_usec = (int64) -tzoff * USECS_PER_SEC;\n\t\tresInterval = (Interval *) palloc(sizeof(Interval));\n\t\t(void) itmin2interval(&itm_in, resInterval);\n\t\tvalues[2] = IntervalPGetDatum(resInterval);\n\n\t\tvalues[3] = BoolGetDatum(tm.tm_isdst > 0);\n\n\t\ttuplestore_putvalues(rsinfo->setResult, rsinfo->setDesc, values, nulls);\n\t}\n\n\tpg_tzenumerate_end(tzenum);\n\treturn (Datum) 0;\n}\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "misc_functions",
+    "sysviews"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 10,
+  "oracle_diff_by_file": {
+    "misc_functions": 5,
+    "sysviews": 5
+  }
+}

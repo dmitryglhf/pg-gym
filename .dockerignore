@@ -1,0 +1,11 @@
+**/__pycache__
+**/.venv
+**/node_modules
+**/.deno-cache
+**/_fresh
+.git
+pg-gym-instance
+artifacts
+runs
+stand
+*.zip

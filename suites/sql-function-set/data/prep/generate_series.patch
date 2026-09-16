@@ -1,0 +1,449 @@
+diff --git a/src/backend/utils/adt/int.c b/src/backend/utils/adt/int.c
+index df07ac0..d80f00b 100644
+--- a/src/backend/utils/adt/int.c
++++ b/src/backend/utils/adt/int.c
+@@ -1525,86 +1525,18 @@ int2shr(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT16(arg1 >> arg2);
+ }
+ 
+-/*
+- * non-persistent numeric series generator
+- */
+ Datum
+ generate_series_int4(PG_FUNCTION_ARGS)
+ {
+-	return generate_series_step_int4(fcinfo);
++	elog(ERROR, "generate_series_int4 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ generate_series_step_int4(PG_FUNCTION_ARGS)
+ {
+-	FuncCallContext *funcctx;
+-	generate_series_fctx *fctx;
+-	int32		result;
+-	MemoryContext oldcontext;
+-
+-	/* stuff done only on the first call of the function */
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		int32		start = PG_GETARG_INT32(0);
+-		int32		finish = PG_GETARG_INT32(1);
+-		int32		step = 1;
+-
+-		/* see if we were given an explicit step size */
+-		if (PG_NARGS() == 3)
+-			step = PG_GETARG_INT32(2);
+-		if (step == 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("step size cannot equal zero")));
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * switch to memory context appropriate for multiple function calls
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* allocate memory for user context */
+-		fctx = (generate_series_fctx *) palloc(sizeof(generate_series_fctx));
+-
+-		/*
+-		 * Use fctx to keep state from call to call. Seed current with the
+-		 * original start value
+-		 */
+-		fctx->current = start;
+-		fctx->finish = finish;
+-		fctx->step = step;
+-
+-		funcctx->user_fctx = fctx;
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-
+-	/*
+-	 * get the saved state and use current as the result for this iteration
+-	 */
+-	fctx = funcctx->user_fctx;
+-	result = fctx->current;
+-
+-	if ((fctx->step > 0 && fctx->current <= fctx->finish) ||
+-		(fctx->step < 0 && fctx->current >= fctx->finish))
+-	{
+-		/*
+-		 * Increment current in preparation for next iteration. If next-value
+-		 * computation overflows, this is the final result.
+-		 */
+-		if (pg_add_s32_overflow(fctx->current, fctx->step, &fctx->current))
+-			fctx->step = 0;
+-
+-		/* do when there is more left to send */
+-		SRF_RETURN_NEXT(funcctx, Int32GetDatum(result));
+-	}
+-	else
+-		/* do when there is no more left */
+-		SRF_RETURN_DONE(funcctx);
++	elog(ERROR, "generate_series_step_int4 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+diff --git a/src/backend/utils/adt/int8.c b/src/backend/utils/adt/int8.c
+index 2c0ae71..2328ea7 100644
+--- a/src/backend/utils/adt/int8.c
++++ b/src/backend/utils/adt/int8.c
+@@ -1400,86 +1400,18 @@ oidtoi8(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT64((int64) arg);
+ }
+ 
+-/*
+- * non-persistent numeric series generator
+- */
+ Datum
+ generate_series_int8(PG_FUNCTION_ARGS)
+ {
+-	return generate_series_step_int8(fcinfo);
++	elog(ERROR, "generate_series_int8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ generate_series_step_int8(PG_FUNCTION_ARGS)
+ {
+-	FuncCallContext *funcctx;
+-	generate_series_fctx *fctx;
+-	int64		result;
+-	MemoryContext oldcontext;
+-
+-	/* stuff done only on the first call of the function */
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		int64		start = PG_GETARG_INT64(0);
+-		int64		finish = PG_GETARG_INT64(1);
+-		int64		step = 1;
+-
+-		/* see if we were given an explicit step size */
+-		if (PG_NARGS() == 3)
+-			step = PG_GETARG_INT64(2);
+-		if (step == 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("step size cannot equal zero")));
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * switch to memory context appropriate for multiple function calls
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* allocate memory for user context */
+-		fctx = (generate_series_fctx *) palloc(sizeof(generate_series_fctx));
+-
+-		/*
+-		 * Use fctx to keep state from call to call. Seed current with the
+-		 * original start value
+-		 */
+-		fctx->current = start;
+-		fctx->finish = finish;
+-		fctx->step = step;
+-
+-		funcctx->user_fctx = fctx;
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-
+-	/*
+-	 * get the saved state and use current as the result for this iteration
+-	 */
+-	fctx = funcctx->user_fctx;
+-	result = fctx->current;
+-
+-	if ((fctx->step > 0 && fctx->current <= fctx->finish) ||
+-		(fctx->step < 0 && fctx->current >= fctx->finish))
+-	{
+-		/*
+-		 * Increment current in preparation for next iteration. If next-value
+-		 * computation overflows, this is the final result.
+-		 */
+-		if (pg_add_s64_overflow(fctx->current, fctx->step, &fctx->current))
+-			fctx->step = 0;
+-
+-		/* do when there is more left to send */
+-		SRF_RETURN_NEXT(funcctx, Int64GetDatum(result));
+-	}
+-	else
+-		/* do when there is no more left */
+-		SRF_RETURN_DONE(funcctx);
++	elog(ERROR, "generate_series_step_int8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+diff --git a/src/backend/utils/adt/numeric.c b/src/backend/utils/adt/numeric.c
+index 14e8895..8853c94 100644
+--- a/src/backend/utils/adt/numeric.c
++++ b/src/backend/utils/adt/numeric.c
+@@ -1698,138 +1698,18 @@ numeric_floor(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*
+- * generate_series_numeric() -
+- *
+- *	Generate series of numeric.
+- */
+ Datum
+ generate_series_numeric(PG_FUNCTION_ARGS)
+ {
+-	return generate_series_step_numeric(fcinfo);
++	elog(ERROR, "generate_series_numeric is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ generate_series_step_numeric(PG_FUNCTION_ARGS)
+ {
+-	generate_series_numeric_fctx *fctx;
+-	FuncCallContext *funcctx;
+-	MemoryContext oldcontext;
+-
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		Numeric		start_num = PG_GETARG_NUMERIC(0);
+-		Numeric		stop_num = PG_GETARG_NUMERIC(1);
+-		NumericVar	steploc = const_one;
+-
+-		/* Reject NaN and infinities in start and stop values */
+-		if (NUMERIC_IS_SPECIAL(start_num))
+-		{
+-			if (NUMERIC_IS_NAN(start_num))
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("start value cannot be NaN")));
+-			else
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("start value cannot be infinity")));
+-		}
+-		if (NUMERIC_IS_SPECIAL(stop_num))
+-		{
+-			if (NUMERIC_IS_NAN(stop_num))
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("stop value cannot be NaN")));
+-			else
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("stop value cannot be infinity")));
+-		}
+-
+-		/* see if we were given an explicit step size */
+-		if (PG_NARGS() == 3)
+-		{
+-			Numeric		step_num = PG_GETARG_NUMERIC(2);
+-
+-			if (NUMERIC_IS_SPECIAL(step_num))
+-			{
+-				if (NUMERIC_IS_NAN(step_num))
+-					ereport(ERROR,
+-							(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-							 errmsg("step size cannot be NaN")));
+-				else
+-					ereport(ERROR,
+-							(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-							 errmsg("step size cannot be infinity")));
+-			}
+-
+-			init_var_from_num(step_num, &steploc);
+-
+-			if (cmp_var(&steploc, &const_zero) == 0)
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("step size cannot equal zero")));
+-		}
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * Switch to memory context appropriate for multiple function calls.
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* allocate memory for user context */
+-		fctx = (generate_series_numeric_fctx *)
+-			palloc(sizeof(generate_series_numeric_fctx));
+-
+-		/*
+-		 * Use fctx to keep state from call to call. Seed current with the
+-		 * original start value. We must copy the start_num and stop_num
+-		 * values rather than pointing to them, since we may have detoasted
+-		 * them in the per-call context.
+-		 */
+-		init_var(&fctx->current);
+-		init_var(&fctx->stop);
+-		init_var(&fctx->step);
+-
+-		set_var_from_num(start_num, &fctx->current);
+-		set_var_from_num(stop_num, &fctx->stop);
+-		set_var_from_var(&steploc, &fctx->step);
+-
+-		funcctx->user_fctx = fctx;
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-
+-	/*
+-	 * Get the saved state and use current state as the result of this
+-	 * iteration.
+-	 */
+-	fctx = funcctx->user_fctx;
+-
+-	if ((fctx->step.sign == NUMERIC_POS &&
+-		 cmp_var(&fctx->current, &fctx->stop) <= 0) ||
+-		(fctx->step.sign == NUMERIC_NEG &&
+-		 cmp_var(&fctx->current, &fctx->stop) >= 0))
+-	{
+-		Numeric		result = make_result(&fctx->current);
+-
+-		/* switch to memory context appropriate for iteration calculation */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* increment current in preparation for next iteration */
+-		add_var(&fctx->current, &fctx->step, &fctx->current);
+-		MemoryContextSwitchTo(oldcontext);
+-
+-		/* do when there is more left to send */
+-		SRF_RETURN_NEXT(funcctx, NumericGetDatum(result));
+-	}
+-	else
+-		/* do when there is no more left */
+-		SRF_RETURN_DONE(funcctx);
++	elog(ERROR, "generate_series_step_numeric is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..ff77cb7 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -6511,87 +6511,11 @@ timestamptz_izone(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(result);
+ }
+ 
+-/* generate_series_timestamp()
+- * Generate the set of timestamps from start to finish by step
+- */
+ Datum
+ generate_series_timestamp(PG_FUNCTION_ARGS)
+ {
+-	FuncCallContext *funcctx;
+-	generate_series_timestamp_fctx *fctx;
+-	Timestamp	result;
+-
+-	/* stuff done only on the first call of the function */
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		Timestamp	start = PG_GETARG_TIMESTAMP(0);
+-		Timestamp	finish = PG_GETARG_TIMESTAMP(1);
+-		Interval   *step = PG_GETARG_INTERVAL_P(2);
+-		MemoryContext oldcontext;
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * switch to memory context appropriate for multiple function calls
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* allocate memory for user context */
+-		fctx = (generate_series_timestamp_fctx *)
+-			palloc(sizeof(generate_series_timestamp_fctx));
+-
+-		/*
+-		 * Use fctx to keep state from call to call. Seed current with the
+-		 * original start value
+-		 */
+-		fctx->current = start;
+-		fctx->finish = finish;
+-		fctx->step = *step;
+-
+-		/* Determine sign of the interval */
+-		fctx->step_sign = interval_sign(&fctx->step);
+-
+-		if (fctx->step_sign == 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("step size cannot equal zero")));
+-
+-		if (INTERVAL_NOT_FINITE((&fctx->step)))
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("step size cannot be infinite")));
+-
+-		funcctx->user_fctx = fctx;
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-
+-	/*
+-	 * get the saved state and use current as the result for this iteration
+-	 */
+-	fctx = funcctx->user_fctx;
+-	result = fctx->current;
+-
+-	if (fctx->step_sign > 0 ?
+-		timestamp_cmp_internal(result, fctx->finish) <= 0 :
+-		timestamp_cmp_internal(result, fctx->finish) >= 0)
+-	{
+-		/* increment current in preparation for next iteration */
+-		fctx->current = DatumGetTimestamp(DirectFunctionCall2(timestamp_pl_interval,
+-															  TimestampGetDatum(fctx->current),
+-															  PointerGetDatum(&fctx->step)));
+-
+-		/* do when there is more left to send */
+-		SRF_RETURN_NEXT(funcctx, TimestampGetDatum(result));
+-	}
+-	else
+-	{
+-		/* do when there is no more left */
+-		SRF_RETURN_DONE(funcctx);
+-	}
++	elog(ERROR, "generate_series_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* generate_series_timestamptz()
+@@ -6683,13 +6607,15 @@ generate_series_timestamptz_internal(FunctionCallInfo fcinfo)
+ Datum
+ generate_series_timestamptz(PG_FUNCTION_ARGS)
+ {
+-	return generate_series_timestamptz_internal(fcinfo);
++	elog(ERROR, "generate_series_timestamptz is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ generate_series_timestamptz_at_zone(PG_FUNCTION_ARGS)
+ {
+-	return generate_series_timestamptz_internal(fcinfo);
++	elog(ERROR, "generate_series_timestamptz_at_zone is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamp_at_local()

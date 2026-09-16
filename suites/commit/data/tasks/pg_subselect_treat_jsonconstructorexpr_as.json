@@ -1,0 +1,10 @@
+{
+  "name": "pg_subselect_treat_jsonconstructorexpr_as",
+  "area": "planner, SQL/JSON under outer joins",
+  "goal": "The planner treats JSON constructor expressions as strict when simplifying an outer join, even though their SQL/JSON null behavior is not equivalent to a strict function. This can evaluate a constructor on a missing inner row instead of null-extending its output.\n\nLeft join a one-row table to a subquery projecting `JSON_ARRAY(1, a)` with a false join condition. The JSON column in the result must be SQL NULL, and EXPLAIN must retain the placeholder needed for that null extension. Constructors on matched rows, genuinely strict expressions and inner joins must retain their current results and optimizations.",
+  "func": "pg_subselect_treat_jsonconstructorexpr_as",
+  "graded_by": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ]
+}

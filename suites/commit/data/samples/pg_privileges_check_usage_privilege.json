@@ -1,0 +1,36 @@
+{
+  "name": "pg_privileges_check_usage_privilege",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "67135960559d5e623757ffa8ec0ab4d94293dfc2",
+  "parent": "d1c8aa0b09f18bba1343ce2e4aa537a17a8a972f",
+  "date": "2026-08-10",
+  "subject": "Check for USAGE privilege on the composite type in ALTER TABLE OF.",
+  "area": "ALTER TABLE OF, type privileges",
+  "licence": "PostgreSQL",
+  "goal": "ALTER TABLE ... OF can associate an existing table with a composite type without checking whether the caller has USAGE on that type. CREATE TABLE OF already requires it.\n\nLet one role own a matching ordinary table but lack USAGE on a composite type owned by another role, then issue ALTER TABLE ... OF. It must fail with the normal type permission error and leave the table unassociated. After USAGE is granted the same command must succeed. Ownership checks, column-shape validation and CREATE TABLE OF behavior must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 5,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "privileges"
+    ],
+    "command": "make -C src/test/regress check TESTS=privileges"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

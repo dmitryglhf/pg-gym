@@ -1,0 +1,18 @@
+{
+  "func": "enum_first",
+  "variants": [
+    {
+      "arguments": "anyenum",
+      "returns": "anyenum",
+      "kind": "f",
+      "volatile": "s",
+      "description": "first value of the input enum type"
+    }
+  ],
+  "description": "Returns the first value of the input enum type.",
+  "examples": [
+    "enum_first(null::rainbow) -> red"
+  ],
+  "mode": "stub",
+  "category": "enum"
+}

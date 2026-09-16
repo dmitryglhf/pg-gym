@@ -1,0 +1,17 @@
+{
+  "func": "make_date",
+  "variants": [
+    {
+      "arguments": "int4 int4 int4",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "i",
+      "description": "construct date"
+    }
+  ],
+  "description": "Create date from year, month and day fields (negative years signify BC)",
+  "examples": [
+    "make_date(2013, 7, 15) -> 2013-07-15"
+  ],
+  "mode": "stub"
+}

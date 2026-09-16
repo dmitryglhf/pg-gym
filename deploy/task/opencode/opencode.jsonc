@@ -1,0 +1,27 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "share": "disabled",
+  "provider": {
+    "pgpro": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "pgpro gateway",
+      "options": {
+        "baseURL": "{env:PGPRO_HOST}/v1",
+        "apiKey": "{env:POSTGRES_GYM_PROVIDER_KEY}"
+      },
+      "models": {
+        "Qwen/Qwen3.8-27B-FP8": {
+          "name": "Qwen3.8-27B-FP8",
+          "limit": { "context": 128000, "output": 32768 }
+        },
+        "DeepSeek-V4-Flash-0731": {
+          "name": "DeepSeek-V4-Flash-0731",
+          "limit": { "context": 128000, "output": 32768 }
+        }
+      }
+    }
+  },
+  "tools": { "webfetch": false },
+  "permission": { "webfetch": "deny" }
+}

@@ -1,0 +1,18 @@
+{
+  "func": "date_recv",
+  "mode": "stub",
+  "patch": "prep/date_recv.patch",
+  "symbols": [
+    "date_recv"
+  ],
+  "units": {
+    "date_recv": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/*\n *\t\tdate_recv\t\t\t- converts external binary format to date\n */\nDatum\ndate_recv(PG_FUNCTION_ARGS)\n{\n\tStringInfo\tbuf = (StringInfo) PG_GETARG_POINTER(0);\n\tDateADT\t\tresult;\n\n\tresult = (DateADT) pq_getmsgint(buf, sizeof(DateADT));\n\n\t/* Limit to the same range that date_in() accepts. */\n\tif (DATE_NOT_FINITE(result))\n\t\t /* ok */ ;\n\telse if (!IS_VALID_DATE(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"date out of range\")));\n\n\tPG_RETURN_DATEADT(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

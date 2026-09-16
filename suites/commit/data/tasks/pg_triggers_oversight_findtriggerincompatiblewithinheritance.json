@@ -1,0 +1,10 @@
+{
+  "name": "pg_triggers_oversight_findtriggerincompatiblewithinheritance",
+  "area": "triggers, partition attach and inheritance",
+  "goal": "A statement-level trigger with transition tables can wrongly prevent a former partition or inheritance child from being attached or inherited again. Such a trigger does not have the row-level incompatibility that the check is intended to catch.\n\nOn a table hierarchy with statement triggers referencing transition tables, detach and reattach a partition, then repeat the analogous NO INHERIT and INHERIT sequence. Both round trips must succeed. Trigger kinds that are genuinely incompatible with inheritance must still be rejected, and row-level trigger behavior must remain unchanged.",
+  "func": "pg_triggers_oversight_findtriggerincompatiblewithinheritance",
+  "graded_by": [
+    "src/test/regress/sql/triggers.sql",
+    "src/test/regress/expected/triggers.out"
+  ]
+}

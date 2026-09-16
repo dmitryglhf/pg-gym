@@ -1,0 +1,14 @@
+{
+  "name": "pg_generated_disallow_generated_columns",
+  "area": "COPY FROM, generated columns",
+  "goal": "COPY ... FROM ... WHERE applies its filter to the incoming row before stored generated columns have been computed. A WHERE clause that reads a generated column therefore tests a value that does not exist yet, and rows are kept or discarded on the strength of it. Nothing rejects such a clause. COPY already refuses to let a generated column appear in the column list.\n\n    CREATE TABLE gtest1 (a int, b int GENERATED ALWAYS AS (a * 2) STORED);\n    COPY gtest1 FROM stdin WHERE b <> 10;\n\nThat has to raise an error, and so does a whole-row reference such as WHERE gtest1 IS NULL, since it reads every column of the table including the generated one.\n\nWHERE clauses over ordinary columns must keep working exactly as they do, and no other use of a generated column that is legal today may start failing.",
+  "contract": [
+    "Column \"%s\" is a generated column.",
+    "generated columns are not supported in COPY FROM WHERE conditions"
+  ],
+  "func": "pg_generated_disallow_generated_columns",
+  "graded_by": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ]
+}

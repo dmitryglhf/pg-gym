@@ -1,0 +1,14 @@
+diff --git a/src/backend/tcop/utility.c b/src/backend/tcop/utility.c
+index c6b1bc25..fa66b801 100644
+--- a/src/backend/tcop/utility.c
++++ b/src/backend/tcop/utility.c
+@@ -1880,8 +1880,7 @@ ProcessUtilitySlow(ParseState *pstate,
+ 					if (!IsA(rel, RangeVar))
+ 						ereport(ERROR,
+ 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+-								 errmsg("cannot create statistics on the specified relation"),
+-								 errdetail("CREATE STATISTICS only supports tables, foreign tables and materialized views.")));
++								 errmsg("only a single relation is allowed in CREATE STATISTICS")));
+ 
+ 					/*
+ 					 * CREATE STATISTICS will influence future execution plans

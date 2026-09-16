@@ -1,0 +1,43 @@
+{
+  "func": "date_add",
+  "mode": "stub",
+  "patch": "prep/date_add.patch",
+  "symbols": [
+    "timestamptz_pl_interval",
+    "timestamptz_pl_interval_at_zone"
+  ],
+  "units": {
+    "timestamptz_pl_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_pl_interval()\n * Add an interval to a timestamptz, in the session timezone.\n */\nDatum\ntimestamptz_pl_interval(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\n\tPG_RETURN_TIMESTAMP(timestamptz_pl_interval_internal(timestamp, span, NULL));\n}\n\n"
+    },
+    "timestamptz_pl_interval_at_zone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_pl_interval_at_zone()\n * Add an interval to a timestamptz, in the specified timezone.\n */\nDatum\ntimestamptz_pl_interval_at_zone(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\ttext\t   *zone = PG_GETARG_TEXT_PP(2);\n\tpg_tz\t   *attimezone = lookup_timezone(zone);\n\n\tPG_RETURN_TIMESTAMP(timestamptz_pl_interval_internal(timestamp, span, attimezone));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "horology",
+    "interval",
+    "stats_ext",
+    "timestamptz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 381,
+  "oracle_diff_by_file": {
+    "timestamptz": 10,
+    "interval": 15,
+    "horology": 323,
+    "brin": 18,
+    "brin_bloom": 2,
+    "brin_multi": 12,
+    "stats_ext": 1
+  }
+}

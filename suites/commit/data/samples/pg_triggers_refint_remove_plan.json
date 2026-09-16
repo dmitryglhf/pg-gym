@@ -1,0 +1,36 @@
+{
+  "name": "pg_triggers_refint_remove_plan",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "66a5146dc73d3ac1befe6ab595815157d5281cb5",
+  "parent": "0c9cbbfb5be79d2061d7f897f6c6f4bccb886062",
+  "date": "2026-06-05",
+  "subject": "refint: Remove plan cache.",
+  "area": "contrib refint, referential actions",
+  "licence": "PostgreSQL",
+  "goal": "The sample refint module in contrib/spi can reuse the wrong SQL operation across trigger calls in one backend. A cascading UPDATE after a cascading DELETE may delete referencing rows instead of updating them, and later updates may reuse key values belonging to an earlier call. Previously used objects can also leave state that affects calls after those objects have changed.\n\nSet up the pkeys, fkeys and fkeys2 tables the way the triggers regression test does, with check_primary_key on the referencing tables and check_foreign_key with the cascade and restrict actions on the referenced ones, then perform a cascading delete and a cascading update in the same session, in that order.\n\nEvery referential action has to use the operation, objects and key values of the call that raised it, regardless of earlier calls in the session. A restricted delete of a referenced row must still fail, a cascading delete must still delete the referencing rows, and existing refint notices must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "contrib/spi/refint.c",
+      "added": 115,
+      "deleted": 237
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/triggers.sql",
+    "src/test/regress/expected/triggers.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "triggers"
+    ],
+    "command": "make -C src/test/regress check TESTS=triggers"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

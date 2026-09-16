@@ -1,0 +1,36 @@
+{
+  "name": "pg_join_clean_up_all",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "766d40286600ebb9e3aa241451fa96427ed2f454",
+  "parent": "88d7fdcc9aaa065daf10ff3b777f607fe65bdc02",
+  "date": "2026-04-20",
+  "subject": "Clean up all relid fields of RestrictInfos during join removal.",
+  "area": "planner, join removal",
+  "licence": "PostgreSQL",
+  "goal": "Join removal can leave a query in a state that later planning steps cannot handle. A full join around a removable left join is enough to expose it when the inner side has either a constant restriction or no matching rows.\n\n    explain (costs off)\n    select * from\n      (select 1::int as id) as lhs\n    full join\n      (select dummy_source.id\n       from (select null::int as id) as dummy_source\n       left join (select a.id from a where a.id = 42) as sub\n       on sub.id = dummy_source.id\n      ) as rhs\n    on lhs.id = rhs.id;\n\nThat query and the same shape with a non-NULL constant on the inner side have to plan successfully. Both should reduce to a full join between two Result nodes; no relation proven unnecessary by join removal should survive in the plan. Existing join plans must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/plan/analyzejoins.c",
+      "added": 17,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "join"
+    ],
+    "command": "make -C src/test/regress check TESTS=join"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

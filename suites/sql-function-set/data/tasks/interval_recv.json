@@ -1,0 +1,15 @@
+{
+  "func": "interval_recv",
+  "variants": [
+    {
+      "arguments": "internal oid int4",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

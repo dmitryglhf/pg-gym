@@ -1,0 +1,36 @@
+{
+  "name": "pg_sqljson_double_transformation_json",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "717e8a1e5256fd01ed5b4cd60f2aac97dceb00bd",
+  "parent": "5e6e97fbf4031de0e7c84d87a002c0eef2ca7abe",
+  "date": "2025-04-05",
+  "subject": "Avoid double transformation of json_array()'s subquery.",
+  "area": "SQL/JSON, JSON_ARRAY subqueries",
+  "licence": "PostgreSQL",
+  "goal": "A JSON_ARRAY whose input is a subquery beginning with WITH can be transformed twice during parsing, leading to a failure or malformed result for otherwise valid syntax.\n\n`SELECT JSON_ARRAY(WITH x AS (SELECT 1) VALUES (TRUE));` must parse once and return `[true]`. Equivalent subqueries using SELECT or VALUES, with and without CTEs, must keep their normal scoping and JSON conversion behavior, and invalid subqueries must continue to be rejected normally.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/parser/parse_expr.c",
+      "added": 1,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/sqljson.sql",
+    "src/test/regress/expected/sqljson.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "sqljson"
+    ],
+    "command": "make -C src/test/regress check TESTS=sqljson"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

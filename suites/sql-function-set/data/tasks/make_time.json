@@ -1,0 +1,17 @@
+{
+  "func": "make_time",
+  "variants": [
+    {
+      "arguments": "int4 int4 float8",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "construct time"
+    }
+  ],
+  "description": "Create time from hour, minute and seconds fields",
+  "examples": [
+    "make_time(8, 15, 23.5) -> 08:15:23.5"
+  ],
+  "mode": "stub"
+}

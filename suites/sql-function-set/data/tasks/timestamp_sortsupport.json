@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_sortsupport",
+  "variants": [
+    {
+      "arguments": "internal",
+      "returns": "void",
+      "kind": "f",
+      "volatile": "i",
+      "description": "sort support"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

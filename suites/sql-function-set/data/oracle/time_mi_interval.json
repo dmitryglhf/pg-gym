@@ -1,0 +1,18 @@
+{
+  "func": "time_mi_interval",
+  "mode": "stub",
+  "patch": "prep/time_mi_interval.patch",
+  "symbols": [
+    "time_mi_interval"
+  ],
+  "units": {
+    "time_mi_interval": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* time_mi_interval()\n * Subtract interval from time.\n */\nDatum\ntime_mi_interval(PG_FUNCTION_ARGS)\n{\n\tTimeADT\t\ttime = PG_GETARG_TIMEADT(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\tTimeADT\t\tresult;\n\n\tif (INTERVAL_NOT_FINITE(span))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"cannot subtract infinite interval from time\")));\n\n\tresult = time - span->time;\n\tresult -= result / USECS_PER_DAY * USECS_PER_DAY;\n\tif (result < INT64CONST(0))\n\t\tresult += USECS_PER_DAY;\n\n\tPG_RETURN_TIMEADT(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

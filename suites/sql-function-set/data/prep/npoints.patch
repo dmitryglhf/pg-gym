@@ -1,0 +1,37 @@
+diff --git a/src/backend/utils/adt/geo_ops.c b/src/backend/utils/adt/geo_ops.c
+index 07d1649..93183e2 100644
+--- a/src/backend/utils/adt/geo_ops.c
++++ b/src/backend/utils/adt/geo_ops.c
+@@ -1617,9 +1617,8 @@ path_isopen(PG_FUNCTION_ARGS)
+ Datum
+ path_npoints(PG_FUNCTION_ARGS)
+ {
+-	PATH	   *path = PG_GETARG_PATH_P(0);
+-
+-	PG_RETURN_INT32(path->npts);
++	elog(ERROR, "path_npoints is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -4484,18 +4483,11 @@ path_poly(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/***********************************************************************
+- **
+- **		Routines for 2D polygons.
+- **
+- ***********************************************************************/
+-
+ Datum
+ poly_npoints(PG_FUNCTION_ARGS)
+ {
+-	POLYGON    *poly = PG_GETARG_POLYGON_P(0);
+-
+-	PG_RETURN_INT32(poly->npts);
++	elog(ERROR, "poly_npoints is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

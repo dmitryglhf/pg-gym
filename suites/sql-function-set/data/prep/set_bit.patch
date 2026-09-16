@@ -1,0 +1,140 @@
+diff --git a/src/backend/utils/adt/varbit.c b/src/backend/utils/adt/varbit.c
+index ad9cf37..437d2c5 100644
+--- a/src/backend/utils/adt/varbit.c
++++ b/src/backend/utils/adt/varbit.c
+@@ -1793,67 +1793,11 @@ bitposition(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*
+- * bitsetbit
+- *
+- * Given an instance of type 'bit' creates a new one with
+- * the Nth bit set to the given value.
+- *
+- * The bit location is specified left-to-right in a zero-based fashion
+- * consistent with the other get_bit and set_bit functions, but
+- * inconsistent with the standard substring, position, overlay functions
+- */
+ Datum
+ bitsetbit(PG_FUNCTION_ARGS)
+ {
+-	VarBit	   *arg1 = PG_GETARG_VARBIT_P(0);
+-	int32		n = PG_GETARG_INT32(1);
+-	int32		newBit = PG_GETARG_INT32(2);
+-	VarBit	   *result;
+-	int			len,
+-				bitlen;
+-	bits8	   *r,
+-			   *p;
+-	int			byteNo,
+-				bitNo;
+-
+-	bitlen = VARBITLEN(arg1);
+-	if (n < 0 || n >= bitlen)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+-				 errmsg("bit index %d out of valid range (0..%d)",
+-						n, bitlen - 1)));
+-
+-	/*
+-	 * sanity check!
+-	 */
+-	if (newBit != 0 && newBit != 1)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("new bit must be 0 or 1")));
+-
+-	len = VARSIZE(arg1);
+-	result = (VarBit *) palloc(len);
+-	SET_VARSIZE(result, len);
+-	VARBITLEN(result) = bitlen;
+-
+-	p = VARBITS(arg1);
+-	r = VARBITS(result);
+-
+-	memcpy(r, p, VARBITBYTES(arg1));
+-
+-	byteNo = n / BITS_PER_BYTE;
+-	bitNo = BITS_PER_BYTE - 1 - (n % BITS_PER_BYTE);
+-
+-	/*
+-	 * Update the byte.
+-	 */
+-	if (newBit == 0)
+-		r[byteNo] &= (~(1 << bitNo));
+-	else
+-		r[byteNo] |= (1 << bitNo);
+-
+-	PG_RETURN_VARBIT_P(result);
++	elog(ERROR, "bitsetbit is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index 15d2cab..99c34a6 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -3341,59 +3341,11 @@ byteaSetByte(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BYTEA_P(res);
+ }
+ 
+-/*-------------------------------------------------------------
+- * byteaSetBit
+- *
+- * Given an instance of type 'bytea' creates a new one with
+- * the Nth bit set to the given value.
+- *
+- *-------------------------------------------------------------
+- */
+ Datum
+ byteaSetBit(PG_FUNCTION_ARGS)
+ {
+-	bytea	   *res = PG_GETARG_BYTEA_P_COPY(0);
+-	int64		n = PG_GETARG_INT64(1);
+-	int32		newBit = PG_GETARG_INT32(2);
+-	int			len;
+-	int			oldByte,
+-				newByte;
+-	int			byteNo,
+-				bitNo;
+-
+-	len = VARSIZE(res) - VARHDRSZ;
+-
+-	if (n < 0 || n >= (int64) len * 8)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+-				 errmsg("index %lld out of valid range, 0..%lld",
+-						(long long) n, (long long) len * 8 - 1)));
+-
+-	/* n/8 is now known < len, so safe to cast to int */
+-	byteNo = (int) (n / 8);
+-	bitNo = (int) (n % 8);
+-
+-	/*
+-	 * sanity check!
+-	 */
+-	if (newBit != 0 && newBit != 1)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("new bit must be 0 or 1")));
+-
+-	/*
+-	 * Update the byte.
+-	 */
+-	oldByte = ((unsigned char *) VARDATA(res))[byteNo];
+-
+-	if (newBit == 0)
+-		newByte = oldByte & (~(1 << bitNo));
+-	else
+-		newByte = oldByte | (1 << bitNo);
+-
+-	((unsigned char *) VARDATA(res))[byteNo] = newByte;
+-
+-	PG_RETURN_BYTEA_P(res);
++	elog(ERROR, "byteaSetBit is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

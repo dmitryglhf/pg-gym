@@ -1,0 +1,10 @@
+{
+  "name": "pg_triggers_maketransitioncapturestate_return_consistent",
+  "area": "triggers, transition tables on partitioned tables",
+  "goal": "A partitioned table carries an UPDATE trigger declared REFERENCING NEW TABLE and, at the same time, a DELETE trigger declared REFERENCING OLD TABLE. For an UPDATE command the state built to capture transition tuples comes out internally inconsistent: the flags that say which transition tables are wanted do not agree with the tuplestores actually handed over.\n\nA cross-partition update on such a table then behaves wrongly, and on some builds crashes.\n\nFor every combination of trigger events and transition tables the flags and the tuplestores have to describe the same thing. A table carrying only one of the two triggers must keep behaving as it does now.",
+  "func": "pg_triggers_maketransitioncapturestate_return_consistent",
+  "graded_by": [
+    "src/test/regress/sql/triggers.sql",
+    "src/test/regress/expected/triggers.out"
+  ]
+}

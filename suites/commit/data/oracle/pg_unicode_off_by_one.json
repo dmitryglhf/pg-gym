@@ -1,0 +1,27 @@
+{
+  "func": "pg_unicode_off_by_one",
+  "sha": "0c9cbbfb5be79d2061d7f897f6c6f4bccb886062",
+  "parent": "0626fbfebae51a048b5415710200554eac65ff5e",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_unicode_off_by_one.patch",
+  "test_files": [
+    "src/test/regress/sql/unicode.sql",
+    "src/test/regress/expected/unicode.out"
+  ],
+  "reference": "diff --git a/src/common/unicode_norm.c b/src/common/unicode_norm.c\nindex 14e84946..57669e17 100644\n--- a/src/common/unicode_norm.c\n+++ b/src/common/unicode_norm.c\n@@ -236,7 +236,7 @@ recompose_code(uint32 start, uint32 code, uint32 *result)\n \t/* Check if two current characters are LV and T */\n \telse if (start >= SBASE && start < (SBASE + SCOUNT) &&\n \t\t\t ((start - SBASE) % TCOUNT) == 0 &&\n-\t\t\t code >= TBASE && code < (TBASE + TCOUNT))\n+\t\t\t code > TBASE && code < (TBASE + TCOUNT))\n \t{\n \t\t/* make syllable of form LVT */\n \t\tuint32\t\ttindex = code - TBASE;\n",
+  "test": "diff --git a/src/test/regress/expected/unicode.out b/src/test/regress/expected/unicode.out\nindex 1e06de22..63e48d3a 100644\n--- a/src/test/regress/expected/unicode.out\n+++ b/src/test/regress/expected/unicode.out\n@@ -105,3 +105,81 @@ ORDER BY num;\n \n SELECT is_normalized('abc', 'def');  -- run-time error\n ERROR:  invalid normalization form: def\n+-- Hangul NFC recomposition tests\n+-- L+V -> LV composition (first and last)\n+SELECT normalize(U&'\\1100\\1161', NFC) = U&'\\AC00' COLLATE \"C\" AS hangul_lv_first;\n+ hangul_lv_first \n+-----------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\1112\\1175', NFC) = U&'\\D788' COLLATE \"C\" AS hangul_lv_last;\n+ hangul_lv_last \n+----------------\n+ t\n+(1 row)\n+\n+-- LV+T -> LVT composition\n+SELECT normalize(U&'\\AC00\\11A8', NFC) = U&'\\AC01' COLLATE \"C\" AS hangul_lvt_first_t;\n+ hangul_lvt_first_t \n+--------------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\AC00\\11C2', NFC) = U&'\\AC1B' COLLATE \"C\" AS hangul_lvt_last_t;\n+ hangul_lvt_last_t \n+-------------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\D788\\11A8', NFC) = U&'\\D789' COLLATE \"C\" AS hangul_lvt_last_lv;\n+ hangul_lvt_last_lv \n+--------------------\n+ t\n+(1 row)\n+\n+-- L+V+T -> LVT composition\n+SELECT normalize(U&'\\1100\\1161\\11A8', NFC) = U&'\\AC01' COLLATE \"C\" AS hangul_full_lvt;\n+ hangul_full_lvt \n+-----------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\1112\\1175\\11C2', NFC) = U&'\\D7A3' COLLATE \"C\" AS hangul_full_lvt;\n+ hangul_full_lvt \n+-----------------\n+ t\n+(1 row)\n+\n+-- TBASE invalid T syllable\n+SELECT normalize(U&'\\AC00\\11A7', NFC) = U&'\\AC00\\11A7' COLLATE \"C\" AS hangul_tbase_not_combined;\n+ hangul_tbase_not_combined \n+---------------------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\1100\\1161\\11A7', NFC) = U&'\\AC00\\11A7' COLLATE \"C\" AS hangul_lv_tbase_separate;\n+ hangul_lv_tbase_separate \n+--------------------------\n+ t\n+(1 row)\n+\n+-- Hangul NFD decomposition tests\n+SELECT normalize(U&'\\AC00', NFD) = U&'\\1100\\1161' COLLATE \"C\" AS hangul_nfd_lv;\n+ hangul_nfd_lv \n+---------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\AC01', NFD) = U&'\\1100\\1161\\11A8' COLLATE \"C\" AS hangul_nfd_lvt;\n+ hangul_nfd_lvt \n+----------------\n+ t\n+(1 row)\n+\n+SELECT normalize(U&'\\D7A3', NFD) = U&'\\1112\\1175\\11C2' COLLATE \"C\" AS hangul_nfd_last;\n+ hangul_nfd_last \n+-----------------\n+ t\n+(1 row)\n+\ndiff --git a/src/test/regress/sql/unicode.sql b/src/test/regress/sql/unicode.sql\nindex e50adb68..951f86a3 100644\n--- a/src/test/regress/sql/unicode.sql\n+++ b/src/test/regress/sql/unicode.sql\n@@ -36,3 +36,23 @@ FROM\n ORDER BY num;\n \n SELECT is_normalized('abc', 'def');  -- run-time error\n+\n+-- Hangul NFC recomposition tests\n+-- L+V -> LV composition (first and last)\n+SELECT normalize(U&'\\1100\\1161', NFC) = U&'\\AC00' COLLATE \"C\" AS hangul_lv_first;\n+SELECT normalize(U&'\\1112\\1175', NFC) = U&'\\D788' COLLATE \"C\" AS hangul_lv_last;\n+-- LV+T -> LVT composition\n+SELECT normalize(U&'\\AC00\\11A8', NFC) = U&'\\AC01' COLLATE \"C\" AS hangul_lvt_first_t;\n+SELECT normalize(U&'\\AC00\\11C2', NFC) = U&'\\AC1B' COLLATE \"C\" AS hangul_lvt_last_t;\n+SELECT normalize(U&'\\D788\\11A8', NFC) = U&'\\D789' COLLATE \"C\" AS hangul_lvt_last_lv;\n+-- L+V+T -> LVT composition\n+SELECT normalize(U&'\\1100\\1161\\11A8', NFC) = U&'\\AC01' COLLATE \"C\" AS hangul_full_lvt;\n+SELECT normalize(U&'\\1112\\1175\\11C2', NFC) = U&'\\D7A3' COLLATE \"C\" AS hangul_full_lvt;\n+-- TBASE invalid T syllable\n+SELECT normalize(U&'\\AC00\\11A7', NFC) = U&'\\AC00\\11A7' COLLATE \"C\" AS hangul_tbase_not_combined;\n+SELECT normalize(U&'\\1100\\1161\\11A7', NFC) = U&'\\AC00\\11A7' COLLATE \"C\" AS hangul_lv_tbase_separate;\n+\n+-- Hangul NFD decomposition tests\n+SELECT normalize(U&'\\AC00', NFD) = U&'\\1100\\1161' COLLATE \"C\" AS hangul_nfd_lv;\n+SELECT normalize(U&'\\AC01', NFD) = U&'\\1100\\1161\\11A8' COLLATE \"C\" AS hangul_nfd_lvt;\n+SELECT normalize(U&'\\D7A3', NFD) = U&'\\1112\\1175\\11C2' COLLATE \"C\" AS hangul_nfd_last;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=unicode",
+  "expected_tests": [
+    "unicode"
+  ],
+  "failing_tests": [
+    "unicode"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 4,
+  "oracle_diff_by_file": {
+    "unicode": 4
+  }
+}

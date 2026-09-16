@@ -1,0 +1,15 @@
+{
+  "name": "pg_tsearch_overflows_ts_headline",
+  "area": "full-text search, ts_headline options",
+  "goal": "ts_headline() stores selection markers and fragment delimiters in a bounded representation but accepts oversized option values, allowing length arithmetic to overflow or memory to be mishandled.\n\nPass 32768-character values separately as StartSel, StopSel and FragmentDelimiter. Each call must fail cleanly with `value for \"%s\" is too long`, naming the option (`StartSel`, `StopSel` or `FragmentDelimiter`). Values within the supported limit, combinations of normal options and headline output itself must remain unchanged.",
+  "contract": [
+    "FragmentDelimiter",
+    "StartSel",
+    "value for \"%s\" is too long"
+  ],
+  "func": "pg_tsearch_overflows_ts_headline",
+  "graded_by": [
+    "src/test/regress/sql/tsearch.sql",
+    "src/test/regress/expected/tsearch.out"
+  ]
+}

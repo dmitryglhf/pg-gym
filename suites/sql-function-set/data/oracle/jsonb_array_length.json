@@ -1,0 +1,29 @@
+{
+  "func": "jsonb_array_length",
+  "mode": "stub",
+  "patch": "prep/jsonb_array_length.patch",
+  "symbols": [
+    "jsonb_array_length"
+  ],
+  "units": {
+    "jsonb_array_length": {
+      "file": "src/backend/utils/adt/jsonfuncs.c",
+      "code": "Datum\njsonb_array_length(PG_FUNCTION_ARGS)\n{\n\tJsonb\t   *jb = PG_GETARG_JSONB_P(0);\n\n\tif (JB_ROOT_IS_SCALAR(jb))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"cannot get array length of a scalar\")));\n\telse if (!JB_ROOT_IS_ARRAY(jb))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"cannot get array length of a non-array\")));\n\n\tPG_RETURN_INT32(JB_ROOT_COUNT(jb));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "incremental_sort",
+    "jsonb"
+  ],
+  "category": "json",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 106,
+  "oracle_diff_by_file": {
+    "incremental_sort": 92,
+    "jsonb": 14
+  }
+}

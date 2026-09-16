@@ -1,0 +1,10 @@
+{
+  "name": "pg_encoding_substring_toasted_multibyte",
+  "area": "text slicing, multibyte encodings",
+  "goal": "substring() can reject a valid requested prefix of a toasted multibyte string when the fetched slice happens to end partway through the next character. The incomplete character lies beyond the requested result, but eager validation treats it as part of the substring.\n\nUse toasted text containing three- and four-byte UTF-8 characters, request prefixes and suffixes ending on valid character boundaries, and include a value with malformed bytes after the requested range. A substring wholly before the malformed or incomplete tail must succeed and contain exactly the requested characters. A substring that actually reaches malformed input must still error, and single-byte and untoasted behavior must not change.",
+  "func": "pg_encoding_substring_toasted_multibyte",
+  "graded_by": [
+    "src/test/regress/sql/encoding.sql",
+    "src/test/regress/expected/encoding.out"
+  ]
+}

@@ -1,0 +1,142 @@
+diff --git a/src/backend/utils/adt/regexp.c b/src/backend/utils/adt/regexp.c
+index 637970d..694e386 100644
+--- a/src/backend/utils/adt/regexp.c
++++ b/src/backend/utils/adt/regexp.c
+@@ -631,127 +631,39 @@ textregexsubstr(PG_FUNCTION_ARGS)
+ 							   Int32GetDatum(eo - so));
+ }
+ 
+-/*
+- * textregexreplace_noopt()
+- *		Return a string matched by a regular expression, with replacement.
+- *
+- * This version doesn't have an option argument: we default to case
+- * sensitive match, replace the first instance only.
+- */
+ Datum
+ textregexreplace_noopt(PG_FUNCTION_ARGS)
+ {
+-	text	   *s = PG_GETARG_TEXT_PP(0);
+-	text	   *p = PG_GETARG_TEXT_PP(1);
+-	text	   *r = PG_GETARG_TEXT_PP(2);
+-
+-	PG_RETURN_TEXT_P(replace_text_regexp(s, p, r,
+-										 REG_ADVANCED, PG_GET_COLLATION(),
+-										 0, 1));
++	elog(ERROR, "textregexreplace_noopt is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * textregexreplace()
+- *		Return a string matched by a regular expression, with replacement.
+- */
+ Datum
+ textregexreplace(PG_FUNCTION_ARGS)
+ {
+-	text	   *s = PG_GETARG_TEXT_PP(0);
+-	text	   *p = PG_GETARG_TEXT_PP(1);
+-	text	   *r = PG_GETARG_TEXT_PP(2);
+-	text	   *opt = PG_GETARG_TEXT_PP(3);
+-	pg_re_flags flags;
+-
+-	/*
+-	 * regexp_replace() with four arguments will be preferentially resolved as
+-	 * this form when the fourth argument is of type UNKNOWN.  However, the
+-	 * user might have intended to call textregexreplace_extended_no_n.  If we
+-	 * see flags that look like an integer, emit the same error that
+-	 * parse_re_flags would, but add a HINT about how to fix it.
+-	 */
+-	if (VARSIZE_ANY_EXHDR(opt) > 0)
+-	{
+-		char	   *opt_p = VARDATA_ANY(opt);
+-		const char *end_p = opt_p + VARSIZE_ANY_EXHDR(opt);
+-
+-		if (*opt_p >= '0' && *opt_p <= '9')
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid regular expression option: \"%.*s\"",
+-							pg_mblen_range(opt_p, end_p), opt_p),
+-					 errhint("If you meant to use regexp_replace() with a start parameter, cast the fourth argument to integer explicitly.")));
+-	}
+-
+-	parse_re_flags(&flags, opt);
+-
+-	PG_RETURN_TEXT_P(replace_text_regexp(s, p, r,
+-										 flags.cflags, PG_GET_COLLATION(),
+-										 0, flags.glob ? 0 : 1));
++	elog(ERROR, "textregexreplace is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * textregexreplace_extended()
+- *		Return a string matched by a regular expression, with replacement.
+- *		Extends textregexreplace by allowing a start position and the
+- *		choice of the occurrence to replace (0 means all occurrences).
+- */
+ Datum
+ textregexreplace_extended(PG_FUNCTION_ARGS)
+ {
+-	text	   *s = PG_GETARG_TEXT_PP(0);
+-	text	   *p = PG_GETARG_TEXT_PP(1);
+-	text	   *r = PG_GETARG_TEXT_PP(2);
+-	int			start = 1;
+-	int			n = 1;
+-	text	   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(5);
+-	pg_re_flags re_flags;
+-
+-	/* Collect optional parameters */
+-	if (PG_NARGS() > 3)
+-	{
+-		start = PG_GETARG_INT32(3);
+-		if (start <= 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid value for parameter \"%s\": %d",
+-							"start", start)));
+-	}
+-	if (PG_NARGS() > 4)
+-	{
+-		n = PG_GETARG_INT32(4);
+-		if (n < 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid value for parameter \"%s\": %d",
+-							"n", n)));
+-	}
+-
+-	/* Determine options */
+-	parse_re_flags(&re_flags, flags);
+-
+-	/* If N was not specified, deduce it from the 'g' flag */
+-	if (PG_NARGS() <= 4)
+-		n = re_flags.glob ? 0 : 1;
+-
+-	/* Do the replacement(s) */
+-	PG_RETURN_TEXT_P(replace_text_regexp(s, p, r,
+-										 re_flags.cflags, PG_GET_COLLATION(),
+-										 start - 1, n));
++	elog(ERROR, "textregexreplace_extended is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ textregexreplace_extended_no_n(PG_FUNCTION_ARGS)
+ {
+-	return textregexreplace_extended(fcinfo);
++	elog(ERROR, "textregexreplace_extended_no_n is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ textregexreplace_extended_no_flags(PG_FUNCTION_ARGS)
+ {
+-	return textregexreplace_extended(fcinfo);
++	elog(ERROR, "textregexreplace_extended_no_flags is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

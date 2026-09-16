@@ -1,0 +1,13 @@
+{
+  "name": "pg_privileges_alter_group_drop",
+  "area": "role membership, error reporting",
+  "goal": "ALTER GROUP ... DROP USER reports a misleading authorization detail: it names the wrong option required to modify role membership, unlike the corresponding ADD USER path.\n\nAs a role without authority to administer a target role, attempt both ALTER GROUP ... ADD USER and DROP USER. Both must fail with `permission denied to alter role` and the detail `Only roles with the %s option on role \"%s\" may add or drop members.`, filled with the correct option and role. Successful membership changes and unrelated role errors must be unchanged.",
+  "contract": [
+    "Only roles with the %s option on role \\\"%s\\\" may add or drop members."
+  ],
+  "func": "pg_privileges_alter_group_drop",
+  "graded_by": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ]
+}

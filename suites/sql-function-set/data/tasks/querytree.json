@@ -1,0 +1,18 @@
+{
+  "func": "querytree",
+  "variants": [
+    {
+      "arguments": "tsquery",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "show real useful query for GiST index"
+    }
+  ],
+  "description": "Produces a representation of the indexable portion of a tsquery. A result that is empty or just T indicates a non-indexable query.",
+  "examples": [
+    "querytree('foo &amp; ! bar'::tsquery) -> 'foo'"
+  ],
+  "mode": "stub",
+  "category": "textsearch"
+}

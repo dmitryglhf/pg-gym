@@ -1,0 +1,84 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..c57ee6e 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1134,77 +1134,8 @@ intervaltypmodin(PG_FUNCTION_ARGS)
+ Datum
+ intervaltypmodout(PG_FUNCTION_ARGS)
+ {
+-	int32		typmod = PG_GETARG_INT32(0);
+-	char	   *res = (char *) palloc(64);
+-	int			fields;
+-	int			precision;
+-	const char *fieldstr;
+-
+-	if (typmod < 0)
+-	{
+-		*res = '\0';
+-		PG_RETURN_CSTRING(res);
+-	}
+-
+-	fields = INTERVAL_RANGE(typmod);
+-	precision = INTERVAL_PRECISION(typmod);
+-
+-	switch (fields)
+-	{
+-		case INTERVAL_MASK(YEAR):
+-			fieldstr = " year";
+-			break;
+-		case INTERVAL_MASK(MONTH):
+-			fieldstr = " month";
+-			break;
+-		case INTERVAL_MASK(DAY):
+-			fieldstr = " day";
+-			break;
+-		case INTERVAL_MASK(HOUR):
+-			fieldstr = " hour";
+-			break;
+-		case INTERVAL_MASK(MINUTE):
+-			fieldstr = " minute";
+-			break;
+-		case INTERVAL_MASK(SECOND):
+-			fieldstr = " second";
+-			break;
+-		case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):
+-			fieldstr = " year to month";
+-			break;
+-		case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):
+-			fieldstr = " day to hour";
+-			break;
+-		case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
+-			fieldstr = " day to minute";
+-			break;
+-		case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+-			fieldstr = " day to second";
+-			break;
+-		case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
+-			fieldstr = " hour to minute";
+-			break;
+-		case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+-			fieldstr = " hour to second";
+-			break;
+-		case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+-			fieldstr = " minute to second";
+-			break;
+-		case INTERVAL_FULL_RANGE:
+-			fieldstr = "";
+-			break;
+-		default:
+-			elog(ERROR, "invalid INTERVAL typmod: 0x%x", typmod);
+-			fieldstr = "";
+-			break;
+-	}
+-
+-	if (precision != INTERVAL_FULL_PRECISION)
+-		snprintf(res, 64, "%s(%d)", fieldstr, precision);
+-	else
+-		snprintf(res, 64, "%s", fieldstr);
+-
+-	PG_RETURN_CSTRING(res);
++	elog(ERROR, "intervaltypmodout is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,19 @@
+{
+  "func": "split_part",
+  "variants": [
+    {
+      "arguments": "text text int4",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "split string by field_sep and return field_num"
+    }
+  ],
+  "description": "Splits string at occurrences of delimiter and returns the n'th field (counting from one), or when n is negative, returns the |n|'th-from-last field.",
+  "examples": [
+    "split_part('abc~@~def~@~ghi', '~@~', 2) -> def",
+    "split_part('abc,def,ghi,jkl', ',', -2) -> ghi"
+  ],
+  "mode": "stub",
+  "category": "string"
+}

@@ -1,0 +1,72 @@
+diff --git a/src/backend/utils/adt/regexp.c b/src/backend/utils/adt/regexp.c
+index 637970d..0044813 100644
+--- a/src/backend/utils/adt/regexp.c
++++ b/src/backend/utils/adt/regexp.c
+@@ -1405,63 +1405,18 @@ regexp_match_no_flags(PG_FUNCTION_ARGS)
+ 	return regexp_match(fcinfo);
+ }
+ 
+-/*
+- * regexp_matches()
+- *		Return a table of all matches of a pattern within a string.
+- */
+ Datum
+ regexp_matches(PG_FUNCTION_ARGS)
+ {
+-	FuncCallContext *funcctx;
+-	regexp_matches_ctx *matchctx;
+-
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		text	   *pattern = PG_GETARG_TEXT_PP(1);
+-		text	   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(2);
+-		pg_re_flags re_flags;
+-		MemoryContext oldcontext;
+-
+-		funcctx = SRF_FIRSTCALL_INIT();
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* Determine options */
+-		parse_re_flags(&re_flags, flags);
+-
+-		/* be sure to copy the input string into the multi-call ctx */
+-		matchctx = setup_regexp_matches(PG_GETARG_TEXT_P_COPY(0), pattern,
+-										&re_flags, 0,
+-										PG_GET_COLLATION(),
+-										true, false, false);
+-
+-		/* Pre-create workspace that build_regexp_match_result needs */
+-		matchctx->elems = (Datum *) palloc(sizeof(Datum) * matchctx->npatterns);
+-		matchctx->nulls = (bool *) palloc(sizeof(bool) * matchctx->npatterns);
+-
+-		MemoryContextSwitchTo(oldcontext);
+-		funcctx->user_fctx = (void *) matchctx;
+-	}
+-
+-	funcctx = SRF_PERCALL_SETUP();
+-	matchctx = (regexp_matches_ctx *) funcctx->user_fctx;
+-
+-	if (matchctx->next_match < matchctx->nmatches)
+-	{
+-		ArrayType  *result_ary;
+-
+-		result_ary = build_regexp_match_result(matchctx);
+-		matchctx->next_match++;
+-		SRF_RETURN_NEXT(funcctx, PointerGetDatum(result_ary));
+-	}
+-
+-	SRF_RETURN_DONE(funcctx);
++	elog(ERROR, "regexp_matches is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_matches_no_flags(PG_FUNCTION_ARGS)
+ {
+-	return regexp_matches(fcinfo);
++	elog(ERROR, "regexp_matches_no_flags is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

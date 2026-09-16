@@ -1,0 +1,36 @@
+{
+  "name": "pg_union_estimate_array_length",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "93ed18720105ebacfd2a2bdeb55bf33feaf2ec80",
+  "parent": "c05c3baf169f353914ed34fcabd057be1d25f9b4",
+  "date": "2026-04-11",
+  "subject": "Fix estimate_array_length error with set-operation array coercions",
+  "area": "planner estimates, set operations",
+  "licence": "PostgreSQL",
+  "goal": "Planning nested set operations over differently typed arrays can fail while estimating an array expression introduced by type coercion. The internal reference created for a set-operation output does not identify a base relation.\n\nEXPLAIN VERBOSE for `SELECT NULL::int[] UNION ALL SELECT NULL::int[] UNION ALL SELECT NULL::bigint[]` must succeed and show the required coercion to the common array type without a lookup error. Executing it must return three null array rows. Array predicates over ordinary relation columns and set operations without array coercion must keep their current estimates and plans.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/selfuncs.c",
+      "added": 12,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/union.sql",
+    "src/test/regress/expected/union.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "union"
+    ],
+    "command": "make -C src/test/regress check TESTS=union"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

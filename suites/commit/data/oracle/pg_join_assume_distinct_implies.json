@@ -1,0 +1,27 @@
+{
+  "func": "pg_join_assume_distinct_implies",
+  "sha": "a4eb938b33557193d90c1b396afd2c274e28b07e",
+  "parent": "aa14281fdde6b2cc7a794dd02bc128dd0cb20b45",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_join_assume_distinct_implies.patch",
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/plan/analyzejoins.c b/src/backend/optimizer/plan/analyzejoins.c\nindex 4f5af451..e8312c04 100644\n--- a/src/backend/optimizer/plan/analyzejoins.c\n+++ b/src/backend/optimizer/plan/analyzejoins.c\n@@ -996,8 +996,9 @@ rel_is_distinct_for(PlannerInfo *root, RelOptInfo *rel, List *clause_list)\n bool\n query_supports_distinctness(Query *query)\n {\n-\t/* SRFs break distinctness except with DISTINCT, see below */\n-\tif (query->hasTargetSRFs && query->distinctClause == NIL)\n+\t/* SRFs break distinctness except with plain DISTINCT, see below */\n+\tif (query->hasTargetSRFs &&\n+\t\t(query->distinctClause == NIL || query->hasDistinctOn))\n \t\treturn false;\n \n \t/* check for features we can prove distinctness with */\n@@ -1081,10 +1082,15 @@ query_is_distinct_for_with_collations(Query *query, List *distinct_cols)\n \t/*\n \t * DISTINCT (including DISTINCT ON) guarantees uniqueness if all the\n \t * columns in the DISTINCT clause appear in colnos and operator semantics\n-\t * match.  This is true even if there are SRFs in the DISTINCT columns or\n-\t * elsewhere in the tlist.\n+\t * match.  With plain DISTINCT this is true even if there are SRFs in the\n+\t * tlist, since they are all DISTINCT columns and hence get expanded\n+\t * before the Unique step.  But with DISTINCT ON, the planner may postpone\n+\t * SRFs that are not DISTINCT ON or ORDER BY columns until after the\n+\t * Unique step, which can produce duplicates of the DISTINCT ON columns;\n+\t * so we can't rely on DISTINCT ON if there are any tlist SRFs.\n \t */\n-\tif (query->distinctClause)\n+\tif (query->distinctClause &&\n+\t\t!(query->hasTargetSRFs && query->hasDistinctOn))\n \t{\n \t\tforeach(l, query->distinctClause)\n \t\t{\n",
+  "test": "diff --git a/src/test/regress/expected/join.out b/src/test/regress/expected/join.out\nindex edae4df8..f55fd5fd 100644\n--- a/src/test/regress/expected/join.out\n+++ b/src/test/regress/expected/join.out\n@@ -5856,6 +5856,39 @@ select d.* from d left join (select distinct * from b) s\n          ->  Seq Scan on d\n (9 rows)\n \n+-- join removal is not possible when the subquery has DISTINCT ON and a\n+-- set-returning function that is not a DISTINCT ON column\n+explain (costs off)\n+select d.* from d left join\n+  (select distinct on (id) id, generate_series(1, 2) as g from b order by id) s\n+  on d.a = s.id\n+  order by 1, 2;\n+                              QUERY PLAN                               \n+-----------------------------------------------------------------------\n+ Sort\n+   Sort Key: d.a, d.b\n+   ->  Hash Left Join\n+         Hash Cond: (d.a = s.id)\n+         ->  Seq Scan on d\n+         ->  Hash\n+               ->  Subquery Scan on s\n+                     ->  ProjectSet\n+                           ->  Unique\n+                                 ->  Index Only Scan using b_pkey on b\n+(10 rows)\n+\n+select d.* from d left join\n+  (select distinct on (id) id, generate_series(1, 2) as g from b order by id) s\n+  on d.a = s.id\n+  order by 1, 2;\n+ a | b \n+---+---\n+ 1 | 3\n+ 1 | 3\n+ 2 | 2\n+ 3 | 1\n+(4 rows)\n+\n -- join removal is not possible here\n explain (costs off)\n select 1 from a t1\ndiff --git a/src/test/regress/sql/join.sql b/src/test/regress/sql/join.sql\nindex 166156c9..25a66f27 100644\n--- a/src/test/regress/sql/join.sql\n+++ b/src/test/regress/sql/join.sql\n@@ -2141,6 +2141,18 @@ explain (costs off)\n select d.* from d left join (select distinct * from b) s\n   on d.a = s.id;\n \n+-- join removal is not possible when the subquery has DISTINCT ON and a\n+-- set-returning function that is not a DISTINCT ON column\n+explain (costs off)\n+select d.* from d left join\n+  (select distinct on (id) id, generate_series(1, 2) as g from b order by id) s\n+  on d.a = s.id\n+  order by 1, 2;\n+select d.* from d left join\n+  (select distinct on (id) id, generate_series(1, 2) as g from b order by id) s\n+  on d.a = s.id\n+  order by 1, 2;\n+\n -- join removal is not possible here\n explain (costs off)\n select 1 from a t1\n",
+  "oracle_command": "make -C src/test/regress check TESTS=join",
+  "expected_tests": [
+    "join"
+  ],
+  "failing_tests": [
+    "join"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 17,
+  "oracle_diff_by_file": {
+    "join": 17
+  }
+}

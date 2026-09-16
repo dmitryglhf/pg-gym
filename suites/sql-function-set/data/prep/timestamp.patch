@@ -1,0 +1,102 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..1373452 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1276,18 +1276,11 @@ date_mi_interval(PG_FUNCTION_ARGS)
+ 							   PointerGetDatum(span));
+ }
+ 
+-/* date_timestamp()
+- * Convert date to timestamp data type.
+- */
+ Datum
+ date_timestamp(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal = PG_GETARG_DATEADT(0);
+-	Timestamp	result;
+-
+-	result = date2timestamp(dateVal);
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "date_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamp_date()
+@@ -1959,27 +1952,11 @@ timestamptz_time(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMEADT(result);
+ }
+ 
+-/* datetime_timestamp()
+- * Convert date and time to timestamp data type.
+- */
+ Datum
+ datetime_timestamp(PG_FUNCTION_ARGS)
+ {
+-	DateADT		date = PG_GETARG_DATEADT(0);
+-	TimeADT		time = PG_GETARG_TIMEADT(1);
+-	Timestamp	result;
+-
+-	result = date2timestamp(date);
+-	if (!TIMESTAMP_NOT_FINITE(result))
+-	{
+-		result += time;
+-		if (!IS_VALID_TIMESTAMP(result))
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("timestamp out of range")));
+-	}
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "datetime_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* time_interval()
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..9db6cf3 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -337,22 +337,11 @@ timestamp_support(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(ret);
+ }
+ 
+-/* timestamp_scale()
+- * Adjust time type for specified scale factor.
+- * Used by PostgreSQL type system to stuff columns.
+- */
+ Datum
+ timestamp_scale(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(0);
+-	int32		typmod = PG_GETARG_INT32(1);
+-	Timestamp	result;
+-
+-	result = timestamp;
+-
+-	AdjustTimestampForTypmod(&result, typmod, NULL);
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "timestamp_scale is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*
+@@ -6370,15 +6359,11 @@ timestamp2timestamptz(Timestamp timestamp)
+ 	return timestamp2timestamptz_opt_overflow(timestamp, NULL);
+ }
+ 
+-/* timestamptz_timestamp()
+- * Convert timestamp at GMT to local timestamp
+- */
+ Datum
+ timestamptz_timestamp(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+-
+-	PG_RETURN_TIMESTAMP(timestamptz2timestamp(timestamp));
++	elog(ERROR, "timestamptz_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ static Timestamp

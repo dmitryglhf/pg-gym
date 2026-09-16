@@ -1,0 +1,36 @@
+{
+  "name": "pg_privileges_inconsistent_quoting_role",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "50959f96e7b17c3f225919edbec4072c033aef60",
+  "parent": "24f6c1bd41d0631a04cc956cc8cafa0b117ab625",
+  "date": "2025-07-11",
+  "subject": "Fix inconsistent quoting of role names in ACLs.",
+  "area": "ACLs, role-name quoting",
+  "licence": "PostgreSQL",
+  "goal": "ACL item output and input disagree for role names containing a double quote, and an empty quoted name around the grantor separator can be misparsed as a quote character.\n\nCreate a role named like `regress_\"quoted`, build an aclitem with makeaclitem(), and round-trip its textual form. Both grantee and grantor must be emitted with SQL-style doubled quotes and parse back identically. An aclitem such as `\"\"=r*/\"\"` must be rejected because no grantor name follows the slash. Simple, whitespace-containing and PUBLIC ACL names must keep their established syntax.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/acl.c",
+      "added": 25,
+      "deleted": 8
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "privileges"
+    ],
+    "command": "make -C src/test/regress check TESTS=privileges"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

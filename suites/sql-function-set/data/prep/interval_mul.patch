@@ -1,0 +1,137 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..12ff320 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3561,130 +3561,11 @@ interval_mi(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(result);
+ }
+ 
+-/*
+- *	There is no interval_abs():  it is unclear what value to return:
+- *	  http://archives.postgresql.org/pgsql-general/2009-10/msg01031.php
+- *	  http://archives.postgresql.org/pgsql-general/2009-11/msg00041.php
+- */
+-
+ Datum
+ interval_mul(PG_FUNCTION_ARGS)
+ {
+-	Interval   *span = PG_GETARG_INTERVAL_P(0);
+-	float8		factor = PG_GETARG_FLOAT8(1);
+-	double		month_remainder_days,
+-				sec_remainder,
+-				result_double;
+-	int32		orig_month = span->month,
+-				orig_day = span->day;
+-	Interval   *result;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	/*
+-	 * Handle NaN and infinities.
+-	 *
+-	 * We treat "0 * infinity" and "infinity * 0" as errors, since the
+-	 * interval type has nothing equivalent to NaN.
+-	 */
+-	if (isnan(factor))
+-		goto out_of_range;
+-
+-	if (INTERVAL_NOT_FINITE(span))
+-	{
+-		if (factor == 0.0)
+-			goto out_of_range;
+-
+-		if (factor < 0.0)
+-			interval_um_internal(span, result);
+-		else
+-			memcpy(result, span, sizeof(Interval));
+-
+-		PG_RETURN_INTERVAL_P(result);
+-	}
+-	if (isinf(factor))
+-	{
+-		int			isign = interval_sign(span);
+-
+-		if (isign == 0)
+-			goto out_of_range;
+-
+-		if (factor * isign < 0)
+-			INTERVAL_NOBEGIN(result);
+-		else
+-			INTERVAL_NOEND(result);
+-
+-		PG_RETURN_INTERVAL_P(result);
+-	}
+-
+-	result_double = span->month * factor;
+-	if (isnan(result_double) || !FLOAT8_FITS_IN_INT32(result_double))
+-		goto out_of_range;
+-	result->month = (int32) result_double;
+-
+-	result_double = span->day * factor;
+-	if (isnan(result_double) || !FLOAT8_FITS_IN_INT32(result_double))
+-		goto out_of_range;
+-	result->day = (int32) result_double;
+-
+-	/*
+-	 * The above correctly handles the whole-number part of the month and day
+-	 * products, but we have to do something with any fractional part
+-	 * resulting when the factor is non-integral.  We cascade the fractions
+-	 * down to lower units using the conversion factors DAYS_PER_MONTH and
+-	 * SECS_PER_DAY.  Note we do NOT cascade up, since we are not forced to do
+-	 * so by the representation.  The user can choose to cascade up later,
+-	 * using justify_hours and/or justify_days.
+-	 */
+-
+-	/*
+-	 * Fractional months full days into days.
+-	 *
+-	 * Floating point calculation are inherently imprecise, so these
+-	 * calculations are crafted to produce the most reliable result possible.
+-	 * TSROUND() is needed to more accurately produce whole numbers where
+-	 * appropriate.
+-	 */
+-	month_remainder_days = (orig_month * factor - result->month) * DAYS_PER_MONTH;
+-	month_remainder_days = TSROUND(month_remainder_days);
+-	sec_remainder = (orig_day * factor - result->day +
+-					 month_remainder_days - (int) month_remainder_days) * SECS_PER_DAY;
+-	sec_remainder = TSROUND(sec_remainder);
+-
+-	/*
+-	 * Might have 24:00:00 hours due to rounding, or >24 hours because of time
+-	 * cascade from months and days.  It might still be >24 if the combination
+-	 * of cascade and the seconds factor operation itself.
+-	 */
+-	if (fabs(sec_remainder) >= SECS_PER_DAY)
+-	{
+-		if (pg_add_s32_overflow(result->day,
+-								(int) (sec_remainder / SECS_PER_DAY),
+-								&result->day))
+-			goto out_of_range;
+-		sec_remainder -= (int) (sec_remainder / SECS_PER_DAY) * SECS_PER_DAY;
+-	}
+-
+-	/* cascade units down */
+-	if (pg_add_s32_overflow(result->day, (int32) month_remainder_days,
+-							&result->day))
+-		goto out_of_range;
+-	result_double = rint(span->time * factor + sec_remainder * USECS_PER_SEC);
+-	if (isnan(result_double) || !FLOAT8_FITS_IN_INT64(result_double))
+-		goto out_of_range;
+-	result->time = (int64) result_double;
+-
+-	if (INTERVAL_NOT_FINITE(result))
+-		goto out_of_range;
+-
+-	PG_RETURN_INTERVAL_P(result);
+-
+-out_of_range:
+-	ereport(ERROR,
+-			errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-			errmsg("interval out of range"));
+-
+-	PG_RETURN_NULL();			/* keep compiler quiet */
++	elog(ERROR, "interval_mul is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

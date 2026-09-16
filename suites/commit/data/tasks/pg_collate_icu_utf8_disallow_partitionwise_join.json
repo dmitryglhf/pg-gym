@@ -1,0 +1,10 @@
+{
+  "name": "pg_collate_icu_utf8_disallow_partitionwise_join",
+  "area": "partitionwise joins, collations",
+  "goal": "A partitionwise join can return wrong rows when its join equality uses a collation different from the collation of the matching partition keys. Two strings routed to different partitions under the key collation can still compare equal under the join collation, but a partition-by-partition join never brings them together.\n\nJoin two text tables partitioned with `COLLATE \"C\"` using a case-insensitive ICU collation and compare the result with partitionwise joins disabled and enabled. The rows must agree, and the unsafe partitionwise plan must not be selected. A join using the same collation as both partition keys must remain eligible, as must unrelated partitionwise joins.",
+  "func": "pg_collate_icu_utf8_disallow_partitionwise_join",
+  "graded_by": [
+    "src/test/regress/sql/collate.icu.utf8.sql",
+    "src/test/regress/expected/collate.icu.utf8.out"
+  ]
+}

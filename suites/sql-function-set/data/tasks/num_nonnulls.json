@@ -1,0 +1,18 @@
+{
+  "func": "num_nonnulls",
+  "variants": [
+    {
+      "arguments": "any",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "count the number of non-NULL arguments"
+    }
+  ],
+  "description": "Returns the number of non-null arguments.",
+  "examples": [
+    "num_nonnulls(1, NULL, 2) -> 2"
+  ],
+  "mode": "stub",
+  "category": "comparison"
+}

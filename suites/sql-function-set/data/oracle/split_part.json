@@ -1,0 +1,27 @@
+{
+  "func": "split_part",
+  "mode": "stub",
+  "patch": "prep/split_part.patch",
+  "symbols": [
+    "split_part"
+  ],
+  "units": {
+    "split_part": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*\n * split_part\n * parse input string based on provided field separator\n * return N'th item (1 based, negative counts from end)\n */\nDatum\nsplit_part(PG_FUNCTION_ARGS)\n{\n\ttext\t   *inputstring = PG_GETARG_TEXT_PP(0);\n\ttext\t   *fldsep = PG_GETARG_TEXT_PP(1);\n\tint\t\t\tfldnum = PG_GETARG_INT32(2);\n\tint\t\t\tinputstring_len;\n\tint\t\t\tfldsep_len;\n\tTextPositionState state;\n\tchar\t   *start_ptr;\n\tchar\t   *end_ptr;\n\ttext\t   *result_text;\n\tbool\t\tfound;\n\n\t/* field number is 1 based */\n\tif (fldnum == 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"field position must not be zero\")));\n\n\tinputstring_len = VARSIZE_ANY_EXHDR(inputstring);\n\tfldsep_len = VARSIZE_ANY_EXHDR(fldsep);\n\n\t/* return empty string for empty input string */\n\tif (inputstring_len < 1)\n\t\tPG_RETURN_TEXT_P(cstring_to_text(\"\"));\n\n\t/* handle empty field separator */\n\tif (fldsep_len < 1)\n\t{\n\t\t/* if first or last field, return input string, else empty string */\n\t\tif (fldnum == 1 || fldnum == -1)\n\t\t\tPG_RETURN_TEXT_P(inputstring);\n\t\telse\n\t\t\tPG_RETURN_TEXT_P(cstring_to_text(\"\"));\n\t}\n\n\t/* find the first field separator */\n\ttext_position_setup(inputstring, fldsep, PG_GET_COLLATION(), &state);\n\n\tfound = text_position_next(&state);\n\n\t/* special case if fldsep not found at all */\n\tif (!found)\n\t{\n\t\ttext_position_cleanup(&state);\n\t\t/* if first or last field, return input string, else empty string */\n\t\tif (fldnum == 1 || fldnum == -1)\n\t\t\tPG_RETURN_TEXT_P(inputstring);\n\t\telse\n\t\t\tPG_RETURN_TEXT_P(cstring_to_text(\"\"));\n\t}\n\n\t/*\n\t * take care of a negative field number (i.e. count from the right) by\n\t * converting to a positive field number; we need total number of fields\n\t */\n\tif (fldnum < 0)\n\t{\n\t\t/* we found a fldsep, so there are at least two fields */\n\t\tint\t\t\tnumfields = 2;\n\n\t\twhile (text_position_next(&state))\n\t\t\tnumfields++;\n\n\t\t/* special case of last field does not require an extra pass */\n\t\tif (fldnum == -1)\n\t\t{\n\t\t\tstart_ptr = text_position_get_match_ptr(&state) + fldsep_len;\n\t\t\tend_ptr = VARDATA_ANY(inputstring) + inputstring_len;\n\t\t\ttext_position_cleanup(&state);\n\t\t\tPG_RETURN_TEXT_P(cstring_to_text_with_len(start_ptr,\n\t\t\t\t\t\t\t\t\t\t\t\t\t  end_ptr - start_ptr));\n\t\t}\n\n\t\t/* else, convert fldnum to positive notation */\n\t\tfldnum += numfields + 1;\n\n\t\t/* if nonexistent field, return empty string */\n\t\tif (fldnum <= 0)\n\t\t{\n\t\t\ttext_position_cleanup(&state);\n\t\t\tPG_RETURN_TEXT_P(cstring_to_text(\"\"));\n\t\t}\n\n\t\t/* reset to pointing at first match, but now with positive fldnum */\n\t\ttext_position_reset(&state);\n\t\tfound = text_position_next(&state);\n\t\tAssert(found);\n\t}\n\n\t/* identify bounds of first field */\n\tstart_ptr = VARDATA_ANY(inputstring);\n\tend_ptr = text_position_get_match_ptr(&state);\n\n\twhile (found && --fldnum > 0)\n\t{\n\t\t/* identify bounds of next field */\n\t\tstart_ptr = end_ptr + fldsep_len;\n\t\tfound = text_position_next(&state);\n\t\tif (found)\n\t\t\tend_ptr = text_position_get_match_ptr(&state);\n\t}\n\n\ttext_position_cleanup(&state);\n\n\tif (fldnum > 0)\n\t{\n\t\t/* N'th field separator not found */\n\t\t/* if last field requested, return it, else empty string */\n\t\tif (fldnum == 1)\n\t\t{\n\t\t\tint\t\t\tlast_len = start_ptr - VARDATA_ANY(inputstring);\n\n\t\t\tresult_text = cstring_to_text_with_len(start_ptr,\n\t\t\t\t\t\t\t\t\t\t\t\t   inputstring_len - last_len);\n\t\t}\n\t\telse\n\t\t\tresult_text = cstring_to_text(\"\");\n\t}\n\telse\n\t{\n\t\t/* non-last field requested */\n\t\tresult_text = cstring_to_text_with_len(start_ptr, end_ptr - start_ptr);\n\t}\n\n\tPG_RETURN_TEXT_P(result_text);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 82,
+  "oracle_diff_by_file": {
+    "strings": 82
+  }
+}

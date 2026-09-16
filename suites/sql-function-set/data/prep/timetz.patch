@@ -1,0 +1,89 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..4c119db 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2417,25 +2417,11 @@ timetz2tm(TimeTzADT *time, struct pg_tm *tm, fsec_t *fsec, int *tzp)
+ 	return 0;
+ }
+ 
+-/* timetz_scale()
+- * Adjust time type for specified scale factor.
+- * Used by PostgreSQL type system to stuff columns.
+- */
+ Datum
+ timetz_scale(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);
+-	int32		typmod = PG_GETARG_INT32(1);
+-	TimeTzADT  *result;
+-
+-	result = (TimeTzADT *) palloc(sizeof(TimeTzADT));
+-
+-	result->time = time->time;
+-	result->zone = time->zone;
+-
+-	AdjustTimeForTypmod(&(result->time), typmod);
+-
+-	PG_RETURN_TIMETZADT_P(result);
++	elog(ERROR, "timetz_scale is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -2827,52 +2813,16 @@ timetz_time(PG_FUNCTION_ARGS)
+ Datum
+ time_timetz(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time = PG_GETARG_TIMEADT(0);
+-	TimeTzADT  *result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-	int			tz;
+-
+-	GetCurrentDateTime(tm);
+-	time2tm(time, tm, &fsec);
+-	tz = DetermineTimeZoneOffset(tm, session_timezone);
+-
+-	result = (TimeTzADT *) palloc(sizeof(TimeTzADT));
+-
+-	result->time = time;
+-	result->zone = tz;
+-
+-	PG_RETURN_TIMETZADT_P(result);
++	elog(ERROR, "time_timetz is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+-/* timestamptz_timetz()
+- * Convert timestamp to timetz data type.
+- */
+ Datum
+ timestamptz_timetz(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMP(0);
+-	TimeTzADT  *result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	int			tz;
+-	fsec_t		fsec;
+-
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		PG_RETURN_NULL();
+-
+-	if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("timestamp out of range")));
+-
+-	result = (TimeTzADT *) palloc(sizeof(TimeTzADT));
+-
+-	tm2timetz(tm, fsec, tz, result);
+-
+-	PG_RETURN_TIMETZADT_P(result);
++	elog(ERROR, "timestamptz_timetz is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

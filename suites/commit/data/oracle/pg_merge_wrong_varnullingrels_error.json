@@ -1,0 +1,27 @@
+{
+  "func": "pg_merge_wrong_varnullingrels_error",
+  "sha": "34ae54af92e006e601f808e58765cc979ca9135f",
+  "parent": "d7d297f8449641bfd71750d04c302572a350052c",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_merge_wrong_varnullingrels_error.patch",
+  "test_files": [
+    "src/test/regress/sql/merge.sql",
+    "src/test/regress/expected/merge.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/prep/prepjointree.c b/src/backend/optimizer/prep/prepjointree.c\nindex 01239c0cb..ef0115a77 100644\n--- a/src/backend/optimizer/prep/prepjointree.c\n+++ b/src/backend/optimizer/prep/prepjointree.c\n@@ -282,6 +282,45 @@ transform_MERGE_to_join(Query *parse)\n \t\t\t\t\t\t\t   bms_make_singleton(parse->mergeTargetRelation),\n \t\t\t\t\t\t\t   bms_make_singleton(joinrti));\n \n+\t/*\n+\t * If the source relation is on the outer side of the join, mark any\n+\t * source relation Vars in the join condition, actions, and RETURNING list\n+\t * as nullable by the join.  These Vars will be added to the targetlist by\n+\t * preprocess_targetlist(), so it's important to mark them correctly here.\n+\t *\n+\t * It might seem that this is not necessary for Vars in the join\n+\t * condition, since it is inside the join, but it is also needed above the\n+\t * join (in the ModifyTable node) to distinguish between the MATCHED and\n+\t * NOT MATCHED BY SOURCE cases -- see ExecMergeMatched().  Note that this\n+\t * creates a modified copy of the join condition, for use above the join,\n+\t * without modifying the the original join condition, inside the join.\n+\t */\n+\tif (jointype == JOIN_LEFT || jointype == JOIN_FULL)\n+\t{\n+\t\tparse->mergeJoinCondition =\n+\t\t\tadd_nulling_relids(parse->mergeJoinCondition,\n+\t\t\t\t\t\t\t   bms_make_singleton(sourcerti),\n+\t\t\t\t\t\t\t   bms_make_singleton(joinrti));\n+\n+\t\tforeach_node(MergeAction, action, parse->mergeActionList)\n+\t\t{\n+\t\t\taction->qual =\n+\t\t\t\tadd_nulling_relids(action->qual,\n+\t\t\t\t\t\t\t\t   bms_make_singleton(sourcerti),\n+\t\t\t\t\t\t\t\t   bms_make_singleton(joinrti));\n+\n+\t\t\taction->targetList = (List *)\n+\t\t\t\tadd_nulling_relids((Node *) action->targetList,\n+\t\t\t\t\t\t\t\t   bms_make_singleton(sourcerti),\n+\t\t\t\t\t\t\t\t   bms_make_singleton(joinrti));\n+\t\t}\n+\n+\t\tparse->returningList = (List *)\n+\t\t\tadd_nulling_relids((Node *) parse->returningList,\n+\t\t\t\t\t\t\t   bms_make_singleton(sourcerti),\n+\t\t\t\t\t\t\t   bms_make_singleton(joinrti));\n+\t}\n+\n \t/*\n \t * If there are any WHEN NOT MATCHED BY SOURCE actions, the executor will\n \t * use the join condition to distinguish between MATCHED and NOT MATCHED\n",
+  "test": "diff --git a/src/test/regress/expected/merge.out b/src/test/regress/expected/merge.out\nindex 0e59bae1a..c236f155c 100644\n--- a/src/test/regress/expected/merge.out\n+++ b/src/test/regress/expected/merge.out\n@@ -2711,6 +2711,35 @@ SELECT * FROM tgt;\n (0 rows)\n \n DROP TABLE src, tgt;\n+ \n+--\n+-- test for bug #18634 (wrong varnullingrels error)\n+--\n+CREATE TABLE bug18634t (a int, b int, c text);\n+INSERT INTO bug18634t VALUES(1, 10, 'tgt1'), (2, 20, 'tgt2');\n+CREATE VIEW bug18634v AS\n+  SELECT * FROM bug18634t WHERE EXISTS (SELECT 1 FROM bug18634t);\n+CREATE TABLE bug18634s (a int, b int, c text);\n+INSERT INTO bug18634s VALUES (1, 2, 'src1');\n+MERGE INTO bug18634v t USING bug18634s s ON s.a = t.a\n+  WHEN MATCHED THEN UPDATE SET b = s.b\n+  WHEN NOT MATCHED BY SOURCE THEN DELETE\n+  RETURNING merge_action(), s.c, t.*;\n+ merge_action |  c   | a | b  |  c   \n+--------------+------+---+----+------\n+ UPDATE       | src1 | 1 |  2 | tgt1\n+ DELETE       |      | 2 | 20 | tgt2\n+(2 rows)\n+\n+SELECT * FROM bug18634t;\n+ a | b |  c   \n+---+---+------\n+ 1 | 2 | tgt1\n+(1 row)\n+\n+DROP TABLE bug18634t CASCADE;\n+NOTICE:  drop cascades to view bug18634v\n+DROP TABLE bug18634s;\n -- prepare\n RESET SESSION AUTHORIZATION;\n -- try a system catalog\ndiff --git a/src/test/regress/sql/merge.sql b/src/test/regress/sql/merge.sql\nindex 2a7753c65..ce9981d70 100644\n--- a/src/test/regress/sql/merge.sql\n+++ b/src/test/regress/sql/merge.sql\n@@ -1727,6 +1727,27 @@ MERGE INTO tgt USING src ON tgt.a IS NOT DISTINCT FROM src.a\n SELECT * FROM tgt;\n \n DROP TABLE src, tgt;\n+ \n+--\n+-- test for bug #18634 (wrong varnullingrels error)\n+--\n+CREATE TABLE bug18634t (a int, b int, c text);\n+INSERT INTO bug18634t VALUES(1, 10, 'tgt1'), (2, 20, 'tgt2');\n+CREATE VIEW bug18634v AS\n+  SELECT * FROM bug18634t WHERE EXISTS (SELECT 1 FROM bug18634t);\n+\n+CREATE TABLE bug18634s (a int, b int, c text);\n+INSERT INTO bug18634s VALUES (1, 2, 'src1');\n+\n+MERGE INTO bug18634v t USING bug18634s s ON s.a = t.a\n+  WHEN MATCHED THEN UPDATE SET b = s.b\n+  WHEN NOT MATCHED BY SOURCE THEN DELETE\n+  RETURNING merge_action(), s.c, t.*;\n+\n+SELECT * FROM bug18634t;\n+\n+DROP TABLE bug18634t CASCADE;\n+DROP TABLE bug18634s;\n \n -- prepare\n \n",
+  "oracle_command": "make -C src/test/regress check TESTS=merge",
+  "expected_tests": [
+    "merge"
+  ],
+  "failing_tests": [
+    "merge"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 14,
+  "oracle_diff_by_file": {
+    "merge": 14
+  }
+}

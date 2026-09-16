@@ -1,0 +1,36 @@
+{
+  "name": "pg_collate_icu_utf8_disallow_partitionwise_join",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "a0cdfc8893673d1325f077b79f551aa105f360b8",
+  "parent": "b6484ca9535e947a068da01015620dfde0b9b488",
+  "date": "2024-11-08",
+  "subject": "Disallow partitionwise join when collations don't match",
+  "area": "partitionwise joins, collations",
+  "licence": "PostgreSQL",
+  "goal": "A partitionwise join can return wrong rows when its join equality uses a collation different from the collation of the matching partition keys. Two strings routed to different partitions under the key collation can still compare equal under the join collation, but a partition-by-partition join never brings them together.\n\nJoin two text tables partitioned with `COLLATE \"C\"` using a case-insensitive ICU collation and compare the result with partitionwise joins disabled and enabled. The rows must agree, and the unsafe partitionwise plan must not be selected. A join using the same collation as both partition keys must remain eligible, as must unrelated partitionwise joins.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/util/relnode.c",
+      "added": 4,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/collate.icu.utf8.sql",
+    "src/test/regress/expected/collate.icu.utf8.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "collate.icu.utf8"
+    ],
+    "command": "make -C src/test/regress check TESTS=collate.icu.utf8"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

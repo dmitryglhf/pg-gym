@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_in",
+  "variants": [
+    {
+      "arguments": "cstring oid int4",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "s",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

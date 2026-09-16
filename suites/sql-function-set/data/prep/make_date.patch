@@ -1,0 +1,60 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..00300e7 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -238,53 +238,11 @@ date_send(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
+ }
+ 
+-/*
+- *		make_date			- date constructor
+- */
+ Datum
+ make_date(PG_FUNCTION_ARGS)
+ {
+-	struct pg_tm tm;
+-	DateADT		date;
+-	int			dterr;
+-	bool		bc = false;
+-
+-	tm.tm_year = PG_GETARG_INT32(0);
+-	tm.tm_mon = PG_GETARG_INT32(1);
+-	tm.tm_mday = PG_GETARG_INT32(2);
+-
+-	/* Handle negative years as BC */
+-	if (tm.tm_year < 0)
+-	{
+-		bc = true;
+-		tm.tm_year = -tm.tm_year;
+-	}
+-
+-	dterr = ValidateDate(DTK_DATE_M, false, false, bc, &tm);
+-
+-	if (dterr != 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+-				 errmsg("date field value out of range: %d-%02d-%02d",
+-						tm.tm_year, tm.tm_mon, tm.tm_mday)));
+-
+-	/* Prevent overflow in Julian-day routines */
+-	if (!IS_VALID_JULIAN(tm.tm_year, tm.tm_mon, tm.tm_mday))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("date out of range: %d-%02d-%02d",
+-						tm.tm_year, tm.tm_mon, tm.tm_mday)));
+-
+-	date = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - POSTGRES_EPOCH_JDATE;
+-
+-	/* Now check for just-out-of-range dates */
+-	if (!IS_VALID_DATE(date))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("date out of range: %d-%02d-%02d",
+-						tm.tm_year, tm.tm_mon, tm.tm_mday)));
+-
+-	PG_RETURN_DATEADT(date);
++	elog(ERROR, "make_date is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

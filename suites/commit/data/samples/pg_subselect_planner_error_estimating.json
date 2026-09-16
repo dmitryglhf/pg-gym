@@ -1,0 +1,36 @@
+{
+  "name": "pg_subselect_planner_error_estimating",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "f34202f51867534fbbb6196fc9e77be25e5e5b23",
+  "parent": "0fedb3a27d24c5dd977c5eca3b009c8f4ec09f33",
+  "date": "2025-09-03",
+  "subject": "Fix planner error when estimating SubPlan cost",
+  "area": "planner, SubPlan cost estimation",
+  "licence": "PostgreSQL",
+  "goal": "The planner can fail with \"no relation entry for relid N\" while estimating a SubPlan whose test expression contains an aggregate expression from the parent query.\n\n    explain (costs off)\n    select (1 = any(array_agg(f1))) = any (select false) from int4_tbl;\n\nThe query has to plan and return true. The SubPlan's test expression must still contribute to its estimated cost, and no existing plan or row estimate may change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/path/costsize.c",
+      "added": 16,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "subselect"
+    ],
+    "command": "make -C src/test/regress check TESTS=subselect"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

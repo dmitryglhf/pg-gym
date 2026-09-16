@@ -1,0 +1,39 @@
+{
+  "name": "pg_encoding_out_bound_reads",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "849da82105395fa4d06f877db8edc62158167941",
+  "parent": "46fa1f6f373865fae7553043790cd17944893ac3",
+  "date": "2026-08-10",
+  "subject": "Fix out-of-bound reads with ascii() for invalid multibyte characters",
+  "area": "string functions, ascii()",
+  "licence": "PostgreSQL",
+  "goal": "ascii() takes the first character of its argument and returns its code point. In a multibyte encoding it reads as many bytes as the first byte announces, without checking the value is that long, so it reads past the end and can return bytes of server memory to the caller. It also takes for granted that the bytes that follow are valid continuation bytes, and asserts on them rather than checking.\n\nTo reach it, hand it a value whose first byte announces a two-byte character but which is only one byte long.\n\nMalformed input has to be reported as an error, on any build. Well-formed input must keep returning what it returns now.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/oracle_compat.c",
+      "added": 20,
+      "deleted": 5
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/encoding.sql",
+    "src/test/regress/expected/encoding.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "encoding"
+    ],
+    "command": "make -C src/test/regress check TESTS=encoding"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true,
+  "contract": [
+    "invalid byte sequence for encoding \"%s\""
+  ]
+}

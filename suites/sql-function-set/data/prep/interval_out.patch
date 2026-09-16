@@ -1,0 +1,35 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..6144c21 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -975,28 +975,11 @@ interval_in(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(result);
+ }
+ 
+-/* interval_out()
+- * Convert a time span to external form.
+- */
+ Datum
+ interval_out(PG_FUNCTION_ARGS)
+ {
+-	Interval   *span = PG_GETARG_INTERVAL_P(0);
+-	char	   *result;
+-	struct pg_itm tt,
+-			   *itm = &tt;
+-	char		buf[MAXDATELEN + 1];
+-
+-	if (INTERVAL_NOT_FINITE(span))
+-		EncodeSpecialInterval(span, buf);
+-	else
+-	{
+-		interval2itm(*span, itm);
+-		EncodeInterval(itm, IntervalStyle, buf);
+-	}
+-
+-	result = pstrdup(buf);
+-	PG_RETURN_CSTRING(result);
++	elog(ERROR, "interval_out is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

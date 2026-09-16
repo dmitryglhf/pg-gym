@@ -1,0 +1,59 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..f6ae560 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1982,22 +1982,11 @@ datetime_timestamp(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(result);
+ }
+ 
+-/* time_interval()
+- * Convert time to interval data type.
+- */
+ Datum
+ time_interval(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time = PG_GETARG_TIMEADT(0);
+-	Interval   *result;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	result->time = time;
+-	result->day = 0;
+-	result->month = 0;
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "time_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* interval_time()
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..8f6d826 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1329,23 +1329,11 @@ interval_support(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(ret);
+ }
+ 
+-/* interval_scale()
+- * Adjust interval type for specified fields.
+- * Used by PostgreSQL type system to stuff columns.
+- */
+ Datum
+ interval_scale(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval = PG_GETARG_INTERVAL_P(0);
+-	int32		typmod = PG_GETARG_INT32(1);
+-	Interval   *result;
+-
+-	result = palloc(sizeof(Interval));
+-	*result = *interval;
+-
+-	AdjustIntervalForTypmod(result, typmod, NULL);
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_scale is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,15 @@
+{
+  "func": "date_in",
+  "variants": [
+    {
+      "arguments": "cstring",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "s",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

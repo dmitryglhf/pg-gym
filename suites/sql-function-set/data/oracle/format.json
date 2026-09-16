@@ -1,0 +1,72 @@
+{
+  "func": "format",
+  "mode": "stub",
+  "patch": "prep/format.patch",
+  "symbols": [
+    "text_format",
+    "text_format_nv"
+  ],
+  "units": {
+    "text_format": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*\n * Returns a formatted string\n */\nDatum\ntext_format(PG_FUNCTION_ARGS)\n{\n\ttext\t   *fmt;\n\tStringInfoData str;\n\tconst char *cp;\n\tconst char *start_ptr;\n\tconst char *end_ptr;\n\ttext\t   *result;\n\tint\t\t\targ;\n\tbool\t\tfuncvariadic;\n\tint\t\t\tnargs;\n\tDatum\t   *elements = NULL;\n\tbool\t   *nulls = NULL;\n\tOid\t\t\telement_type = InvalidOid;\n\tOid\t\t\tprev_type = InvalidOid;\n\tOid\t\t\tprev_width_type = InvalidOid;\n\tFmgrInfo\ttypoutputfinfo;\n\tFmgrInfo\ttypoutputinfo_width;\n\n\t/* When format string is null, immediately return null */\n\tif (PG_ARGISNULL(0))\n\t\tPG_RETURN_NULL();\n\n\t/* If argument is marked VARIADIC, expand array into elements */\n\tif (get_fn_expr_variadic(fcinfo->flinfo))\n\t{\n\t\tArrayType  *arr;\n\t\tint16\t\telmlen;\n\t\tbool\t\telmbyval;\n\t\tchar\t\telmalign;\n\t\tint\t\t\tnitems;\n\n\t\t/* Should have just the one argument */\n\t\tAssert(PG_NARGS() == 2);\n\n\t\t/* If argument is NULL, we treat it as zero-length array */\n\t\tif (PG_ARGISNULL(1))\n\t\t\tnitems = 0;\n\t\telse\n\t\t{\n\t\t\t/*\n\t\t\t * Non-null argument had better be an array.  We assume that any\n\t\t\t * call context that could let get_fn_expr_variadic return true\n\t\t\t * will have checked that a VARIADIC-labeled parameter actually is\n\t\t\t * an array.  So it should be okay to just Assert that it's an\n\t\t\t * array rather than doing a full-fledged error check.\n\t\t\t */\n\t\t\tAssert(OidIsValid(get_base_element_type(get_fn_expr_argtype(fcinfo->flinfo, 1))));\n\n\t\t\t/* OK, safe to fetch the array value */\n\t\t\tarr = PG_GETARG_ARRAYTYPE_P(1);\n\n\t\t\t/* Get info about array element type */\n\t\t\telement_type = ARR_ELEMTYPE(arr);\n\t\t\tget_typlenbyvalalign(element_type,\n\t\t\t\t\t\t\t\t &elmlen, &elmbyval, &elmalign);\n\n\t\t\t/* Extract all array elements */\n\t\t\tdeconstruct_array(arr, element_type, elmlen, elmbyval, elmalign,\n\t\t\t\t\t\t\t  &elements, &nulls, &nitems);\n\t\t}\n\n\t\tnargs = nitems + 1;\n\t\tfuncvariadic = true;\n\t}\n\telse\n\t{\n\t\t/* Non-variadic case, we'll process the arguments individually */\n\t\tnargs = PG_NARGS();\n\t\tfuncvariadic = false;\n\t}\n\n\t/* Setup for main loop. */\n\tfmt = PG_GETARG_TEXT_PP(0);\n\tstart_ptr = VARDATA_ANY(fmt);\n\tend_ptr = start_ptr + VARSIZE_ANY_EXHDR(fmt);\n\tinitStringInfo(&str);\n\targ = 1;\t\t\t\t\t/* next argument position to print */\n\n\t/* Scan format string, looking for conversion specifiers. */\n\tfor (cp = start_ptr; cp < end_ptr; cp++)\n\t{\n\t\tint\t\t\targpos;\n\t\tint\t\t\twidthpos;\n\t\tint\t\t\tflags;\n\t\tint\t\t\twidth;\n\t\tDatum\t\tvalue;\n\t\tbool\t\tisNull;\n\t\tOid\t\t\ttypid;\n\n\t\t/*\n\t\t * If it's not the start of a conversion specifier, just copy it to\n\t\t * the output buffer.\n\t\t */\n\t\tif (*cp != '%')\n\t\t{\n\t\t\tappendStringInfoCharMacro(&str, *cp);\n\t\t\tcontinue;\n\t\t}\n\n\t\tADVANCE_PARSE_POINTER(cp, end_ptr);\n\n\t\t/* Easy case: %% outputs a single % */\n\t\tif (*cp == '%')\n\t\t{\n\t\t\tappendStringInfoCharMacro(&str, *cp);\n\t\t\tcontinue;\n\t\t}\n\n\t\t/* Parse the optional portions of the format specifier */\n\t\tcp = text_format_parse_format(cp, end_ptr,\n\t\t\t\t\t\t\t\t\t  &argpos, &widthpos,\n\t\t\t\t\t\t\t\t\t  &flags, &width);\n\n\t\t/*\n\t\t * Next we should see the main conversion specifier.  Whether or not\n\t\t * an argument position was present, it's known that at least one\n\t\t * character remains in the string at this point.  Experience suggests\n\t\t * that it's worth checking that that character is one of the expected\n\t\t * ones before we try to fetch arguments, so as to produce the least\n\t\t * confusing response to a mis-formatted specifier.\n\t\t */\n\t\tif (strchr(\"sIL\", *cp) == NULL)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"unrecognized format() type specifier \\\"%.*s\\\"\",\n\t\t\t\t\t\t\tpg_mblen_range(cp, end_ptr), cp),\n\t\t\t\t\t errhint(\"For a single \\\"%%\\\" use \\\"%%%%\\\".\")));\n\n\t\t/* If indirect width was specified, get its value */\n\t\tif (widthpos >= 0)\n\t\t{\n\t\t\t/* Collect the specified or next argument position */\n\t\t\tif (widthpos > 0)\n\t\t\t\targ = widthpos;\n\t\t\tif (arg >= nargs)\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"too few arguments for format()\")));\n\n\t\t\t/* Get the value and type of the selected argument */\n\t\t\tif (!funcvariadic)\n\t\t\t{\n\t\t\t\tvalue = PG_GETARG_DATUM(arg);\n\t\t\t\tisNull = PG_ARGISNULL(arg);\n\t\t\t\ttypid = get_fn_expr_argtype(fcinfo->flinfo, arg);\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tvalue = elements[arg - 1];\n\t\t\t\tisNull = nulls[arg - 1];\n\t\t\t\ttypid = element_type;\n\t\t\t}\n\t\t\tif (!OidIsValid(typid))\n\t\t\t\telog(ERROR, \"could not determine data type of format() input\");\n\n\t\t\targ++;\n\n\t\t\t/* We can treat NULL width the same as zero */\n\t\t\tif (isNull)\n\t\t\t\twidth = 0;\n\t\t\telse if (typid == INT4OID)\n\t\t\t\twidth = DatumGetInt32(value);\n\t\t\telse if (typid == INT2OID)\n\t\t\t\twidth = DatumGetInt16(value);\n\t\t\telse\n\t\t\t{\n\t\t\t\t/* For less-usual datatypes, convert to text then to int */\n\t\t\t\tchar\t   *str;\n\n\t\t\t\tif (typid != prev_width_type)\n\t\t\t\t{\n\t\t\t\t\tOid\t\t\ttypoutputfunc;\n\t\t\t\t\tbool\t\ttypIsVarlena;\n\n\t\t\t\t\tgetTypeOutputInfo(typid, &typoutputfunc, &typIsVarlena);\n\t\t\t\t\tfmgr_info(typoutputfunc, &typoutputinfo_width);\n\t\t\t\t\tprev_width_type = typid;\n\t\t\t\t}\n\n\t\t\t\tstr = OutputFunctionCall(&typoutputinfo_width, value);\n\n\t\t\t\t/* pg_strtoint32 will complain about bad data or overflow */\n\t\t\t\twidth = pg_strtoint32(str);\n\n\t\t\t\tpfree(str);\n\t\t\t}\n\t\t}\n\n\t\t/* Collect the specified or next argument position */\n\t\tif (argpos > 0)\n\t\t\targ = argpos;\n\t\tif (arg >= nargs)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"too few arguments for format()\")));\n\n\t\t/* Get the value and type of the selected argument */\n\t\tif (!funcvariadic)\n\t\t{\n\t\t\tvalue = PG_GETARG_DATUM(arg);\n\t\t\tisNull = PG_ARGISNULL(arg);\n\t\t\ttypid = get_fn_expr_argtype(fcinfo->flinfo, arg);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tvalue = elements[arg - 1];\n\t\t\tisNull = nulls[arg - 1];\n\t\t\ttypid = element_type;\n\t\t}\n\t\tif (!OidIsValid(typid))\n\t\t\telog(ERROR, \"could not determine data type of format() input\");\n\n\t\targ++;\n\n\t\t/*\n\t\t * Get the appropriate typOutput function, reusing previous one if\n\t\t * same type as previous argument.  That's particularly useful in the\n\t\t * variadic-array case, but often saves work even for ordinary calls.\n\t\t */\n\t\tif (typid != prev_type)\n\t\t{\n\t\t\tOid\t\t\ttypoutputfunc;\n\t\t\tbool\t\ttypIsVarlena;\n\n\t\t\tgetTypeOutputInfo(typid, &typoutputfunc, &typIsVarlena);\n\t\t\tfmgr_info(typoutputfunc, &typoutputfinfo);\n\t\t\tprev_type = typid;\n\t\t}\n\n\t\t/*\n\t\t * And now we can format the value.\n\t\t */\n\t\tswitch (*cp)\n\t\t{\n\t\t\tcase 's':\n\t\t\tcase 'I':\n\t\t\tcase 'L':\n\t\t\t\ttext_format_string_conversion(&str, *cp, &typoutputfinfo,\n\t\t\t\t\t\t\t\t\t\t\t  value, isNull,\n\t\t\t\t\t\t\t\t\t\t\t  flags, width);\n\t\t\t\tbreak;\n\t\t\tdefault:\n\t\t\t\t/* should not get here, because of previous check */\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"unrecognized format() type specifier \\\"%.*s\\\"\",\n\t\t\t\t\t\t\t\tpg_mblen_range(cp, end_ptr), cp),\n\t\t\t\t\t\t errhint(\"For a single \\\"%%\\\" use \\\"%%%%\\\".\")));\n\t\t\t\tbreak;\n\t\t}\n\t}\n\n\t/* Don't need deconstruct_array results anymore. */\n\tif (elements != NULL)\n\t\tpfree(elements);\n\tif (nulls != NULL)\n\t\tpfree(nulls);\n\n\t/* Generate results. */\n\tresult = cstring_to_text_with_len(str.data, str.len);\n\tpfree(str.data);\n\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    },
+    "text_format_nv": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*\n * text_format_nv - nonvariadic wrapper for text_format function.\n *\n * note: this wrapper is necessary to pass the sanity check in opr_sanity,\n * which checks that all built-in functions that share the implementing C\n * function take the same number of arguments.\n */\nDatum\ntext_format_nv(PG_FUNCTION_ARGS)\n{\n\treturn text_format(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "create_index",
+    "domain",
+    "event_trigger",
+    "indexing",
+    "interval",
+    "memoize",
+    "merge",
+    "name",
+    "partition_prune",
+    "plpgsql",
+    "privileges",
+    "psql",
+    "psql_crosstab",
+    "stats",
+    "stats_ext",
+    "temp",
+    "text",
+    "type_sanity"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 3804,
+  "oracle_diff_by_file": {
+    "name": 4,
+    "text": 213,
+    "interval": 43,
+    "type_sanity": 7,
+    "create_index": 68,
+    "brin": 4,
+    "privileges": 34,
+    "brin_bloom": 4,
+    "brin_multi": 4,
+    "merge": 358,
+    "psql": 87,
+    "psql_crosstab": 8,
+    "stats_ext": 2387,
+    "plpgsql": 2,
+    "temp": 11,
+    "domain": 8,
+    "partition_prune": 292,
+    "indexing": 3,
+    "memoize": 185,
+    "stats": 6,
+    "event_trigger": 76
+  }
+}

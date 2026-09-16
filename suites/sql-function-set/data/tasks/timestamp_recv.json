@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_recv",
+  "variants": [
+    {
+      "arguments": "internal oid int4",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

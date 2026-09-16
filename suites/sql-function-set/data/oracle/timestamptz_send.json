@@ -1,0 +1,18 @@
+{
+  "func": "timestamptz_send",
+  "mode": "stub",
+  "patch": "prep/timestamptz_send.patch",
+  "symbols": [
+    "timestamptz_send"
+  ],
+  "units": {
+    "timestamptz_send": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n *\t\ttimestamptz_send\t\t\t- converts timestamptz to binary format\n */\nDatum\ntimestamptz_send(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tStringInfoData buf;\n\n\tpq_begintypsend(&buf);\n\tpq_sendint64(&buf, timestamp);\n\tPG_RETURN_BYTEA_P(pq_endtypsend(&buf));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

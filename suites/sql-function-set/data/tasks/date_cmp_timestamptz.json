@@ -1,0 +1,15 @@
+{
+  "func": "date_cmp_timestamptz",
+  "variants": [
+    {
+      "arguments": "date timestamptz",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "s",
+      "description": "less-equal-greater"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

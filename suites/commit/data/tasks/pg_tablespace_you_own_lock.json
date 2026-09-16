@@ -1,0 +1,10 @@
+{
+  "name": "pg_tablespace_you_own_lock",
+  "area": "tablespace privileges, cache initialization",
+  "goal": "The first GRANT on a tablespace in a freshly connected session can fail an assertion with `you don't own a lock of type ExclusiveLock` when executed inside a transaction before relevant caches have otherwise been initialized.\n\nReconnect, begin a transaction, run `GRANT ALL ON TABLESPACE ... TO PUBLIC`, and roll it back. The GRANT must complete without an assertion or backend failure, while all normal ownership and privilege checks remain enforced. Repeated GRANT, autocommit use and GRANT on other object types must not change.",
+  "func": "pg_tablespace_you_own_lock",
+  "graded_by": [
+    "src/test/regress/sql/tablespace.sql",
+    "src/test/regress/expected/tablespace.out"
+  ]
+}

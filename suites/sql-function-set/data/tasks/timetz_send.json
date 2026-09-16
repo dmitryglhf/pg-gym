@@ -1,0 +1,15 @@
+{
+  "func": "timetz_send",
+  "variants": [
+    {
+      "arguments": "timetz",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

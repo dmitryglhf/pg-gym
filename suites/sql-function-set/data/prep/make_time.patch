@@ -1,0 +1,36 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..a1e5d15 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1570,29 +1570,11 @@ timetypmodout(PG_FUNCTION_ARGS)
+ 	PG_RETURN_CSTRING(anytime_typmodout(false, typmod));
+ }
+ 
+-/*
+- *		make_time			- time constructor
+- */
+ Datum
+ make_time(PG_FUNCTION_ARGS)
+ {
+-	int			tm_hour = PG_GETARG_INT32(0);
+-	int			tm_min = PG_GETARG_INT32(1);
+-	double		sec = PG_GETARG_FLOAT8(2);
+-	TimeADT		time;
+-
+-	/* Check for time overflow */
+-	if (float_time_overflows(tm_hour, tm_min, sec))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+-				 errmsg("time field value out of range: %d:%02d:%02g",
+-						tm_hour, tm_min, sec)));
+-
+-	/* This should match tm2time */
+-	time = (((tm_hour * MINS_PER_HOUR + tm_min) * SECS_PER_MINUTE)
+-			* USECS_PER_SEC) + (int64) rint(sec * USECS_PER_SEC);
+-
+-	PG_RETURN_TIMEADT(time);
++	elog(ERROR, "make_time is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

@@ -1,0 +1,27 @@
+{
+  "func": "translate",
+  "mode": "stub",
+  "patch": "prep/translate.patch",
+  "symbols": [
+    "translate"
+  ],
+  "units": {
+    "translate": {
+      "file": "src/backend/utils/adt/oracle_compat.c",
+      "code": "/********************************************************************\n *\n * translate\n *\n * Syntax:\n *\n *\t text translate(text string, text from, text to)\n *\n * Purpose:\n *\n *\t Returns string after replacing all occurrences of characters in from\n *\t with the corresponding character in to.  If from is longer than to,\n *\t occurrences of the extra characters in from are deleted.\n *\t Improved by Edwin Ramirez <ramirez@doc.mssm.edu>.\n *\n ********************************************************************/\n\nDatum\ntranslate(PG_FUNCTION_ARGS)\n{\n\ttext\t   *string = PG_GETARG_TEXT_PP(0);\n\ttext\t   *from = PG_GETARG_TEXT_PP(1);\n\ttext\t   *to = PG_GETARG_TEXT_PP(2);\n\ttext\t   *result;\n\tchar\t   *from_ptr,\n\t\t\t   *to_ptr,\n\t\t\t   *to_end;\n\tchar\t   *source,\n\t\t\t   *target;\n\tconst char *source_end;\n\tconst char *from_end;\n\tint\t\t\tm,\n\t\t\t\tfromlen,\n\t\t\t\ttolen,\n\t\t\t\tretlen,\n\t\t\t\ti;\n\tint\t\t\tbytelen;\n\tint\t\t\tlen;\n\tint\t\t\tsource_len;\n\tint\t\t\tfrom_index;\n\n\tm = VARSIZE_ANY_EXHDR(string);\n\tif (m <= 0)\n\t\tPG_RETURN_TEXT_P(string);\n\tsource = VARDATA_ANY(string);\n\tsource_end = source + m;\n\n\tfromlen = VARSIZE_ANY_EXHDR(from);\n\tfrom_ptr = VARDATA_ANY(from);\n\tfrom_end = from_ptr + fromlen;\n\ttolen = VARSIZE_ANY_EXHDR(to);\n\tto_ptr = VARDATA_ANY(to);\n\tto_end = to_ptr + tolen;\n\n\t/*\n\t * The worst-case expansion is to substitute a max-length character for a\n\t * single-byte character at each position of the string.\n\t */\n\tif (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), m,\n\t\t\t\t\t\t\t\t\t &bytelen)) ||\n\t\tunlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||\n\t\tunlikely(!AllocSizeIsValid(bytelen)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),\n\t\t\t\t errmsg(\"requested length too large\")));\n\n\tresult = (text *) palloc(bytelen);\n\n\ttarget = VARDATA(result);\n\tretlen = 0;\n\n\twhile (m > 0)\n\t{\n\t\tsource_len = pg_mblen_range(source, source_end);\n\t\tfrom_index = 0;\n\n\t\tfor (i = 0; i < fromlen; i += len)\n\t\t{\n\t\t\tlen = pg_mblen_range(&from_ptr[i], from_end);\n\t\t\tif (len == source_len &&\n\t\t\t\tmemcmp(source, &from_ptr[i], len) == 0)\n\t\t\t\tbreak;\n\n\t\t\tfrom_index++;\n\t\t}\n\t\tif (i < fromlen)\n\t\t{\n\t\t\t/* substitute, or delete if no corresponding \"to\" character */\n\t\t\tchar\t   *p = to_ptr;\n\n\t\t\tfor (i = 0; i < from_index; i++)\n\t\t\t{\n\t\t\t\tif (p >= to_end)\n\t\t\t\t\tbreak;\n\t\t\t\tp += pg_mblen_range(p, to_end);\n\t\t\t}\n\t\t\tif (p < to_end)\n\t\t\t{\n\t\t\t\tlen = pg_mblen_range(p, to_end);\n\t\t\t\tmemcpy(target, p, len);\n\t\t\t\ttarget += len;\n\t\t\t\tretlen += len;\n\t\t\t}\n\t\t}\n\t\telse\n\t\t{\n\t\t\t/* no match, so copy */\n\t\t\tmemcpy(target, source, source_len);\n\t\t\ttarget += source_len;\n\t\t\tretlen += source_len;\n\t\t}\n\n\t\tsource += source_len;\n\t\tm -= source_len;\n\t}\n\n\tSET_VARSIZE(result, retlen + VARHDRSZ);\n\n\t/*\n\t * The function result is probably much bigger than needed, if we're using\n\t * a multibyte encoding, but it's not worth reallocating it; the result\n\t * probably won't live long anyway.\n\t */\n\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 15,
+  "oracle_diff_by_file": {
+    "strings": 15
+  }
+}

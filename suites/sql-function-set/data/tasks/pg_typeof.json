@@ -1,0 +1,18 @@
+{
+  "func": "pg_typeof",
+  "variants": [
+    {
+      "arguments": "any",
+      "returns": "regtype",
+      "kind": "f",
+      "volatile": "s",
+      "description": "type of the argument"
+    }
+  ],
+  "description": "Returns the OID of the data type of the value that is passed to it. This can be helpful for troubleshooting or dynamically constructing SQL queries. The function is declared as returning regtype, which is an OID alias type; this means that it is the same as an OID for comparison purposes but displays as a type name.",
+  "examples": [
+    "pg_typeof(33) -> integer"
+  ],
+  "mode": "stub",
+  "category": "sysinfo"
+}

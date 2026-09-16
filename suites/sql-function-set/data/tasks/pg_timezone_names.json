@@ -1,0 +1,15 @@
+{
+  "func": "pg_timezone_names",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "record",
+      "kind": "f",
+      "volatile": "s",
+      "description": "get the available time zone names"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

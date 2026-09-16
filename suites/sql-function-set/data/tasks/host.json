@@ -1,0 +1,18 @@
+{
+  "func": "host",
+  "variants": [
+    {
+      "arguments": "inet",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "show address octets only"
+    }
+  ],
+  "description": "Returns the IP address as text, ignoring the netmask.",
+  "examples": [
+    "host(inet '192.168.1.0/24') -> 192.168.1.0"
+  ],
+  "mode": "stub",
+  "category": "network"
+}

@@ -1,0 +1,64 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..456a3f7 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -4019,57 +4019,11 @@ interval_avg_accum(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(state);
+ }
+ 
+-/*
+- * Combine function for sum() and avg() interval aggregates.
+- *
+- * Combine the given internal aggregate states and place the combination in
+- * the first argument.
+- */
+ Datum
+ interval_avg_combine(PG_FUNCTION_ARGS)
+ {
+-	IntervalAggState *state1;
+-	IntervalAggState *state2;
+-
+-	state1 = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);
+-	state2 = PG_ARGISNULL(1) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(1);
+-
+-	if (state2 == NULL)
+-	{
+-		/*
+-		 * NULL state2 is easy, just return state1, which we know is already
+-		 * in the agg_context
+-		 */
+-		if (state1 == NULL)
+-			PG_RETURN_NULL();
+-		PG_RETURN_POINTER(state1);
+-	}
+-
+-	if (state1 == NULL)
+-	{
+-		/* manually copy all fields from state2 to state1 */
+-		state1 = makeIntervalAggState(fcinfo);
+-
+-		state1->N = state2->N;
+-		state1->pInfcount = state2->pInfcount;
+-		state1->nInfcount = state2->nInfcount;
+-
+-		state1->sumX.day = state2->sumX.day;
+-		state1->sumX.month = state2->sumX.month;
+-		state1->sumX.time = state2->sumX.time;
+-
+-		PG_RETURN_POINTER(state1);
+-	}
+-
+-	state1->N += state2->N;
+-	state1->pInfcount += state2->pInfcount;
+-	state1->nInfcount += state2->nInfcount;
+-
+-	/* Accumulate finite interval values, if any. */
+-	if (state2->N > 0)
+-		finite_interval_pl(&state1->sumX, &state2->sumX, &state1->sumX);
+-
+-	PG_RETURN_POINTER(state1);
++	elog(ERROR, "interval_avg_combine is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

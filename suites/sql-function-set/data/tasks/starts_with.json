@@ -1,0 +1,18 @@
+{
+  "func": "starts_with",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "Returns true if string starts with prefix.",
+  "examples": [
+    "starts_with('alphabet', 'alph') -> t"
+  ],
+  "mode": "stub",
+  "category": "string"
+}

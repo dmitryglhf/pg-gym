@@ -1,0 +1,18 @@
+{
+  "func": "time_hash_extended",
+  "mode": "stub",
+  "patch": "prep/time_hash_extended.patch",
+  "symbols": [
+    "time_hash_extended"
+  ],
+  "units": {
+    "time_hash_extended": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntime_hash_extended(PG_FUNCTION_ARGS)\n{\n\treturn hashint8extended(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

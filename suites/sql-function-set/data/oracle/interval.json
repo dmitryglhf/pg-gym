@@ -1,0 +1,33 @@
+{
+  "func": "interval",
+  "mode": "stub",
+  "patch": "prep/interval.patch",
+  "symbols": [
+    "interval_scale",
+    "time_interval"
+  ],
+  "units": {
+    "interval_scale": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* interval_scale()\n * Adjust interval type for specified fields.\n * Used by PostgreSQL type system to stuff columns.\n */\nDatum\ninterval_scale(PG_FUNCTION_ARGS)\n{\n\tInterval   *interval = PG_GETARG_INTERVAL_P(0);\n\tint32\t\ttypmod = PG_GETARG_INT32(1);\n\tInterval   *result;\n\n\tresult = palloc(sizeof(Interval));\n\t*result = *interval;\n\n\tAdjustIntervalForTypmod(result, typmod, NULL);\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    },
+    "time_interval": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* time_interval()\n * Convert time to interval data type.\n */\nDatum\ntime_interval(PG_FUNCTION_ARGS)\n{\n\tTimeADT\t\ttime = PG_GETARG_TIMEADT(0);\n\tInterval   *result;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\tresult->time = time;\n\tresult->day = 0;\n\tresult->month = 0;\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "horology",
+    "interval"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 26,
+  "oracle_diff_by_file": {
+    "interval": 16,
+    "horology": 10
+  }
+}

@@ -1,0 +1,23 @@
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index c4d469a5..15d2cabb 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -5616,17 +5616,7 @@ text_right(PG_FUNCTION_ARGS)
+ 	int			off;
+ 
+ 	if (n < 0)
+-	{
+-		/*
+-		 * Negating PG_INT32_MIN would overflow, so clamp instead.  Any n whose
+-		 * absolute value is at least the string's length skips the whole
+-		 * string, and len can't exceed PG_INT32_MAX, so this is equivalent.
+-		 */
+-		if (unlikely(n == PG_INT32_MIN))
+-			n = PG_INT32_MAX;
+-		else
+-			n = -n;
+-	}
++		n = -n;
+ 	else
+ 		n = pg_mbstrlen_with_len(p, len) - n;
+ 	off = pg_mbcharcliplen(p, len, n);

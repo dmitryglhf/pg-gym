@@ -1,0 +1,23 @@
+{
+  "func": "pg_window_possible_crash_during",
+  "sha": "9d5ce4f1a00aae95193b9737c4e8ced7f0aa4aaa",
+  "parent": "ec7b89cc533aaa8356b018e557b252047330b471",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_window_possible_crash_during.patch",
+  "test_files": [
+    "src/test/regress/sql/window.sql",
+    "src/test/regress/expected/window.out"
+  ],
+  "reference": "diff --git a/src/backend/executor/nodeWindowAgg.c b/src/backend/executor/nodeWindowAgg.c\nindex 3221fa152..96c117c54 100644\n--- a/src/backend/executor/nodeWindowAgg.c\n+++ b/src/backend/executor/nodeWindowAgg.c\n@@ -2296,6 +2296,23 @@ ExecWindowAgg(PlanState *pstate)\n \t\t\t\t */\n \t\t\t\tif (winstate->use_pass_through)\n \t\t\t\t{\n+\t\t\t\t\t/*\n+\t\t\t\t\t * When switching into a pass-through mode, we'd better\n+\t\t\t\t\t * NULLify the aggregate results as these are no longer\n+\t\t\t\t\t * updated and NULLifying them avoids the old stale\n+\t\t\t\t\t * results lingering.  Some of these might be byref types\n+\t\t\t\t\t * so we can't have them pointing to free'd memory.  The\n+\t\t\t\t\t * planner insisted that quals used in the runcondition\n+\t\t\t\t\t * are strict, so the top-level WindowAgg will always\n+\t\t\t\t\t * filter these NULLs out in the filter clause.\n+\t\t\t\t\t */\n+\t\t\t\t\tnumfuncs = winstate->numfuncs;\n+\t\t\t\t\tfor (i = 0; i < numfuncs; i++)\n+\t\t\t\t\t{\n+\t\t\t\t\t\tecontext->ecxt_aggvalues[i] = (Datum) 0;\n+\t\t\t\t\t\tecontext->ecxt_aggnulls[i] = true;\n+\t\t\t\t\t}\n+\n \t\t\t\t\t/*\n \t\t\t\t\t * STRICT pass-through mode is required for the top window\n \t\t\t\t\t * when there is a PARTITION BY clause.  Otherwise we must\n@@ -2310,24 +2327,6 @@ ExecWindowAgg(PlanState *pstate)\n \t\t\t\t\telse\n \t\t\t\t\t{\n \t\t\t\t\t\twinstate->status = WINDOWAGG_PASSTHROUGH;\n-\n-\t\t\t\t\t\t/*\n-\t\t\t\t\t\t * If we're not the top-window, we'd better NULLify\n-\t\t\t\t\t\t * the aggregate results.  In pass-through mode we no\n-\t\t\t\t\t\t * longer update these and this avoids the old stale\n-\t\t\t\t\t\t * results lingering.  Some of these might be byref\n-\t\t\t\t\t\t * types so we can't have them pointing to free'd\n-\t\t\t\t\t\t * memory.  The planner insisted that quals used in\n-\t\t\t\t\t\t * the runcondition are strict, so the top-level\n-\t\t\t\t\t\t * WindowAgg will filter these NULLs out in the filter\n-\t\t\t\t\t\t * clause.\n-\t\t\t\t\t\t */\n-\t\t\t\t\t\tnumfuncs = winstate->numfuncs;\n-\t\t\t\t\t\tfor (i = 0; i < numfuncs; i++)\n-\t\t\t\t\t\t{\n-\t\t\t\t\t\t\tecontext->ecxt_aggvalues[i] = (Datum) 0;\n-\t\t\t\t\t\t\tecontext->ecxt_aggnulls[i] = true;\n-\t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t}\n \t\t\t\telse\n",
+  "test": "diff --git a/src/test/regress/expected/window.out b/src/test/regress/expected/window.out\nindex 8b447aa01..23d1463df 100644\n--- a/src/test/regress/expected/window.out\n+++ b/src/test/regress/expected/window.out\n@@ -4136,6 +4136,16 @@ WHERE c = 1;\n    ->  Seq Scan on empsalary\n (3 rows)\n \n+-- Try another case with a WindowFunc with a byref return type\n+SELECT * FROM\n+  (SELECT row_number() OVER (PARTITION BY salary) AS rn,\n+          lead(depname) OVER (PARTITION BY salary) || ' Department' AS n_dep\n+   FROM empsalary) emp\n+WHERE rn < 1;\n+ rn | n_dep \n+----+-------\n+(0 rows)\n+\n -- Some more complex cases with multiple window clauses\n EXPLAIN (COSTS OFF)\n SELECT * FROM\ndiff --git a/src/test/regress/sql/window.sql b/src/test/regress/sql/window.sql\nindex 6de5493b0..02f105f07 100644\n--- a/src/test/regress/sql/window.sql\n+++ b/src/test/regress/sql/window.sql\n@@ -1345,6 +1345,13 @@ SELECT * FROM\n    FROM empsalary) emp\n WHERE c = 1;\n \n+-- Try another case with a WindowFunc with a byref return type\n+SELECT * FROM\n+  (SELECT row_number() OVER (PARTITION BY salary) AS rn,\n+          lead(depname) OVER (PARTITION BY salary) || ' Department' AS n_dep\n+   FROM empsalary) emp\n+WHERE rn < 1;\n+\n -- Some more complex cases with multiple window clauses\n EXPLAIN (COSTS OFF)\n SELECT * FROM\n",
+  "oracle_command": "make -C src/test/regress check TESTS=window",
+  "expected_tests": [
+    "window"
+  ],
+  "failing_tests": [],
+  "usable": false,
+  "verify_status": "no_coverage",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

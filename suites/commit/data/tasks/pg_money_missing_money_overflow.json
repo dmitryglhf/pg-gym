@@ -1,0 +1,13 @@
+{
+  "name": "pg_money_missing_money_overflow",
+  "area": "money type, division",
+  "goal": "Dividing the smallest representable money value by -1 has no representable result on a two's complement machine. Nothing checks for it, so the answer depends on the machine and at worst the backend crashes. The integer types already refuse the same division.\n\n    SELECT '-92233720368547758.08'::money / -1;\n\nIt has to raise an error. Divisions with a representable result must be untouched.",
+  "contract": [
+    "money out of range"
+  ],
+  "func": "pg_money_missing_money_overflow",
+  "graded_by": [
+    "src/test/regress/sql/money.sql",
+    "src/test/regress/expected/money.out"
+  ]
+}

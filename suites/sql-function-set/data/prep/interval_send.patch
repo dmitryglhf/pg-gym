@@ -1,0 +1,27 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..9a6acdd 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1024,20 +1024,11 @@ interval_recv(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INTERVAL_P(interval);
+ }
+ 
+-/*
+- *		interval_send			- converts interval to binary format
+- */
+ Datum
+ interval_send(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval = PG_GETARG_INTERVAL_P(0);
+-	StringInfoData buf;
+-
+-	pq_begintypsend(&buf);
+-	pq_sendint64(&buf, interval->time);
+-	pq_sendint32(&buf, interval->day);
+-	pq_sendint32(&buf, interval->month);
+-	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
++	elog(ERROR, "interval_send is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

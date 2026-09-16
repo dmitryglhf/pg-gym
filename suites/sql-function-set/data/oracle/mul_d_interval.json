@@ -1,0 +1,18 @@
+{
+  "func": "mul_d_interval",
+  "mode": "stub",
+  "patch": "prep/mul_d_interval.patch",
+  "symbols": [
+    "mul_d_interval"
+  ],
+  "units": {
+    "mul_d_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nmul_d_interval(PG_FUNCTION_ARGS)\n{\n\t/* Args are float8 and Interval *, but leave them as generic Datum */\n\tDatum\t\tfactor = PG_GETARG_DATUM(0);\n\tDatum\t\tspan = PG_GETARG_DATUM(1);\n\n\treturn DirectFunctionCall2(interval_mul, span, factor);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

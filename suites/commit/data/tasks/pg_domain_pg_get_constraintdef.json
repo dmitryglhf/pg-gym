@@ -1,0 +1,10 @@
+{
+  "name": "pg_domain_pg_get_constraintdef",
+  "area": "domains, constraint deparsing",
+  "goal": "pg_get_constraintdef() does not correctly describe a named NOT NULL constraint belonging to a domain.\n\nCreate a domain, add a named NOT NULL constraint, locate its pg_constraint row and call pg_get_constraintdef() on it. The result must be `NOT NULL`; the domain must reject null values while the constraint exists, and allow them after the constraint is dropped. CHECK constraints, table NOT NULL constraints and other catalog deparsing must be unaffected.",
+  "func": "pg_domain_pg_get_constraintdef",
+  "graded_by": [
+    "src/test/regress/sql/domain.sql",
+    "src/test/regress/expected/domain.out"
+  ]
+}

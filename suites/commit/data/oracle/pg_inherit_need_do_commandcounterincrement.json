@@ -1,0 +1,27 @@
+{
+  "func": "pg_inherit_need_do_commandcounterincrement",
+  "sha": "0941aadcd55b58a03af5d06f3374ca168522097f",
+  "parent": "b19893b94bdea3b206cb544619d84cea6276f648",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_inherit_need_do_commandcounterincrement.patch",
+  "test_files": [
+    "src/test/regress/sql/inherit.sql",
+    "src/test/regress/expected/inherit.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c\nindex 932cf549..535c74fe 100644\n--- a/src/backend/commands/tablecmds.c\n+++ b/src/backend/commands/tablecmds.c\n@@ -7345,6 +7345,8 @@ ATExecAddColumn(List **wqueue, AlteredTableInfo *tab, Relation rel,\n \t\t\t\tif (!missingIsNull)\n \t\t\t\t{\n \t\t\t\t\tStoreAttrMissingVal(rel, attribute->attnum, missingval);\n+\t\t\t\t\t/* Make the additional catalog change visible */\n+\t\t\t\t\tCommandCounterIncrement();\n \t\t\t\t\thas_missing = true;\n \t\t\t\t}\n \t\t\t\tFreeExecutorState(estate);\n",
+  "test": "diff --git a/src/test/regress/expected/inherit.out b/src/test/regress/expected/inherit.out\nindex 85240a9b..689f4242 100644\n--- a/src/test/regress/expected/inherit.out\n+++ b/src/test/regress/expected/inherit.out\n@@ -1093,17 +1093,30 @@ CREATE TABLE inhta ();\n CREATE TABLE inhtb () INHERITS (inhta);\n CREATE TABLE inhtc () INHERITS (inhtb);\n CREATE TABLE inhtd () INHERITS (inhta, inhtb, inhtc);\n-ALTER TABLE inhta ADD COLUMN i int;\n+ALTER TABLE inhta ADD COLUMN i int, ADD COLUMN j bigint DEFAULT 1;\n NOTICE:  merging definition of column \"i\" for child \"inhtd\"\n NOTICE:  merging definition of column \"i\" for child \"inhtd\"\n+NOTICE:  merging definition of column \"j\" for child \"inhtd\"\n+NOTICE:  merging definition of column \"j\" for child \"inhtd\"\n \\d+ inhta\n                                    Table \"public.inhta\"\n  Column |  Type   | Collation | Nullable | Default | Storage | Stats target | Description \n --------+---------+-----------+----------+---------+---------+--------------+-------------\n  i      | integer |           |          |         | plain   |              | \n+ j      | bigint  |           |          | 1       | plain   |              | \n Child tables: inhtb,\n               inhtd\n \n+\\d+ inhtd\n+                                   Table \"public.inhtd\"\n+ Column |  Type   | Collation | Nullable | Default | Storage | Stats target | Description \n+--------+---------+-----------+----------+---------+---------+--------------+-------------\n+ i      | integer |           |          |         | plain   |              | \n+ j      | bigint  |           |          | 1       | plain   |              | \n+Inherits: inhta,\n+          inhtb,\n+          inhtc\n+\n DROP TABLE inhta, inhtb, inhtc, inhtd;\n -- Test for renaming in diamond inheritance\n CREATE TABLE inht2 (x int) INHERITS (inht1);\ndiff --git a/src/test/regress/sql/inherit.sql b/src/test/regress/sql/inherit.sql\nindex 51251b0e..572512cb 100644\n--- a/src/test/regress/sql/inherit.sql\n+++ b/src/test/regress/sql/inherit.sql\n@@ -377,8 +377,9 @@ CREATE TABLE inhta ();\n CREATE TABLE inhtb () INHERITS (inhta);\n CREATE TABLE inhtc () INHERITS (inhtb);\n CREATE TABLE inhtd () INHERITS (inhta, inhtb, inhtc);\n-ALTER TABLE inhta ADD COLUMN i int;\n+ALTER TABLE inhta ADD COLUMN i int, ADD COLUMN j bigint DEFAULT 1;\n \\d+ inhta\n+\\d+ inhtd\n DROP TABLE inhta, inhtb, inhtc, inhtd;\n \n -- Test for renaming in diamond inheritance\n",
+  "oracle_command": "make -C src/test/regress check TESTS=inherit",
+  "expected_tests": [
+    "inherit"
+  ],
+  "failing_tests": [
+    "inherit"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 17,
+  "oracle_diff_by_file": {
+    "inherit": 17
+  }
+}

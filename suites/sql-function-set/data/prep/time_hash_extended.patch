@@ -1,0 +1,14 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..ffd3b99 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1752,7 +1752,8 @@ time_hash(PG_FUNCTION_ARGS)
+ Datum
+ time_hash_extended(PG_FUNCTION_ARGS)
+ {
+-	return hashint8extended(fcinfo);
++	elog(ERROR, "time_hash_extended is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

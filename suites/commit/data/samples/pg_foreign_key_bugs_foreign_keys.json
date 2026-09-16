@@ -1,0 +1,36 @@
+{
+  "name": "pg_foreign_key_bugs_foreign_keys",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "936ab6de95957e1c407ce9dfdc38c54ad146eb5d",
+  "parent": "9aef6f19ac27a607f0c557d19934d5ce96ed5f1a",
+  "date": "2024-10-30",
+  "subject": "Fix some more bugs in foreign keys connecting partitioned tables",
+  "area": "foreign keys, partition attach and detach",
+  "licence": "PostgreSQL",
+  "goal": "Foreign keys on partitioned tables can be corrupted or crash during attach and detach when a partition's physical column order differs from its parent's, especially after dropped columns. The resulting trigger may read the wrong attributes, and some DDL paths can also attempt an unsafe lock escalation.\n\nBuild a partitioned referenced table and a referencing partition whose logical key columns have different attribute numbers, attach it, and exercise inserts plus detach/finalize operations. A violating row must be rejected using the logical key columns, valid rows must remain valid, and attach/detach must neither crash nor leave broken constraints. Equivalent concurrent DDL must not introduce a lock-upgrade deadlock; ordinary same-layout foreign keys must be unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 14,
+      "deleted": 24
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/foreign_key.sql",
+    "src/test/regress/expected/foreign_key.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "foreign_key"
+    ],
+    "command": "make -C src/test/regress check TESTS=foreign_key"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

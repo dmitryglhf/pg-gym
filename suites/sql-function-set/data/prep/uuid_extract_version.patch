@@ -1,0 +1,30 @@
+diff --git a/src/backend/utils/adt/uuid.c b/src/backend/utils/adt/uuid.c
+index 45eb1b2..7e39d28 100644
+--- a/src/backend/utils/adt/uuid.c
++++ b/src/backend/utils/adt/uuid.c
+@@ -470,22 +470,10 @@ uuid_extract_timestamp(PG_FUNCTION_ARGS)
+ 	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * Extract UUID version.
+- *
+- * Returns null if not RFC 4122 variant.
+- */
+ Datum
+ uuid_extract_version(PG_FUNCTION_ARGS)
+ {
+-	pg_uuid_t  *uuid = PG_GETARG_UUID_P(0);
+-	uint16		version;
+-
+-	/* check if RFC 4122 variant */
+-	if ((uuid->data[8] & 0xc0) != 0x80)
+-		PG_RETURN_NULL();
+-
+-	version = uuid->data[6] >> 4;
+-
+-	PG_RETURN_UINT16(version);
++	elog(ERROR, "uuid_extract_version is not implemented");
++	PG_RETURN_NULL();
+ }
++

@@ -1,0 +1,22 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..7fa2e5a 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3169,15 +3169,8 @@ timestamp_pl_interval(PG_FUNCTION_ARGS)
+ Datum
+ timestamp_mi_interval(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-	Interval	tspan;
+-
+-	interval_um_internal(span, &tspan);
+-
+-	return DirectFunctionCall2(timestamp_pl_interval,
+-							   TimestampGetDatum(timestamp),
+-							   PointerGetDatum(&tspan));
++	elog(ERROR, "timestamp_mi_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

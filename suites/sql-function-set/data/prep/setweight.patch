@@ -1,0 +1,110 @@
+diff --git a/src/backend/utils/adt/tsvector_op.c b/src/backend/utils/adt/tsvector_op.c
+index 8fe02a5..5f04b4f 100644
+--- a/src/backend/utils/adt/tsvector_op.c
++++ b/src/backend/utils/adt/tsvector_op.c
+@@ -250,101 +250,15 @@ parse_weight(char cw)
+ Datum
+ tsvector_setweight(PG_FUNCTION_ARGS)
+ {
+-	TSVector	in = PG_GETARG_TSVECTOR(0);
+-	char		cw = PG_GETARG_CHAR(1);
+-	TSVector	out;
+-	int			i,
+-				j;
+-	WordEntry  *entry;
+-	WordEntryPos *p;
+-	int			w = parse_weight(cw);
+-
+-	out = (TSVector) palloc(VARSIZE(in));
+-	memcpy(out, in, VARSIZE(in));
+-	entry = ARRPTR(out);
+-	i = out->size;
+-	while (i--)
+-	{
+-		if ((j = POSDATALEN(out, entry)) != 0)
+-		{
+-			p = POSDATAPTR(out, entry);
+-			while (j--)
+-			{
+-				WEP_SETWEIGHT(*p, w);
+-				p++;
+-			}
+-		}
+-		entry++;
+-	}
+-
+-	PG_FREE_IF_COPY(in, 0);
+-	PG_RETURN_POINTER(out);
++	elog(ERROR, "tsvector_setweight is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * setweight(tsin tsvector, char_weight "char", lexemes "text"[])
+- *
+- * Assign weight w to elements of tsin that are listed in lexemes.
+- */
+ Datum
+ tsvector_setweight_by_filter(PG_FUNCTION_ARGS)
+ {
+-	TSVector	tsin = PG_GETARG_TSVECTOR(0);
+-	char		char_weight = PG_GETARG_CHAR(1);
+-	ArrayType  *lexemes = PG_GETARG_ARRAYTYPE_P(2);
+-
+-	TSVector	tsout;
+-	int			i,
+-				j,
+-				nlexemes,
+-				weight;
+-	WordEntry  *entry;
+-	Datum	   *dlexemes;
+-	bool	   *nulls;
+-
+-	weight = parse_weight(char_weight);
+-
+-	tsout = (TSVector) palloc(VARSIZE(tsin));
+-	memcpy(tsout, tsin, VARSIZE(tsin));
+-	entry = ARRPTR(tsout);
+-
+-	deconstruct_array_builtin(lexemes, TEXTOID, &dlexemes, &nulls, &nlexemes);
+-
+-	/*
+-	 * Assuming that lexemes array is significantly shorter than tsvector we
+-	 * can iterate through lexemes performing binary search of each lexeme
+-	 * from lexemes in tsvector.
+-	 */
+-	for (i = 0; i < nlexemes; i++)
+-	{
+-		char	   *lex;
+-		int			lex_len,
+-					lex_pos;
+-
+-		/* Ignore null array elements, they surely don't match */
+-		if (nulls[i])
+-			continue;
+-
+-		lex = VARDATA(dlexemes[i]);
+-		lex_len = VARSIZE(dlexemes[i]) - VARHDRSZ;
+-		lex_pos = tsvector_bsearch(tsout, lex, lex_len);
+-
+-		if (lex_pos >= 0 && (j = POSDATALEN(tsout, entry + lex_pos)) != 0)
+-		{
+-			WordEntryPos *p = POSDATAPTR(tsout, entry + lex_pos);
+-
+-			while (j--)
+-			{
+-				WEP_SETWEIGHT(*p, weight);
+-				p++;
+-			}
+-		}
+-	}
+-
+-	PG_FREE_IF_COPY(tsin, 0);
+-	PG_FREE_IF_COPY(lexemes, 2);
+-
+-	PG_RETURN_POINTER(tsout);
++	elog(ERROR, "tsvector_setweight_by_filter is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ #define compareEntry(pa, a, pb, b) \

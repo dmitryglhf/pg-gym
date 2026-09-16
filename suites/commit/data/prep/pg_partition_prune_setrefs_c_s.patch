@@ -1,0 +1,30 @@
+diff --git a/src/backend/optimizer/plan/setrefs.c b/src/backend/optimizer/plan/setrefs.c
+index 69ff384f..7aed8458 100644
+--- a/src/backend/optimizer/plan/setrefs.c
++++ b/src/backend/optimizer/plan/setrefs.c
+@@ -1794,12 +1794,6 @@ set_append_references(PlannerInfo *root,
+ 				PartitionedRelPruneInfo *pinfo = lfirst(l2);
+ 
+ 				pinfo->rtindex += rtoffset;
+-				pinfo->initial_pruning_steps =
+-					fix_scan_list(root, pinfo->initial_pruning_steps,
+-								  rtoffset, 1);
+-				pinfo->exec_pruning_steps =
+-					fix_scan_list(root, pinfo->exec_pruning_steps,
+-								  rtoffset, 1);
+ 			}
+ 		}
+ 	}
+@@ -1876,12 +1870,6 @@ set_mergeappend_references(PlannerInfo *root,
+ 				PartitionedRelPruneInfo *pinfo = lfirst(l2);
+ 
+ 				pinfo->rtindex += rtoffset;
+-				pinfo->initial_pruning_steps =
+-					fix_scan_list(root, pinfo->initial_pruning_steps,
+-								  rtoffset, 1);
+-				pinfo->exec_pruning_steps =
+-					fix_scan_list(root, pinfo->exec_pruning_steps,
+-								  rtoffset, 1);
+ 			}
+ 		}
+ 	}

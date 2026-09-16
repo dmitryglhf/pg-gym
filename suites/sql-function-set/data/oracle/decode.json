@@ -1,0 +1,33 @@
+{
+  "func": "decode",
+  "mode": "stub",
+  "patch": "prep/decode.patch",
+  "symbols": [
+    "binary_decode"
+  ],
+  "units": {
+    "binary_decode": {
+      "file": "src/backend/utils/adt/encode.c",
+      "code": "Datum\nbinary_decode(PG_FUNCTION_ARGS)\n{\n\ttext\t   *data = PG_GETARG_TEXT_PP(0);\n\tDatum\t\tname = PG_GETARG_DATUM(1);\n\tbytea\t   *result;\n\tchar\t   *namebuf;\n\tchar\t   *dataptr;\n\tsize_t\t\tdatalen;\n\tuint64\t\tresultlen;\n\tuint64\t\tres;\n\tconst struct pg_encoding *enc;\n\n\tnamebuf = TextDatumGetCString(name);\n\n\tenc = pg_find_encoding(namebuf);\n\tif (enc == NULL)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"unrecognized encoding: \\\"%s\\\"\", namebuf)));\n\n\tdataptr = VARDATA_ANY(data);\n\tdatalen = VARSIZE_ANY_EXHDR(data);\n\n\tresultlen = enc->decode_len(dataptr, datalen);\n\n\t/*\n\t * resultlen possibly overflows uint32, therefore on 32-bit machines it's\n\t * unsafe to rely on palloc's internal check.\n\t */\n\tif (resultlen > MaxAllocSize - VARHDRSZ)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),\n\t\t\t\t errmsg(\"result of decoding conversion is too large\")));\n\n\tresult = palloc(VARHDRSZ + resultlen);\n\n\tres = enc->decode(dataptr, datalen, VARDATA(result));\n\n\t/* Make this FATAL 'cause we've trodden on memory ... */\n\tif (res > resultlen)\n\t\telog(FATAL, \"overflow - decode estimate too small\");\n\n\tSET_VARSIZE(result, VARHDRSZ + res);\n\n\tPG_RETURN_BYTEA_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "aggregates",
+    "compression_pglz",
+    "largeobject",
+    "strings"
+  ],
+  "category": "encoding",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 79,
+  "oracle_diff_by_file": {
+    "strings": 42,
+    "aggregates": 13,
+    "largeobject": 10,
+    "compression_pglz": 14
+  }
+}

@@ -1,0 +1,30 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..3acb1a6 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2026,23 +2026,11 @@ interval_time(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMEADT(result);
+ }
+ 
+-/* time_mi_time()
+- * Subtract two times to produce an interval.
+- */
+ Datum
+ time_mi_time(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time1 = PG_GETARG_TIMEADT(0);
+-	TimeADT		time2 = PG_GETARG_TIMEADT(1);
+-	Interval   *result;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	result->month = 0;
+-	result->day = 0;
+-	result->time = time1 - time2;
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "time_mi_time is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* time_pl_interval()

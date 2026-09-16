@@ -1,0 +1,152 @@
+diff --git a/src/backend/utils/adt/regexp.c b/src/backend/utils/adt/regexp.c
+index 637970d..d468a0d 100644
+--- a/src/backend/utils/adt/regexp.c
++++ b/src/backend/utils/adt/regexp.c
+@@ -1190,135 +1190,46 @@ regexp_count_no_flags(PG_FUNCTION_ARGS)
+ 	return regexp_count(fcinfo);
+ }
+ 
+-/*
+- * regexp_instr()
+- *		Return the match's position within the string
+- */
+ Datum
+ regexp_instr(PG_FUNCTION_ARGS)
+ {
+-	text	   *str = PG_GETARG_TEXT_PP(0);
+-	text	   *pattern = PG_GETARG_TEXT_PP(1);
+-	int			start = 1;
+-	int			n = 1;
+-	int			endoption = 0;
+-	text	   *flags = PG_GETARG_TEXT_PP_IF_EXISTS(5);
+-	int			subexpr = 0;
+-	int			pos;
+-	pg_re_flags re_flags;
+-	regexp_matches_ctx *matchctx;
+-
+-	/* Collect optional parameters */
+-	if (PG_NARGS() > 2)
+-	{
+-		start = PG_GETARG_INT32(2);
+-		if (start <= 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid value for parameter \"%s\": %d",
+-							"start", start)));
+-	}
+-	if (PG_NARGS() > 3)
+-	{
+-		n = PG_GETARG_INT32(3);
+-		if (n <= 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid value for parameter \"%s\": %d",
+-							"n", n)));
+-	}
+-	if (PG_NARGS() > 4)
+-	{
+-		endoption = PG_GETARG_INT32(4);
+-		if (endoption != 0 && endoption != 1)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid value for parameter \"%s\": %d",
+-							"endoption", endoption)));
+-	}
+-	if (PG_NARGS() > 6)
+-	{
+-		subexpr = PG_GETARG_INT32(6);
+-		if (subexpr < 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("invalid value for parameter \"%s\": %d",
+-							"subexpr", subexpr)));
+-	}
+-
+-	/* Determine options */
+-	parse_re_flags(&re_flags, flags);
+-	/* User mustn't specify 'g' */
+-	if (re_flags.glob)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-		/* translator: %s is a SQL function name */
+-				 errmsg("%s does not support the \"global\" option",
+-						"regexp_instr()")));
+-	/* But we find all the matches anyway */
+-	re_flags.glob = true;
+-
+-	/* Do the matching */
+-	matchctx = setup_regexp_matches(str, pattern, &re_flags, start - 1,
+-									PG_GET_COLLATION(),
+-									(subexpr > 0),	/* need submatches? */
+-									false, false);
+-
+-	/* When n exceeds matches return 0 (includes case of no matches) */
+-	if (n > matchctx->nmatches)
+-		PG_RETURN_INT32(0);
+-
+-	/* When subexpr exceeds number of subexpressions return 0 */
+-	if (subexpr > matchctx->npatterns)
+-		PG_RETURN_INT32(0);
+-
+-	/* Select the appropriate match position to return */
+-	pos = (n - 1) * matchctx->npatterns;
+-	if (subexpr > 0)
+-		pos += subexpr - 1;
+-	pos *= 2;
+-	if (endoption == 1)
+-		pos += 1;
+-
+-	if (matchctx->match_locs[pos] >= 0)
+-		PG_RETURN_INT32(matchctx->match_locs[pos] + 1);
+-	else
+-		PG_RETURN_INT32(0);		/* position not identifiable */
++	elog(ERROR, "regexp_instr is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_instr_no_start(PG_FUNCTION_ARGS)
+ {
+-	return regexp_instr(fcinfo);
++	elog(ERROR, "regexp_instr_no_start is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_instr_no_n(PG_FUNCTION_ARGS)
+ {
+-	return regexp_instr(fcinfo);
++	elog(ERROR, "regexp_instr_no_n is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_instr_no_endoption(PG_FUNCTION_ARGS)
+ {
+-	return regexp_instr(fcinfo);
++	elog(ERROR, "regexp_instr_no_endoption is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_instr_no_flags(PG_FUNCTION_ARGS)
+ {
+-	return regexp_instr(fcinfo);
++	elog(ERROR, "regexp_instr_no_flags is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_instr_no_subexpr(PG_FUNCTION_ARGS)
+ {
+-	return regexp_instr(fcinfo);
++	elog(ERROR, "regexp_instr_no_subexpr is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

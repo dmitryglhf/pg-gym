@@ -1,0 +1,26 @@
+{
+  "func": "range_merge",
+  "variants": [
+    {
+      "arguments": "anyrange anyrange",
+      "returns": "anyrange",
+      "kind": "f",
+      "volatile": "i",
+      "description": "the smallest range which includes both of the given ranges"
+    },
+    {
+      "arguments": "anymultirange",
+      "returns": "anyrange",
+      "kind": "f",
+      "volatile": "i",
+      "description": "the smallest range which includes the whole multirange"
+    }
+  ],
+  "description": "Computes the smallest range that includes both of the given ranges.\nComputes the smallest range that includes the entire multirange.",
+  "examples": [
+    "range_merge('[1,2)'::int4range, '[3,4)'::int4range) -> [1,4)",
+    "range_merge('{[1,2), [3,4)}'::int4multirange) -> [1,4)"
+  ],
+  "mode": "stub",
+  "category": "range"
+}

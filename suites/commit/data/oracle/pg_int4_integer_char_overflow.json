@@ -1,0 +1,27 @@
+{
+  "func": "pg_int4_integer_char_overflow",
+  "sha": "04c25af21c02bf2c5152c3c8ab2ba877c231a598",
+  "parent": "e96b27296bec1c6212874eceb394b4f8b7d06dcc",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_int4_integer_char_overflow.patch",
+  "test_files": [
+    "src/test/regress/sql/int4.sql",
+    "src/test/regress/expected/int4.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/formatting.c b/src/backend/utils/adt/formatting.c\nindex d9183509..a101771d 100644\n--- a/src/backend/utils/adt/formatting.c\n+++ b/src/backend/utils/adt/formatting.c\n@@ -6717,15 +6717,17 @@ int4_to_char(PG_FUNCTION_ARGS)\n \n \t\tif (IS_MULTI(&Num))\n \t\t{\n-\t\t\torgnum = DatumGetCString(DirectFunctionCall1(int4out,\n-\t\t\t\t\t\t\t\t\t\t\t\t\t\t Int32GetDatum(value * ((int32) pow((double) 10, (double) Num.multi)))));\n+\t\t\tdouble\t\tmulti = pow((double) 10, (double) Num.multi);\n+\n+\t\t\tvalue = DatumGetInt32(DirectFunctionCall2(int4mul,\n+\t\t\t\t\t\t\t\t\t\t\t\t\t  Int32GetDatum(value),\n+\t\t\t\t\t\t\t\t\t\t\t\t\t  DirectFunctionCall1(dtoi4,\n+\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  Float8GetDatum(multi))));\n \t\t\tNum.pre += Num.multi;\n \t\t}\n-\t\telse\n-\t\t{\n-\t\t\torgnum = DatumGetCString(DirectFunctionCall1(int4out,\n-\t\t\t\t\t\t\t\t\t\t\t\t\t\t Int32GetDatum(value)));\n-\t\t}\n+\n+\t\torgnum = DatumGetCString(DirectFunctionCall1(int4out,\n+\t\t\t\t\t\t\t\t\t\t\t\t\t Int32GetDatum(value)));\n \n \t\tif (*orgnum == '-')\n \t\t{\n",
+  "test": "diff --git a/src/test/regress/expected/int4.out b/src/test/regress/expected/int4.out\nindex b1a15888..fca591fa 100644\n--- a/src/test/regress/expected/int4.out\n+++ b/src/test/regress/expected/int4.out\n@@ -370,6 +370,33 @@ SELECT (-2147483648)::int4 % (-1)::int2;\n         0\n (1 row)\n \n+-- check overflow of to_char() with V format\n+SELECT to_char(2, '9V999999999'); -- 10^9\n+   to_char   \n+-------------\n+  2000000000\n+(1 row)\n+\n+SELECT to_char(3, '9V999999999'); -- 10^9\n+ERROR:  integer out of range\n+SELECT to_char(214748364, '999999999V9');\n+   to_char   \n+-------------\n+  2147483640\n+(1 row)\n+\n+SELECT to_char(2147483647, '9V9');\n+ERROR:  integer out of range\n+SELECT to_char(-2, '9V999999999'); -- 10^9\n+   to_char   \n+-------------\n+ -2000000000\n+(1 row)\n+\n+SELECT to_char((-2147483648)::int4, '9V9');\n+ERROR:  integer out of range\n+SELECT to_char(1, '9V9999999999'); -- 10^10\n+ERROR:  integer out of range\n -- check rounding when casting from float\n SELECT x, x::int4 AS int4_value\n FROM (VALUES (-2.5::float8),\ndiff --git a/src/test/regress/sql/int4.sql b/src/test/regress/sql/int4.sql\nindex e9d89e81..d27f5500 100644\n--- a/src/test/regress/sql/int4.sql\n+++ b/src/test/regress/sql/int4.sql\n@@ -126,6 +126,15 @@ SELECT (-2147483648)::int4 * (-1)::int2;\n SELECT (-2147483648)::int4 / (-1)::int2;\n SELECT (-2147483648)::int4 % (-1)::int2;\n \n+-- check overflow of to_char() with V format\n+SELECT to_char(2, '9V999999999'); -- 10^9\n+SELECT to_char(3, '9V999999999'); -- 10^9\n+SELECT to_char(214748364, '999999999V9');\n+SELECT to_char(2147483647, '9V9');\n+SELECT to_char(-2, '9V999999999'); -- 10^9\n+SELECT to_char((-2147483648)::int4, '9V9');\n+SELECT to_char(1, '9V9999999999'); -- 10^10\n+\n -- check rounding when casting from float\n SELECT x, x::int4 AS int4_value\n FROM (VALUES (-2.5::float8),\n",
+  "oracle_command": "make -C src/test/regress check TESTS=int4",
+  "expected_tests": [
+    "int4"
+  ],
+  "failing_tests": [
+    "int4"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 24,
+  "oracle_diff_by_file": {
+    "int4": 24
+  }
+}

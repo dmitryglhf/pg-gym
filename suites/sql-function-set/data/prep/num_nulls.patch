@@ -1,0 +1,27 @@
+diff --git a/src/backend/utils/adt/misc.c b/src/backend/utils/adt/misc.c
+index 0e6c458..1102205 100644
+--- a/src/backend/utils/adt/misc.c
++++ b/src/backend/utils/adt/misc.c
+@@ -154,20 +154,11 @@ count_nulls(FunctionCallInfo fcinfo,
+ 	return true;
+ }
+ 
+-/*
+- * num_nulls()
+- *	Count the number of NULL arguments
+- */
+ Datum
+ pg_num_nulls(PG_FUNCTION_ARGS)
+ {
+-	int32		nargs,
+-				nulls;
+-
+-	if (!count_nulls(fcinfo, &nargs, &nulls))
+-		PG_RETURN_NULL();
+-
+-	PG_RETURN_INT32(nulls);
++	elog(ERROR, "pg_num_nulls is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

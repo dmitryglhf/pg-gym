@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..36e40fe 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2553,10 +2553,8 @@ interval_lt(PG_FUNCTION_ARGS)
+ Datum
+ interval_gt(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval1 = PG_GETARG_INTERVAL_P(0);
+-	Interval   *interval2 = PG_GETARG_INTERVAL_P(1);
+-
+-	PG_RETURN_BOOL(interval_cmp_internal(interval1, interval2) > 0);
++	elog(ERROR, "interval_gt is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

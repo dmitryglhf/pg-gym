@@ -1,0 +1,15 @@
+{
+  "func": "date_mii",
+  "variants": [
+    {
+      "arguments": "date int4",
+      "returns": "date",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

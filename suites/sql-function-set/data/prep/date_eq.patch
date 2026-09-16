@@ -1,0 +1,24 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..16f308c 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -375,17 +375,11 @@ GetSQLLocalTime(int32 typmod)
+ }
+ 
+ 
+-/*
+- * Comparison functions for dates
+- */
+-
+ Datum
+ date_eq(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal1 = PG_GETARG_DATEADT(0);
+-	DateADT		dateVal2 = PG_GETARG_DATEADT(1);
+-
+-	PG_RETURN_BOOL(dateVal1 == dateVal2);
++	elog(ERROR, "date_eq is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

@@ -1,0 +1,36 @@
+{
+  "name": "pg_text_handle_pg_int32",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "3103bdafde6b0dfa8edbcefb48ac51097c6a9c1e",
+  "parent": "04c25af21c02bf2c5152c3c8ab2ba877c231a598",
+  "date": "2026-09-01",
+  "subject": "Handle PG_INT32_MIN negation overflow in right()",
+  "area": "text functions, extreme lengths",
+  "licence": "PostgreSQL",
+  "goal": "right(text, n) can overflow while negating the most negative int32 length. The result then depends on undefined arithmetic rather than following the established rule for negative lengths.\n\n`left('ahoj', (-2147483648)::int4)` and `right('ahoj', (-2147483648)::int4)` must both return the empty string, just like any negative length whose absolute value exceeds the input length. Other negative values, zero, positive values, multibyte text and NULL inputs must keep their current behavior.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/varlena.c",
+      "added": 11,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/text.sql",
+    "src/test/regress/expected/text.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "text"
+    ],
+    "command": "make -C src/test/regress check TESTS=text"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

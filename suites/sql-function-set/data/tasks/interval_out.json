@@ -1,0 +1,15 @@
+{
+  "func": "interval_out",
+  "variants": [
+    {
+      "arguments": "interval",
+      "returns": "cstring",
+      "kind": "f",
+      "volatile": "s",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

@@ -1,0 +1,18 @@
+{
+  "func": "date_pl_interval",
+  "mode": "stub",
+  "patch": "prep/date_pl_interval.patch",
+  "symbols": [
+    "date_pl_interval"
+  ],
+  "units": {
+    "date_pl_interval": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* Add an interval to a date, giving a new date.\n * Must handle both positive and negative intervals.\n *\n * We implement this by promoting the date to timestamp (without time zone)\n * and then using the timestamp plus interval function.\n */\nDatum\ndate_pl_interval(PG_FUNCTION_ARGS)\n{\n\tDateADT\t\tdateVal = PG_GETARG_DATEADT(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\tTimestamp\tdateStamp;\n\n\tdateStamp = date2timestamp(dateVal);\n\n\treturn DirectFunctionCall2(timestamp_pl_interval,\n\t\t\t\t\t\t\t   TimestampGetDatum(dateStamp),\n\t\t\t\t\t\t\t   PointerGetDatum(span));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

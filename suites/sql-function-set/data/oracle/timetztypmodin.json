@@ -1,0 +1,18 @@
+{
+  "func": "timetztypmodin",
+  "mode": "stub",
+  "patch": "prep/timetztypmodin.patch",
+  "symbols": [
+    "timetztypmodin"
+  ],
+  "units": {
+    "timetztypmodin": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntimetztypmodin(PG_FUNCTION_ARGS)\n{\n\tArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);\n\n\tPG_RETURN_INT32(anytime_typmodin(true, ta));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

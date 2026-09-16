@@ -1,0 +1,16 @@
+{
+  "func": "jsonb_strip_nulls",
+  "variants": [
+    {
+      "arguments": "jsonb",
+      "returns": "jsonb",
+      "kind": "f",
+      "volatile": "i",
+      "description": "remove object fields with null values from jsonb"
+    }
+  ],
+  "description": "Deletes all object fields that have null values from the given JSON value, recursively. Null values that are not object fields are untouched.",
+  "examples": [],
+  "mode": "stub",
+  "category": "json"
+}

@@ -1,0 +1,30 @@
+{
+  "func": "to_date",
+  "mode": "stub",
+  "patch": "prep/to_date.patch",
+  "symbols": [
+    "to_date"
+  ],
+  "units": {
+    "to_date": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* ----------\n * TO_DATE\n *\tMake Date from date_str which is formatted at argument 'fmt'\n * ----------\n */\nDatum\nto_date(PG_FUNCTION_ARGS)\n{\n\ttext\t   *date_txt = PG_GETARG_TEXT_PP(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tOid\t\t\tcollid = PG_GET_COLLATION();\n\tDateADT\t\tresult;\n\tstruct pg_tm tm;\n\tstruct fmt_tz ftz;\n\tfsec_t\t\tfsec;\n\n\tdo_to_timestamp(date_txt, fmt, collid, false,\n\t\t\t\t\t&tm, &fsec, &ftz, NULL, NULL, NULL);\n\n\t/* Prevent overflow in Julian-day routines */\n\tif (!IS_VALID_JULIAN(tm.tm_year, tm.tm_mon, tm.tm_mday))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"date out of range: \\\"%s\\\"\",\n\t\t\t\t\t\ttext_to_cstring(date_txt))));\n\n\tresult = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - POSTGRES_EPOCH_JDATE;\n\n\t/* Now check for just-out-of-range dates */\n\tif (!IS_VALID_DATE(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"date out of range: \\\"%s\\\"\",\n\t\t\t\t\t\ttext_to_cstring(date_txt))));\n\n\tPG_RETURN_DATEADT(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "horology",
+    "polymorphism",
+    "text"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 123,
+  "oracle_diff_by_file": {
+    "text": 10,
+    "horology": 108,
+    "polymorphism": 5
+  }
+}

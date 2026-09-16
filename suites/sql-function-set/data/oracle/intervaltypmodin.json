@@ -1,0 +1,18 @@
+{
+  "func": "intervaltypmodin",
+  "mode": "stub",
+  "patch": "prep/intervaltypmodin.patch",
+  "symbols": [
+    "intervaltypmodin"
+  ],
+  "units": {
+    "intervaltypmodin": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * The interval typmod stores a \"range\" in its high 16 bits and a \"precision\"\n * in its low 16 bits.  Both contribute to defining the resolution of the\n * type.  Range addresses resolution granules larger than one second, and\n * precision specifies resolution below one second.  This representation can\n * express all SQL standard resolutions, but we implement them all in terms of\n * truncating rightward from some position.  Range is a bitmap of permitted\n * fields, but only the temporally-smallest such field is significant to our\n * calculations.  Precision is a count of sub-second decimal places to retain.\n * Setting all bits (INTERVAL_FULL_PRECISION) gives the same truncation\n * semantics as choosing MAX_INTERVAL_PRECISION.\n */\nDatum\nintervaltypmodin(PG_FUNCTION_ARGS)\n{\n\tArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);\n\tint32\t   *tl;\n\tint\t\t\tn;\n\tint32\t\ttypmod;\n\n\ttl = ArrayGetIntegerTypmods(ta, &n);\n\n\t/*\n\t * tl[0] - interval range (fields bitmask)\ttl[1] - precision (optional)\n\t *\n\t * Note we must validate tl[0] even though it's normally guaranteed\n\t * correct by the grammar --- consider SELECT 'foo'::\"interval\"(1000).\n\t */\n\tif (n > 0)\n\t{\n\t\tswitch (tl[0])\n\t\t{\n\t\t\tcase INTERVAL_MASK(YEAR):\n\t\t\tcase INTERVAL_MASK(MONTH):\n\t\t\tcase INTERVAL_MASK(DAY):\n\t\t\tcase INTERVAL_MASK(HOUR):\n\t\t\tcase INTERVAL_MASK(MINUTE):\n\t\t\tcase INTERVAL_MASK(SECOND):\n\t\t\tcase INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):\n\t\t\tcase INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):\n\t\t\tcase INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):\n\t\t\tcase INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):\n\t\t\tcase INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):\n\t\t\tcase INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):\n\t\t\tcase INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):\n\t\t\tcase INTERVAL_FULL_RANGE:\n\t\t\t\t/* all OK */\n\t\t\t\tbreak;\n\t\t\tdefault:\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t errmsg(\"invalid INTERVAL type modifier\")));\n\t\t}\n\t}\n\n\tif (n == 1)\n\t{\n\t\tif (tl[0] != INTERVAL_FULL_RANGE)\n\t\t\ttypmod = INTERVAL_TYPMOD(INTERVAL_FULL_PRECISION, tl[0]);\n\t\telse\n\t\t\ttypmod = -1;\n\t}\n\telse if (n == 2)\n\t{\n\t\tif (tl[1] < 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"INTERVAL(%d) precision must not be negative\",\n\t\t\t\t\t\t\ttl[1])));\n\t\tif (tl[1] > MAX_INTERVAL_PRECISION)\n\t\t{\n\t\t\tereport(WARNING,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"INTERVAL(%d) precision reduced to maximum allowed, %d\",\n\t\t\t\t\t\t\ttl[1], MAX_INTERVAL_PRECISION)));\n\t\t\ttypmod = INTERVAL_TYPMOD(MAX_INTERVAL_PRECISION, tl[0]);\n\t\t}\n\t\telse\n\t\t\ttypmod = INTERVAL_TYPMOD(tl[1], tl[0]);\n\t}\n\telse\n\t{\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"invalid INTERVAL type modifier\")));\n\t\ttypmod = 0;\t\t\t\t/* keep compiler quiet */\n\t}\n\n\tPG_RETURN_INT32(typmod);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

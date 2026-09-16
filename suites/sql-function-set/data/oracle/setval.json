@@ -1,0 +1,34 @@
+{
+  "func": "setval",
+  "mode": "stub",
+  "patch": "prep/setval.patch",
+  "symbols": [
+    "setval3_oid",
+    "setval_oid"
+  ],
+  "units": {
+    "setval3_oid": {
+      "file": "src/backend/commands/sequence.c",
+      "code": "/*\n * Implement the 3 arg setval procedure.\n * See do_setval for discussion.\n */\nDatum\nsetval3_oid(PG_FUNCTION_ARGS)\n{\n\tOid\t\t\trelid = PG_GETARG_OID(0);\n\tint64\t\tnext = PG_GETARG_INT64(1);\n\tbool\t\tiscalled = PG_GETARG_BOOL(2);\n\n\tdo_setval(relid, next, iscalled);\n\n\tPG_RETURN_INT64(next);\n}\n\n"
+    },
+    "setval_oid": {
+      "file": "src/backend/commands/sequence.c",
+      "code": "/*\n * Implement the 2 arg setval procedure.\n * See do_setval for discussion.\n */\nDatum\nsetval_oid(PG_FUNCTION_ARGS)\n{\n\tOid\t\t\trelid = PG_GETARG_OID(0);\n\tint64\t\tnext = PG_GETARG_INT64(1);\n\n\tdo_setval(relid, next, true);\n\n\tPG_RETURN_INT64(next);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "rangefuncs",
+    "sequence"
+  ],
+  "category": "sequence",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 498,
+  "oracle_diff_by_file": {
+    "rangefuncs": 433,
+    "sequence": 65
+  }
+}

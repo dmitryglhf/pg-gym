@@ -1,0 +1,32 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..0c447e2 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1596,25 +1596,11 @@ make_time(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/* time_support()
+- *
+- * Planner support function for the time_scale() and timetz_scale()
+- * length coercion functions (we need not distinguish them here).
+- */
+ Datum
+ time_support(PG_FUNCTION_ARGS)
+ {
+-	Node	   *rawreq = (Node *) PG_GETARG_POINTER(0);
+-	Node	   *ret = NULL;
+-
+-	if (IsA(rawreq, SupportRequestSimplify))
+-	{
+-		SupportRequestSimplify *req = (SupportRequestSimplify *) rawreq;
+-
+-		ret = TemporalSimplify(MAX_TIME_PRECISION, (Node *) req->fcall);
+-	}
+-
+-	PG_RETURN_POINTER(ret);
++	elog(ERROR, "time_support is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* time_scale()

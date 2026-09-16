@@ -1,0 +1,10 @@
+{
+  "name": "pg_with_assert_failure_recursive",
+  "area": "recursive CTEs, duplicate elimination",
+  "goal": "A recursive CTE using UNION rather than UNION ALL can assert while removing duplicate rows from the non-recursive term when that term supplies a buffered heap tuple slot.\n\nCreate a temporary table containing duplicate integer rows and use it as the non-recursive term of `WITH RECURSIVE cte AS (SELECT ... UNION SELECT ... FROM cte)`. The query must terminate and return the single distinct value, without assertion or memory error. UNION ALL recursion and duplicate elimination for other input slot types must remain unchanged.",
+  "func": "pg_with_assert_failure_recursive",
+  "graded_by": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ]
+}

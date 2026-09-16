@@ -1,0 +1,19 @@
+diff --git a/src/backend/access/heap/vacuumlazy.c b/src/backend/access/heap/vacuumlazy.c
+index b22604e9..f2d25987 100644
+--- a/src/backend/access/heap/vacuumlazy.c
++++ b/src/backend/access/heap/vacuumlazy.c
+@@ -872,12 +872,9 @@ lazy_scan_heap(LVRelState *vacrel)
+ 		 * Consider if we definitely have enough space to process TIDs on page
+ 		 * already.  If we are close to overrunning the available space for
+ 		 * dead_items TIDs, pause and do a cycle of vacuuming before we tackle
+-		 * this page. However, let's force at least one page-worth of tuples
+-		 * to be stored as to ensure we do at least some work when the memory
+-		 * configured is so low that we run out before storing anything.
++		 * this page.
+ 		 */
+-		if (vacrel->dead_items_info->num_items > 0 &&
+-			TidStoreMemoryUsage(vacrel->dead_items) > vacrel->dead_items_info->max_bytes)
++		if (TidStoreMemoryUsage(vacrel->dead_items) > vacrel->dead_items_info->max_bytes)
+ 		{
+ 			/*
+ 			 * Before beginning index vacuuming, we release any pin we may

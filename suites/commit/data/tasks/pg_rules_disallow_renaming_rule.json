@@ -1,0 +1,13 @@
+{
+  "name": "pg_rules_disallow_renaming_rule",
+  "area": "rules, ALTER RULE",
+  "goal": "An ON SELECT rule has to be named _RETURN and a rule of any other kind has to not be. Creating a rule enforces this, and a good deal of client code relies on it. Renaming one does not: a non-SELECT rule can be renamed to _RETURN.\n\nThe result cannot be dumped and restored, because the CREATE RULE command the dump produces is rejected on the way back in.\n\n    CREATE RULE r AS ON INSERT TO t DO INSTEAD NOTHING;\n    ALTER RULE r ON t RENAME TO \"_RETURN\";\n\nThe rename has to be refused. Renaming an ON SELECT rule to _RETURN, and renames not involving that name at all, must keep working.",
+  "contract": [
+    "non-view rule for \"%s\" must not be named \"%s\""
+  ],
+  "func": "pg_rules_disallow_renaming_rule",
+  "graded_by": [
+    "src/test/regress/sql/rules.sql",
+    "src/test/regress/expected/rules.out"
+  ]
+}

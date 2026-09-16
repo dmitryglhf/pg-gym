@@ -1,0 +1,30 @@
+diff --git a/src/backend/utils/adt/float.c b/src/backend/utils/adt/float.c
+index 22421cb..703b38a 100644
+--- a/src/backend/utils/adt/float.c
++++ b/src/backend/utils/adt/float.c
+@@ -3203,23 +3203,8 @@ float8_stddev_pop(PG_FUNCTION_ARGS)
+ Datum
+ float8_stddev_samp(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *transarray = PG_GETARG_ARRAYTYPE_P(0);
+-	float8	   *transvalues;
+-	float8		N,
+-				Sxx;
+-
+-	transvalues = check_float8_array(transarray, "float8_stddev_samp", 3);
+-	N = transvalues[0];
+-	/* ignore Sx */
+-	Sxx = transvalues[2];
+-
+-	/* Sample stddev is undefined when N is 0 or 1, so return NULL */
+-	if (N <= 1.0)
+-		PG_RETURN_NULL();
+-
+-	/* Note that Sxx is guaranteed to be non-negative */
+-
+-	PG_RETURN_FLOAT8(sqrt(Sxx / (N - 1.0)));
++	elog(ERROR, "float8_stddev_samp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

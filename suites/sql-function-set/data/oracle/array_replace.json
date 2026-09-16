@@ -1,0 +1,27 @@
+{
+  "func": "array_replace",
+  "mode": "stub",
+  "patch": "prep/array_replace.patch",
+  "symbols": [
+    "array_replace"
+  ],
+  "units": {
+    "array_replace": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * Replace any occurrences of an element in an array\n */\nDatum\narray_replace(PG_FUNCTION_ARGS)\n{\n\tArrayType  *array;\n\tDatum\t\tsearch = PG_GETARG_DATUM(1);\n\tbool\t\tsearch_isnull = PG_ARGISNULL(1);\n\tDatum\t\treplace = PG_GETARG_DATUM(2);\n\tbool\t\treplace_isnull = PG_ARGISNULL(2);\n\n\tif (PG_ARGISNULL(0))\n\t\tPG_RETURN_NULL();\n\tarray = PG_GETARG_ARRAYTYPE_P(0);\n\n\tarray = array_replace_internal(array,\n\t\t\t\t\t\t\t\t   search, search_isnull,\n\t\t\t\t\t\t\t\t   replace, replace_isnull,\n\t\t\t\t\t\t\t\t   false, PG_GET_COLLATION(),\n\t\t\t\t\t\t\t\t   fcinfo);\n\tPG_RETURN_ARRAYTYPE_P(array);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "arrays"
+  ],
+  "category": "array",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 30,
+  "oracle_diff_by_file": {
+    "arrays": 30
+  }
+}

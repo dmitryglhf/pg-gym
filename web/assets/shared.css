@@ -1,0 +1,212 @@
+html {
+  font-size: 14px;
+}
+a {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+button {
+  color: inherit;
+  cursor: pointer;
+}
+.nav-icon {
+  display: flex;
+  align-items: center;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip-link {
+  position: fixed;
+  top: -80px;
+  left: 120px;
+  background: #111418;
+  color: white;
+  padding: 12px;
+  z-index: 99;
+}
+.skip-link:focus {
+  top: 8px;
+}
+@media (prefers-reduced-motion:reduce) {
+  *,
+  *:before,
+  *:after {
+    animation: none!important;
+    transition: none!important;
+  }
+}
+.diff-frame {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.diff-block {
+  max-height: 660px;
+  margin: 0;
+  padding: 14px 0;
+  overflow: auto;
+  font-size: .8125rem;
+  line-height: 1.8;
+  tab-size: 4;
+  background: #fcfcfd;
+}
+.diff-line {
+  display: block;
+  min-width: max-content;
+  padding-inline: 16px;
+  white-space: pre;
+}
+.diff-meta {
+  color: var(--muted);
+}
+.diff-hunk {
+  color: var(--muted);
+  background: var(--hover);
+}
+.diff-add {
+  background: #e8f5ec;
+  color: #235c3b;
+}
+.diff-remove {
+  background: #fcebee;
+  color: #9b303c;
+}
+
+.diff-truncated {
+  padding: 12px 16px;
+  color: var(--muted);
+  background: var(--soft);
+  font-size: 12px;
+}
+.progress-ring {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  vertical-align: middle;
+}
+.progress-ring-track {
+  opacity: .14;
+}
+.progress-ring-arc {
+  stroke-linecap: round;
+  stroke-dasharray: 18 57;
+  transform-origin: 12px 12px;
+  animation: activity-rotate 1.4s linear infinite;
+}
+.progress-ring.is-paused .progress-ring-arc {
+  animation: none;
+}
+@keyframes activity-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.activity-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 20px;
+  margin-block: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.activity-status > .progress-ring {
+  margin-top: 2px;
+}
+.activity-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.activity-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.activity-heading strong {
+  font-size: .875rem;
+  font-weight: 600;
+}
+.activity-elapsed {
+  color: var(--muted);
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.activity-freshness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 20px;
+  margin-top: 3px;
+  font-size: .75rem;
+  color: var(--muted);
+}
+.activity-note {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: .8125rem;
+}
+.activity-note:empty {
+  display: none;
+}
+.activity-actions {
+  flex: 0 0 auto;
+  align-self: center;
+}
+.activity-compact {
+  padding: 12px 0;
+  margin-block: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.activity-stale > .progress-ring {
+  color: var(--muted);
+}
+.activity-stale .activity-heading strong {
+  color: #835510;
+}
+.chat-pending {
+  padding: 0 20px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 640px) {
+  .activity-status {
+    padding: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .activity-content {
+    flex-basis: calc(100% - 40px);
+  }
+  .activity-actions {
+    margin-left: 32px;
+  }
+  .activity-compact {
+    padding: 10px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-ring-arc {
+    animation: none;
+  }
+}

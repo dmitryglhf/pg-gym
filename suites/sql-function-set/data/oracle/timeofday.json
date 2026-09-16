@@ -1,0 +1,20 @@
+{
+  "func": "timeofday",
+  "mode": "stub",
+  "patch": "prep/timeofday.patch",
+  "symbols": [
+    "timeofday"
+  ],
+  "units": {
+    "timeofday": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * timeofday(*) -- returns the current time as a text.\n */\nDatum\ntimeofday(PG_FUNCTION_ARGS)\n{\n\tstruct timeval tp;\n\tpg_time_t\ttt;\n\tstruct pg_tm *tm;\n\tchar\t\tpart1[128];\n\tchar\t\tpart2[128];\n\tchar\t\tbuf[128 + 128 + 10];\n\n\tgettimeofday(&tp, NULL);\n\ttt = (pg_time_t) tp.tv_sec;\n\ttm = pg_localtime(&tt, session_timezone);\n\n\tpg_strftime(part1, sizeof(part1), \"%a %b %d %H:%M:%S\", tm);\n\tpg_strftime(part2, sizeof(part2), \"%Y %Z\", tm);\n\tsnprintf(buf, sizeof(buf), \"%s.%06d %s\", part1, (int) tp.tv_usec, part2);\n\n\tPG_RETURN_TEXT_P(cstring_to_text(buf));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [],
+  "usable": false,
+  "verify_status": "no_coverage"
+}

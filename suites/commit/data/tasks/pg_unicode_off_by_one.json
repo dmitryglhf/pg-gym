@@ -1,0 +1,10 @@
+{
+  "name": "pg_unicode_off_by_one",
+  "area": "Unicode normalization, Hangul",
+  "goal": "NFC normalization incorrectly treats Hangul code point U+11A7, the trailing-jamo base marker, as a composable trailing consonant. It can combine a valid LV syllable with a value that must remain separate.\n\nNormalization of `U+AC00 U+11A7` must remain those two code points, and `U+1100 U+1161 U+11A7` must become `U+AC00 U+11A7`. Valid first and last L+V and LV+T compositions, including U+11A8 through U+11C2, must still produce the standard syllables; NFD decomposition must remain the inverse for valid Hangul syllables.",
+  "func": "pg_unicode_off_by_one",
+  "graded_by": [
+    "src/test/regress/sql/unicode.sql",
+    "src/test/regress/expected/unicode.out"
+  ]
+}

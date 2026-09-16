@@ -1,0 +1,25 @@
+{
+  "func": "json_build_object",
+  "variants": [
+    {
+      "arguments": "any",
+      "returns": "json",
+      "kind": "f",
+      "volatile": "s",
+      "description": "build a json object from pairwise key/value inputs"
+    },
+    {
+      "arguments": "",
+      "returns": "json",
+      "kind": "f",
+      "volatile": "s",
+      "description": "build an empty json object"
+    }
+  ],
+  "description": "Builds a JSON object out of a variadic argument list. By convention, the argument list consists of alternating keys and values. Key arguments are coerced to text; value arguments are converted as per to_json or to_jsonb.",
+  "examples": [
+    "json_build_object('foo', 1, 2, row(3,'bar')) -> {\"foo\" : 1, \"2\" : {\"f1\":3,\"f2\":\"bar\"}}"
+  ],
+  "mode": "stub",
+  "category": "json"
+}

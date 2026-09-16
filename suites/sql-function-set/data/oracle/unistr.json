@@ -1,0 +1,27 @@
+{
+  "func": "unistr",
+  "mode": "stub",
+  "patch": "prep/unistr.patch",
+  "symbols": [
+    "unistr"
+  ],
+  "units": {
+    "unistr": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*\n * Replaces Unicode escape sequences by Unicode characters\n */\nDatum\nunistr(PG_FUNCTION_ARGS)\n{\n\ttext\t   *input_text = PG_GETARG_TEXT_PP(0);\n\tchar\t   *instr;\n\tint\t\t\tlen;\n\tStringInfoData str;\n\ttext\t   *result;\n\tpg_wchar\tpair_first = 0;\n\tchar\t\tcbuf[MAX_UNICODE_EQUIVALENT_STRING + 1];\n\n\tinstr = VARDATA_ANY(input_text);\n\tlen = VARSIZE_ANY_EXHDR(input_text);\n\n\tinitStringInfo(&str);\n\n\twhile (len > 0)\n\t{\n\t\tif (instr[0] == '\\\\')\n\t\t{\n\t\t\tif (len >= 2 &&\n\t\t\t\tinstr[1] == '\\\\')\n\t\t\t{\n\t\t\t\tif (pair_first)\n\t\t\t\t\tgoto invalid_pair;\n\t\t\t\tappendStringInfoChar(&str, '\\\\');\n\t\t\t\tinstr += 2;\n\t\t\t\tlen -= 2;\n\t\t\t}\n\t\t\telse if ((len >= 5 && isxdigits_n(instr + 1, 4)) ||\n\t\t\t\t\t (len >= 6 && instr[1] == 'u' && isxdigits_n(instr + 2, 4)))\n\t\t\t{\n\t\t\t\tpg_wchar\tunicode;\n\t\t\t\tint\t\t\toffset = instr[1] == 'u' ? 2 : 1;\n\n\t\t\t\tunicode = hexval_n(instr + offset, 4);\n\n\t\t\t\tif (!is_valid_unicode_codepoint(unicode))\n\t\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t\terrcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t\terrmsg(\"invalid Unicode code point: %04X\", unicode));\n\n\t\t\t\tif (pair_first)\n\t\t\t\t{\n\t\t\t\t\tif (is_utf16_surrogate_second(unicode))\n\t\t\t\t\t{\n\t\t\t\t\t\tunicode = surrogate_pair_to_codepoint(pair_first, unicode);\n\t\t\t\t\t\tpair_first = 0;\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t\tgoto invalid_pair;\n\t\t\t\t}\n\t\t\t\telse if (is_utf16_surrogate_second(unicode))\n\t\t\t\t\tgoto invalid_pair;\n\n\t\t\t\tif (is_utf16_surrogate_first(unicode))\n\t\t\t\t\tpair_first = unicode;\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tpg_unicode_to_server(unicode, (unsigned char *) cbuf);\n\t\t\t\t\tappendStringInfoString(&str, cbuf);\n\t\t\t\t}\n\n\t\t\t\tinstr += 4 + offset;\n\t\t\t\tlen -= 4 + offset;\n\t\t\t}\n\t\t\telse if (len >= 8 && instr[1] == '+' && isxdigits_n(instr + 2, 6))\n\t\t\t{\n\t\t\t\tpg_wchar\tunicode;\n\n\t\t\t\tunicode = hexval_n(instr + 2, 6);\n\n\t\t\t\tif (!is_valid_unicode_codepoint(unicode))\n\t\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t\terrcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t\terrmsg(\"invalid Unicode code point: %04X\", unicode));\n\n\t\t\t\tif (pair_first)\n\t\t\t\t{\n\t\t\t\t\tif (is_utf16_surrogate_second(unicode))\n\t\t\t\t\t{\n\t\t\t\t\t\tunicode = surrogate_pair_to_codepoint(pair_first, unicode);\n\t\t\t\t\t\tpair_first = 0;\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t\tgoto invalid_pair;\n\t\t\t\t}\n\t\t\t\telse if (is_utf16_surrogate_second(unicode))\n\t\t\t\t\tgoto invalid_pair;\n\n\t\t\t\tif (is_utf16_surrogate_first(unicode))\n\t\t\t\t\tpair_first = unicode;\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tpg_unicode_to_server(unicode, (unsigned char *) cbuf);\n\t\t\t\t\tappendStringInfoString(&str, cbuf);\n\t\t\t\t}\n\n\t\t\t\tinstr += 8;\n\t\t\t\tlen -= 8;\n\t\t\t}\n\t\t\telse if (len >= 10 && instr[1] == 'U' && isxdigits_n(instr + 2, 8))\n\t\t\t{\n\t\t\t\tpg_wchar\tunicode;\n\n\t\t\t\tunicode = hexval_n(instr + 2, 8);\n\n\t\t\t\tif (!is_valid_unicode_codepoint(unicode))\n\t\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t\terrcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t\t\terrmsg(\"invalid Unicode code point: %04X\", unicode));\n\n\t\t\t\tif (pair_first)\n\t\t\t\t{\n\t\t\t\t\tif (is_utf16_surrogate_second(unicode))\n\t\t\t\t\t{\n\t\t\t\t\t\tunicode = surrogate_pair_to_codepoint(pair_first, unicode);\n\t\t\t\t\t\tpair_first = 0;\n\t\t\t\t\t}\n\t\t\t\t\telse\n\t\t\t\t\t\tgoto invalid_pair;\n\t\t\t\t}\n\t\t\t\telse if (is_utf16_surrogate_second(unicode))\n\t\t\t\t\tgoto invalid_pair;\n\n\t\t\t\tif (is_utf16_surrogate_first(unicode))\n\t\t\t\t\tpair_first = unicode;\n\t\t\t\telse\n\t\t\t\t{\n\t\t\t\t\tpg_unicode_to_server(unicode, (unsigned char *) cbuf);\n\t\t\t\t\tappendStringInfoString(&str, cbuf);\n\t\t\t\t}\n\n\t\t\t\tinstr += 10;\n\t\t\t\tlen -= 10;\n\t\t\t}\n\t\t\telse\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_SYNTAX_ERROR),\n\t\t\t\t\t\t errmsg(\"invalid Unicode escape\"),\n\t\t\t\t\t\t errhint(\"Unicode escapes must be \\\\XXXX, \\\\+XXXXXX, \\\\uXXXX, or \\\\UXXXXXXXX.\")));\n\t\t}\n\t\telse\n\t\t{\n\t\t\tif (pair_first)\n\t\t\t\tgoto invalid_pair;\n\n\t\t\tappendStringInfoChar(&str, *instr++);\n\t\t\tlen--;\n\t\t}\n\t}\n\n\t/* unfinished surrogate pair? */\n\tif (pair_first)\n\t\tgoto invalid_pair;\n\n\tresult = cstring_to_text_with_len(str.data, str.len);\n\tpfree(str.data);\n\n\tPG_RETURN_TEXT_P(result);\n\ninvalid_pair:\n\tereport(ERROR,\n\t\t\t(errcode(ERRCODE_SYNTAX_ERROR),\n\t\t\t errmsg(\"invalid Unicode surrogate pair\")));\n\tPG_RETURN_NULL();\t\t\t/* keep compiler quiet */\n}\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 32,
+  "oracle_diff_by_file": {
+    "strings": 32
+  }
+}

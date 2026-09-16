@@ -1,0 +1,36 @@
+{
+  "name": "pg_join_ignore_nullingrels_looking",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "297b280abd7a2e57263cf786a3dd5584cb7e0892",
+  "parent": "759620716adb347c1d8c8b2e6f7d88b947a54c98",
+  "date": "2025-01-02",
+  "subject": "Ignore nullingrels when looking up statistics",
+  "area": "planner, extended statistics across outer joins",
+  "licence": "PostgreSQL",
+  "goal": "Estimating a grouped outer-join query can count nullability annotations as though they made separate expressions, causing expression statistics to be matched inconsistently. Planning may miss the applicable extended statistics or even report a corrupt multivariate-statistics entry.\n\nCreate multivariate statistics on expressions over two columns, then group a left join that exposes both a nullable column and an expression such as coalesce over it. EXPLAIN must succeed and produce stable, sensible estimates without treating logically identical statistics expressions as duplicates. Estimates for inner joins and expressions whose nullability genuinely differs must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/selfuncs.c",
+      "added": 26,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "join"
+    ],
+    "command": "make -C src/test/regress check TESTS=join"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

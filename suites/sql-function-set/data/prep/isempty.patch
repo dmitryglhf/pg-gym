@@ -1,0 +1,41 @@
+diff --git a/src/backend/utils/adt/multirangetypes.c b/src/backend/utils/adt/multirangetypes.c
+index 7f14f7e..8b4713d 100644
+--- a/src/backend/utils/adt/multirangetypes.c
++++ b/src/backend/utils/adt/multirangetypes.c
+@@ -1553,13 +1553,11 @@ multirange_upper(PG_FUNCTION_ARGS)
+ 
+ /* multirange -> bool functions */
+ 
+-/* is multirange empty? */
+ Datum
+ multirange_empty(PG_FUNCTION_ARGS)
+ {
+-	MultirangeType *mr = PG_GETARG_MULTIRANGE_P(0);
+-
+-	PG_RETURN_BOOL(MultirangeIsEmpty(mr));
++	elog(ERROR, "multirange_empty is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* is lower bound inclusive? */
+diff --git a/src/backend/utils/adt/rangetypes.c b/src/backend/utils/adt/rangetypes.c
+index 2d94a6b..f4a7568 100644
+--- a/src/backend/utils/adt/rangetypes.c
++++ b/src/backend/utils/adt/rangetypes.c
+@@ -486,14 +486,11 @@ range_upper(PG_FUNCTION_ARGS)
+ 
+ /* range -> bool functions */
+ 
+-/* is range empty? */
+ Datum
+ range_empty(PG_FUNCTION_ARGS)
+ {
+-	RangeType  *r1 = PG_GETARG_RANGE_P(0);
+-	char		flags = range_get_flags(r1);
+-
+-	PG_RETURN_BOOL(flags & RANGE_EMPTY);
++	elog(ERROR, "range_empty is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* is lower bound inclusive? */

@@ -1,0 +1,36 @@
+{
+  "name": "pg_limit_deparsing_fetch_first",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "54c05292b1ffc8d7ad9305d224225161e4d3d412",
+  "parent": "7318f241d29c0b90e0b8b7e39ebd1914f68fd37a",
+  "date": "2025-05-19",
+  "subject": "Fix deparsing FETCH FIRST <expr> ROWS WITH TIES",
+  "area": "deparsing, FETCH FIRST",
+  "licence": "PostgreSQL",
+  "goal": "The grammar accepts only a restricted expression after FETCH FIRST, so printing a stored query back out has to produce something that parser will accept again. For expressions that are not a bare integer literal it does not.\n\nTo reach it, define a view ordered and limited with FETCH FIRST 5::bigint ROWS WITH TIES, then read its definition back and try to run it.\n\nA printed definition has to parse back into the same query. LIMIT, and FETCH FIRST without WITH TIES, must keep printing as they do now.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/ruleutils.c",
+      "added": 10,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/limit.sql",
+    "src/test/regress/expected/limit.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "limit"
+    ],
+    "command": "make -C src/test/regress check TESTS=limit"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

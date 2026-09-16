@@ -1,0 +1,31 @@
+diff --git a/src/backend/utils/activity/pgstat_database.c b/src/backend/utils/activity/pgstat_database.c
+index 3398a798..10ee3e57 100644
+--- a/src/backend/utils/activity/pgstat_database.c
++++ b/src/backend/utils/activity/pgstat_database.c
+@@ -197,7 +197,7 @@ pgstat_report_connect(Oid dboid)
+ 
+ 	pgLastSessionReportTime = MyStartTimestamp;
+ 
+-	dbentry = pgstat_prep_database_pending(dboid);
++	dbentry = pgstat_prep_database_pending(MyDatabaseId);
+ 	dbentry->sessions++;
+ }
+ 
+@@ -212,7 +212,7 @@ pgstat_report_disconnect(Oid dboid)
+ 	if (!pgstat_should_report_connstat())
+ 		return;
+ 
+-	dbentry = pgstat_prep_database_pending(dboid);
++	dbentry = pgstat_prep_database_pending(MyDatabaseId);
+ 
+ 	switch (pgStatSessionEndCause)
+ 	{
+@@ -356,7 +356,7 @@ pgstat_reset_database_timestamp(Oid dboid, TimestampTz ts)
+ 	PgStat_EntryRef *dbref;
+ 	PgStatShared_Database *dbentry;
+ 
+-	dbref = pgstat_get_entry_ref_locked(PGSTAT_KIND_DATABASE, dboid, InvalidOid,
++	dbref = pgstat_get_entry_ref_locked(PGSTAT_KIND_DATABASE, MyDatabaseId, InvalidOid,
+ 										false);
+ 
+ 	dbentry = (PgStatShared_Database *) dbref->shared_stats;

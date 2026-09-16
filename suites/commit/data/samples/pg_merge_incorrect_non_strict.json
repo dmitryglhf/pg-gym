@@ -1,0 +1,36 @@
+{
+  "name": "pg_merge_incorrect_non_strict",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "d7d297f8449641bfd71750d04c302572a350052c",
+  "parent": "c7a201053e3f7d322782e57879b43d1fd8b7bf32",
+  "date": "2024-10-03",
+  "subject": "Fix incorrect non-strict join recheck in MERGE WHEN NOT MATCHED BY SOURCE.",
+  "area": "MERGE, NOT MATCHED BY SOURCE",
+  "licence": "PostgreSQL",
+  "goal": "MERGE can choose the wrong action for a target row with no source row when the ON condition is non-strict, such as `IS NOT DISTINCT FROM`. The null-filled source side of the outer join can make the condition appear matched a second time.\n\nMerge a source containing a non-null key into a target containing a NULL key with `ON target.a IS NOT DISTINCT FROM source.a`, a MATCHED update, and a NOT MATCHED BY SOURCE delete. The unmatched target row must take the delete action, and RETURNING with merge_action() must describe the action and row values correctly. Strict ON conditions and genuinely matched NULL keys must retain their behavior.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/prep/prepjointree.c",
+      "added": 61,
+      "deleted": 5
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/merge.sql",
+    "src/test/regress/expected/merge.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "merge"
+    ],
+    "command": "make -C src/test/regress check TESTS=merge"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

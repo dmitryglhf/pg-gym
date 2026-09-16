@@ -1,0 +1,55 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..6d004c2 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -4110,48 +4110,11 @@ interval_avg_serialize(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BYTEA_P(result);
+ }
+ 
+-/*
+- * interval_avg_deserialize
+- *		Deserialize bytea into IntervalAggState for interval aggregates.
+- */
+ Datum
+ interval_avg_deserialize(PG_FUNCTION_ARGS)
+ {
+-	bytea	   *sstate;
+-	IntervalAggState *result;
+-	StringInfoData buf;
+-
+-	if (!AggCheckCallContext(fcinfo, NULL))
+-		elog(ERROR, "aggregate function called in non-aggregate context");
+-
+-	sstate = PG_GETARG_BYTEA_PP(0);
+-
+-	/*
+-	 * Initialize a StringInfo so that we can "receive" it using the standard
+-	 * recv-function infrastructure.
+-	 */
+-	initReadOnlyStringInfo(&buf, VARDATA_ANY(sstate),
+-						   VARSIZE_ANY_EXHDR(sstate));
+-
+-	result = (IntervalAggState *) palloc0(sizeof(IntervalAggState));
+-
+-	/* N */
+-	result->N = pq_getmsgint64(&buf);
+-
+-	/* sumX */
+-	result->sumX.time = pq_getmsgint64(&buf);
+-	result->sumX.day = pq_getmsgint(&buf, 4);
+-	result->sumX.month = pq_getmsgint(&buf, 4);
+-
+-	/* pInfcount */
+-	result->pInfcount = pq_getmsgint64(&buf);
+-
+-	/* nInfcount */
+-	result->nInfcount = pq_getmsgint64(&buf);
+-
+-	pq_getmsgend(&buf);
+-
+-	PG_RETURN_POINTER(result);
++	elog(ERROR, "interval_avg_deserialize is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

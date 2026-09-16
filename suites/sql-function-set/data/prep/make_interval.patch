@@ -1,0 +1,68 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..e8868cd 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1532,61 +1532,11 @@ AdjustIntervalForTypmod(Interval *interval, int32 typmod,
+ 	return true;
+ }
+ 
+-/*
+- * make_interval - numeric Interval constructor
+- */
+ Datum
+ make_interval(PG_FUNCTION_ARGS)
+ {
+-	int32		years = PG_GETARG_INT32(0);
+-	int32		months = PG_GETARG_INT32(1);
+-	int32		weeks = PG_GETARG_INT32(2);
+-	int32		days = PG_GETARG_INT32(3);
+-	int32		hours = PG_GETARG_INT32(4);
+-	int32		mins = PG_GETARG_INT32(5);
+-	double		secs = PG_GETARG_FLOAT8(6);
+-	Interval   *result;
+-
+-	/*
+-	 * Reject out-of-range inputs.  We reject any input values that cause
+-	 * integer overflow of the corresponding interval fields.
+-	 */
+-	if (isinf(secs) || isnan(secs))
+-		goto out_of_range;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	/* years and months -> months */
+-	if (pg_mul_s32_overflow(years, MONTHS_PER_YEAR, &result->month) ||
+-		pg_add_s32_overflow(result->month, months, &result->month))
+-		goto out_of_range;
+-
+-	/* weeks and days -> days */
+-	if (pg_mul_s32_overflow(weeks, DAYS_PER_WEEK, &result->day) ||
+-		pg_add_s32_overflow(result->day, days, &result->day))
+-		goto out_of_range;
+-
+-	/* hours and mins -> usecs (cannot overflow 64-bit) */
+-	result->time = hours * USECS_PER_HOUR + mins * USECS_PER_MINUTE;
+-
+-	/* secs -> usecs */
+-	secs = rint(float8_mul(secs, USECS_PER_SEC));
+-	if (!FLOAT8_FITS_IN_INT64(secs) ||
+-		pg_add_s64_overflow(result->time, (int64) secs, &result->time))
+-		goto out_of_range;
+-
+-	/* make sure that the result is finite */
+-	if (INTERVAL_NOT_FINITE(result))
+-		goto out_of_range;
+-
+-	PG_RETURN_INTERVAL_P(result);
+-
+-out_of_range:
+-	ereport(ERROR,
+-			errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-			errmsg("interval out of range"));
+-
+-	PG_RETURN_NULL();			/* keep compiler quiet */
++	elog(ERROR, "make_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* EncodeSpecialTimestamp()

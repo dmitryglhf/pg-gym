@@ -1,0 +1,120 @@
+{
+  "func": "in_range",
+  "variants": [
+    {
+      "arguments": "int8 int8 int8 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "int4 int4 int8 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "int4 int4 int4 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "int4 int4 int2 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "int2 int2 int8 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "int2 int2 int4 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "int2 int2 int2 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "float8 float8 float8 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "float4 float4 float8 bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "numeric numeric numeric bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "date date interval bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "timestamp timestamp interval bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "timestamptz timestamptz interval bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "s",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "interval interval interval bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "time time interval bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    },
+    {
+      "arguments": "timetz timetz interval bool bool",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": "window RANGE support"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

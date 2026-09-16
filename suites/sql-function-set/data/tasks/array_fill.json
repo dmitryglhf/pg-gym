@@ -1,0 +1,26 @@
+{
+  "func": "array_fill",
+  "variants": [
+    {
+      "arguments": "anyelement _int4",
+      "returns": "anyarray",
+      "kind": "f",
+      "volatile": "i",
+      "description": "array constructor with value"
+    },
+    {
+      "arguments": "anyelement _int4 _int4",
+      "returns": "anyarray",
+      "kind": "f",
+      "volatile": "i",
+      "description": "array constructor with value"
+    }
+  ],
+  "description": "Returns an array filled with copies of the given value, having dimensions of the lengths specified by the second argument. The optional third argument supplies lower-bound values for each dimension (which default to all 1).",
+  "examples": [
+    "array_fill(11, ARRAY[2,3]) -> {{11,11,11},{11,11,11}}",
+    "array_fill(7, ARRAY[3], ARRAY[2]) -> [2:4]={7,7,7}"
+  ],
+  "mode": "stub",
+  "category": "array"
+}

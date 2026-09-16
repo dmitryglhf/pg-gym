@@ -1,0 +1,67 @@
+diff --git a/src/backend/utils/adt/jsonfuncs.c b/src/backend/utils/adt/jsonfuncs.c
+index 4605234..cdbed2d 100644
+--- a/src/backend/utils/adt/jsonfuncs.c
++++ b/src/backend/utils/adt/jsonfuncs.c
+@@ -4518,60 +4518,11 @@ json_strip_nulls(PG_FUNCTION_ARGS)
+ 											  state->strval->len));
+ }
+ 
+-/*
+- * SQL function jsonb_strip_nulls(jsonb) -> jsonb
+- */
+ Datum
+ jsonb_strip_nulls(PG_FUNCTION_ARGS)
+ {
+-	Jsonb	   *jb = PG_GETARG_JSONB_P(0);
+-	JsonbIterator *it;
+-	JsonbParseState *parseState = NULL;
+-	JsonbValue *res = NULL;
+-	JsonbValue	v,
+-				k;
+-	JsonbIteratorToken type;
+-	bool		last_was_key = false;
+-
+-	if (JB_ROOT_IS_SCALAR(jb))
+-		PG_RETURN_POINTER(jb);
+-
+-	it = JsonbIteratorInit(&jb->root);
+-
+-	while ((type = JsonbIteratorNext(&it, &v, false)) != WJB_DONE)
+-	{
+-		Assert(!(type == WJB_KEY && last_was_key));
+-
+-		if (type == WJB_KEY)
+-		{
+-			/* stash the key until we know if it has a null value */
+-			k = v;
+-			last_was_key = true;
+-			continue;
+-		}
+-
+-		if (last_was_key)
+-		{
+-			/* if the last element was a key this one can't be */
+-			last_was_key = false;
+-
+-			/* skip this field if value is null */
+-			if (type == WJB_VALUE && v.type == jbvNull)
+-				continue;
+-
+-			/* otherwise, do a delayed push of the key */
+-			(void) pushJsonbValue(&parseState, WJB_KEY, &k);
+-		}
+-
+-		if (type == WJB_VALUE || type == WJB_ELEM)
+-			res = pushJsonbValue(&parseState, type, &v);
+-		else
+-			res = pushJsonbValue(&parseState, type, NULL);
+-	}
+-
+-	Assert(res != NULL);
+-
+-	PG_RETURN_POINTER(JsonbValueToJsonb(res));
++	elog(ERROR, "jsonb_strip_nulls is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

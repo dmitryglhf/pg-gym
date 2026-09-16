@@ -1,0 +1,39 @@
+{
+  "name": "pg_privileges_alter_group_drop",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "c559f61b547188f20ff9c54231f54cd9ef99b867",
+  "parent": "ffd9b813465843c5eda04229a09d2167ed4a4a71",
+  "date": "2025-01-09",
+  "subject": "Fix an ALTER GROUP ... DROP USER error message.",
+  "area": "role membership, error reporting",
+  "licence": "PostgreSQL",
+  "goal": "ALTER GROUP ... DROP USER reports a misleading authorization detail: it names the wrong option required to modify role membership, unlike the corresponding ADD USER path.\n\nAs a role without authority to administer a target role, attempt both ALTER GROUP ... ADD USER and DROP USER. Both must fail with `permission denied to alter role` and the detail `Only roles with the %s option on role \"%s\" may add or drop members.`, filled with the correct option and role. Successful membership changes and unrelated role errors must be unchanged.",
+  "contract": [
+    "Only roles with the %s option on role \\\"%s\\\" may add or drop members."
+  ],
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/user.c",
+      "added": 2,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "privileges"
+    ],
+    "command": "make -C src/test/regress check TESTS=privileges"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

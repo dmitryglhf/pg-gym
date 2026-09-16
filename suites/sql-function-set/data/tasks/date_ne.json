@@ -1,0 +1,15 @@
+{
+  "func": "date_ne",
+  "variants": [
+    {
+      "arguments": "date date",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

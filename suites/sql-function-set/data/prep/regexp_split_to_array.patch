@@ -1,0 +1,63 @@
+diff --git a/src/backend/utils/adt/regexp.c b/src/backend/utils/adt/regexp.c
+index 637970d..9c06fd4 100644
+--- a/src/backend/utils/adt/regexp.c
++++ b/src/backend/utils/adt/regexp.c
+@@ -1804,54 +1804,18 @@ regexp_split_to_table_no_flags(PG_FUNCTION_ARGS)
+ 	return regexp_split_to_table(fcinfo);
+ }
+ 
+-/*
+- * regexp_split_to_array()
+- *		Split the string at matches of the pattern, returning the
+- *		split-out substrings as an array.
+- */
+ Datum
+ regexp_split_to_array(PG_FUNCTION_ARGS)
+ {
+-	ArrayBuildState *astate = NULL;
+-	pg_re_flags re_flags;
+-	regexp_matches_ctx *splitctx;
+-
+-	/* Determine options */
+-	parse_re_flags(&re_flags, PG_GETARG_TEXT_PP_IF_EXISTS(2));
+-	/* User mustn't specify 'g' */
+-	if (re_flags.glob)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-		/* translator: %s is a SQL function name */
+-				 errmsg("%s does not support the \"global\" option",
+-						"regexp_split_to_array()")));
+-	/* But we find all the matches anyway */
+-	re_flags.glob = true;
+-
+-	splitctx = setup_regexp_matches(PG_GETARG_TEXT_PP(0),
+-									PG_GETARG_TEXT_PP(1),
+-									&re_flags, 0,
+-									PG_GET_COLLATION(),
+-									false, true, true);
+-
+-	while (splitctx->next_match <= splitctx->nmatches)
+-	{
+-		astate = accumArrayResult(astate,
+-								  build_regexp_split_result(splitctx),
+-								  false,
+-								  TEXTOID,
+-								  CurrentMemoryContext);
+-		splitctx->next_match++;
+-	}
+-
+-	PG_RETURN_DATUM(makeArrayResult(astate, CurrentMemoryContext));
++	elog(ERROR, "regexp_split_to_array is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* This is separate to keep the opr_sanity regression test from complaining */
+ Datum
+ regexp_split_to_array_no_flags(PG_FUNCTION_ARGS)
+ {
+-	return regexp_split_to_array(fcinfo);
++	elog(ERROR, "regexp_split_to_array_no_flags is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,36 @@
+{
+  "name": "pg_multirangetypes_check_create_privilege",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "c27ba08cd5c58659b32805fe807683cde5429ab2",
+  "parent": "d7de7fa84d2492f15747163cbb2f4c5c110ec4a4",
+  "date": "2026-05-11",
+  "subject": "Check CREATE privilege on multirange type schema in CREATE TYPE.",
+  "area": "range types, schema privileges",
+  "licence": "PostgreSQL",
+  "goal": "CREATE TYPE ... AS RANGE checks schema CREATE privilege for the range type but can omit the check for an explicitly named multirange type placed in another schema.\n\nAs a role lacking CREATE on a target schema, create a range while specifying `MULTIRANGE_TYPE_NAME` in that schema. The command must be rejected without leaving either type behind. After granting CREATE it must succeed. Automatically named multiranges in the already-authorized range schema, and explicit names in authorized schemas, must remain supported.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/typecmds.c",
+      "added": 7,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/multirangetypes.sql",
+    "src/test/regress/expected/multirangetypes.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "multirangetypes"
+    ],
+    "command": "make -C src/test/regress check TESTS=multirangetypes"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

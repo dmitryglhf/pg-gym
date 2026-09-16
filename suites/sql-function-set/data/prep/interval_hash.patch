@@ -1,0 +1,36 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..14f77c1 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2586,29 +2586,11 @@ interval_cmp(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT32(interval_cmp_internal(interval1, interval2));
+ }
+ 
+-/*
+- * Hashing for intervals
+- *
+- * We must produce equal hashvals for values that interval_cmp_internal()
+- * considers equal.  So, compute the net span the same way it does,
+- * and then hash that.
+- */
+ Datum
+ interval_hash(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval = PG_GETARG_INTERVAL_P(0);
+-	INT128		span = interval_cmp_value(interval);
+-	int64		span64;
+-
+-	/*
+-	 * Use only the least significant 64 bits for hashing.  The upper 64 bits
+-	 * seldom add any useful information, and besides we must do it like this
+-	 * for compatibility with hashes calculated before use of INT128 was
+-	 * introduced.
+-	 */
+-	span64 = int128_to_int64(span);
+-
+-	return DirectFunctionCall1(hashint8, Int64GetDatumFast(span64));
++	elog(ERROR, "interval_hash is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

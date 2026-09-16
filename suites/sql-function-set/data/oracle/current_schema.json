@@ -1,0 +1,29 @@
+{
+  "func": "current_schema",
+  "mode": "stub",
+  "patch": "prep/current_schema.patch",
+  "symbols": [
+    "current_schema"
+  ],
+  "units": {
+    "current_schema": {
+      "file": "src/backend/utils/adt/name.c",
+      "code": "/*\n * SQL-functions CURRENT_SCHEMA, CURRENT_SCHEMAS\n */\nDatum\ncurrent_schema(PG_FUNCTION_ARGS)\n{\n\tList\t   *search_path = fetch_search_path(false);\n\tchar\t   *nspname;\n\n\tif (search_path == NIL)\n\t\tPG_RETURN_NULL();\n\tnspname = get_namespace_name(linitial_oid(search_path));\n\tlist_free(search_path);\n\tif (!nspname)\n\t\tPG_RETURN_NULL();\t\t/* recently-deleted namespace? */\n\tPG_RETURN_DATUM(DirectFunctionCall1(namein, CStringGetDatum(nspname)));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "expressions",
+    "temp"
+  ],
+  "category": "sysinfo",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 21,
+  "oracle_diff_by_file": {
+    "expressions": 15,
+    "temp": 6
+  }
+}

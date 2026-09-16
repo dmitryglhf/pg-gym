@@ -1,0 +1,25 @@
+{
+  "func": "to_timestamp",
+  "variants": [
+    {
+      "arguments": "float8",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert UNIX epoch to timestamptz"
+    },
+    {
+      "arguments": "text text",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert text to timestamp with time zone"
+    }
+  ],
+  "description": "Converts string to time stamp according to the given format. (See also to_timestamp(double precision) in .)\nConvert Unix epoch (seconds since 1970-01-01 00:00:00+00) to timestamp with time zone",
+  "examples": [
+    "to_timestamp('05 Dec 2000', 'DD Mon YYYY') -> 2000-12-05 00:00:00-05",
+    "to_timestamp(1284352323) -> 2010-09-13 04:32:03+00"
+  ],
+  "mode": "stub"
+}

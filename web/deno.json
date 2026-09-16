@@ -1,0 +1,59 @@
+{
+  "nodeModulesDir": "auto",
+  "fmt": {
+    "proseWrap": "preserve"
+  },
+  "tasks": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "deno serve -A _fresh/server.js",
+    "fmt": "deno fmt --check",
+    "lint": "deno lint",
+    "typecheck": "deno check main.ts client.ts routes/ islands/ components/ lib/",
+    "test": "deno test -A tests",
+    "check": "deno task fmt && deno task lint && deno task typecheck && deno task test",
+    "verify": "deno task check && deno task build"
+  },
+  "imports": {
+    "@/": "./",
+    "fresh": "jsr:@fresh/core@^2.3.3",
+    "fresh/runtime": "jsr:@fresh/core@^2.3.3/runtime",
+    "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1.1.2",
+    "@types/babel__core": "npm:@types/babel__core@^7",
+    "preact": "npm:preact@^10.27.1",
+    "preact/hooks": "npm:preact@^10.27.1/hooks",
+    "preact/jsx-runtime": "npm:preact@^10.27.1/jsx-runtime",
+    "vite": "npm:vite@^7.1.5"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "preact",
+    "jsxPrecompileSkipElements": [
+      "a",
+      "img",
+      "source",
+      "body",
+      "html",
+      "head",
+      "title",
+      "meta",
+      "script",
+      "link",
+      "style",
+      "base",
+      "noscript",
+      "template"
+    ],
+    "types": [
+      "vite/client"
+    ]
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "fresh",
+        "recommended"
+      ]
+    }
+  }
+}

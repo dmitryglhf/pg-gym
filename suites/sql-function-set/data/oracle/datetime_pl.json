@@ -1,0 +1,18 @@
+{
+  "func": "datetime_pl",
+  "mode": "stub",
+  "patch": "prep/datetime_pl.patch",
+  "symbols": [
+    "datetime_timestamp"
+  ],
+  "units": {
+    "datetime_timestamp": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* datetime_timestamp()\n * Convert date and time to timestamp data type.\n */\nDatum\ndatetime_timestamp(PG_FUNCTION_ARGS)\n{\n\tDateADT\t\tdate = PG_GETARG_DATEADT(0);\n\tTimeADT\t\ttime = PG_GETARG_TIMEADT(1);\n\tTimestamp\tresult;\n\n\tresult = date2timestamp(date);\n\tif (!TIMESTAMP_NOT_FINITE(result))\n\t{\n\t\tresult += time;\n\t\tif (!IS_VALID_TIMESTAMP(result))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

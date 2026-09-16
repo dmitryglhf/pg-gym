@@ -1,0 +1,36 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..fbe4d00 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -999,29 +999,11 @@ interval_out(PG_FUNCTION_ARGS)
+ 	PG_RETURN_CSTRING(result);
+ }
+ 
+-/*
+- *		interval_recv			- converts external binary format to interval
+- */
+ Datum
+ interval_recv(PG_FUNCTION_ARGS)
+ {
+-	StringInfo	buf = (StringInfo) PG_GETARG_POINTER(0);
+-
+-#ifdef NOT_USED
+-	Oid			typelem = PG_GETARG_OID(1);
+-#endif
+-	int32		typmod = PG_GETARG_INT32(2);
+-	Interval   *interval;
+-
+-	interval = (Interval *) palloc(sizeof(Interval));
+-
+-	interval->time = pq_getmsgint64(buf);
+-	interval->day = pq_getmsgint(buf, sizeof(interval->day));
+-	interval->month = pq_getmsgint(buf, sizeof(interval->month));
+-
+-	AdjustIntervalForTypmod(interval, typmod, NULL);
+-
+-	PG_RETURN_INTERVAL_P(interval);
++	elog(ERROR, "interval_recv is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

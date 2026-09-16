@@ -1,0 +1,15 @@
+{
+  "func": "interval_sum",
+  "variants": [
+    {
+      "arguments": "internal",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "aggregate final function"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

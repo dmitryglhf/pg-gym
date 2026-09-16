@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_hash",
+  "mode": "stub",
+  "patch": "prep/timestamp_hash.patch",
+  "symbols": [
+    "timestamp_hash"
+  ],
+  "units": {
+    "timestamp_hash": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_hash(PG_FUNCTION_ARGS)\n{\n\treturn hashint8(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

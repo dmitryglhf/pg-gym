@@ -1,0 +1,25 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..d77df2f 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1540,18 +1540,11 @@ time_recv(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMEADT(result);
+ }
+ 
+-/*
+- *		time_send			- converts time to binary format
+- */
+ Datum
+ time_send(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time = PG_GETARG_TIMEADT(0);
+-	StringInfoData buf;
+-
+-	pq_begintypsend(&buf);
+-	pq_sendint64(&buf, time);
+-	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
++	elog(ERROR, "time_send is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

@@ -1,0 +1,54 @@
+{
+  "func": "regexp_instr",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "position of regexp match"
+    },
+    {
+      "arguments": "text text int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "position of regexp match"
+    },
+    {
+      "arguments": "text text int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "position of regexp match"
+    },
+    {
+      "arguments": "text text int4 int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "position of regexp match"
+    },
+    {
+      "arguments": "text text int4 int4 int4 text",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "position of regexp match"
+    },
+    {
+      "arguments": "text text int4 int4 int4 text int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "position of regexp match"
+    }
+  ],
+  "description": "Returns the position within string where the N'th match of the POSIX regular expression pattern occurs, or zero if there is no such match.",
+  "examples": [
+    "regexp_instr('ABCDEF', 'c(.)(..)', 1, 1, 0, 'i') -> 3",
+    "regexp_instr('ABCDEF', 'c(.)(..)', 1, 1, 0, 'i', 2) -> 5"
+  ],
+  "mode": "stub",
+  "category": "pattern"
+}

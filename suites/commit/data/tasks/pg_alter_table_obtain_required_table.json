@@ -1,0 +1,10 @@
+{
+  "name": "pg_alter_table_obtain_required_table",
+  "area": "ALTER TABLE, cross-table constraints",
+  "goal": "ALTER TABLE can reach an assertion failure while changing the type of an attribute that is referenced through a composite value in another table's CHECK or exclusion constraint.\n\nFor example, create `attbl(a int)`, use its row type in a second table with a constraint such as `CHECK ((b).a IS NOT NULL)`, and alter `attbl.a` to numeric. The command must follow the normal supported or unsupported ALTER TABLE path and report an ordinary SQL error where appropriate, never an ownership-of-lock assertion or a partially updated catalog. Constraints in other relations must remain valid under the same concurrency rules as other dependent objects.",
+  "func": "pg_alter_table_obtain_required_table",
+  "graded_by": [
+    "src/test/regress/sql/alter_table.sql",
+    "src/test/regress/expected/alter_table.out"
+  ]
+}

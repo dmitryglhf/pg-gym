@@ -1,0 +1,36 @@
+{
+  "name": "pg_partition_prune_incorrect_multi_column",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "2d8494e24f75982a5663ea5ca55195ebf392fe76",
+  "parent": "4c8fa02c5feaf7dc9be85da06987836777cd34fe",
+  "date": "2026-08-28",
+  "subject": "Fix incorrect multi-column RANGE partition pruning",
+  "area": "partition pruning, multicolumn range keys",
+  "licence": "PostgreSQL",
+  "goal": "Range partition pruning can skip or retain the wrong partitions when a condition constrains only a prefix of a multicolumn partition key.\n\nFor a table partitioned by RANGE `(a,b)`, a condition such as `a <= 1` must retain every partition whose bounds can contain that prefix, including the default partition, while pruning a partition wholly above it. In the complementary layout, `c1 > 7` must prune the explicit partition that cannot match and retain the default where needed. EXPLAIN and actual results must agree for inclusive and exclusive operators; fully constrained keys and single-column range pruning must not regress.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/partitioning/partprune.c",
+      "added": 11,
+      "deleted": 3
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/partition_prune.sql",
+    "src/test/regress/expected/partition_prune.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "partition_prune"
+    ],
+    "command": "make -C src/test/regress check TESTS=partition_prune"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

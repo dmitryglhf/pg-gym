@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_sortsupport",
+  "mode": "stub",
+  "patch": "prep/timestamp_sortsupport.patch",
+  "symbols": [
+    "timestamp_sortsupport"
+  ],
+  "units": {
+    "timestamp_sortsupport": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_sortsupport(PG_FUNCTION_ARGS)\n{\n\tSortSupport ssup = (SortSupport) PG_GETARG_POINTER(0);\n\n#if SIZEOF_DATUM >= 8\n\n\t/*\n\t * If this build has pass-by-value timestamps, then we can use a standard\n\t * comparator function.\n\t */\n\tssup->comparator = ssup_datum_signed_cmp;\n#else\n\tssup->comparator = timestamp_fastcmp;\n#endif\n\tPG_RETURN_VOID();\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

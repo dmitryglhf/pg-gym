@@ -1,0 +1,53 @@
+diff --git a/src/backend/utils/adt/network.c b/src/backend/utils/adt/network.c
+index 640fc37..abeeaa3 100644
+--- a/src/backend/utils/adt/network.c
++++ b/src/backend/utils/adt/network.c
+@@ -1284,46 +1284,8 @@ network_family(PG_FUNCTION_ARGS)
+ Datum
+ network_broadcast(PG_FUNCTION_ARGS)
+ {
+-	inet	   *ip = PG_GETARG_INET_PP(0);
+-	inet	   *dst;
+-	int			byte;
+-	int			bits;
+-	int			maxbytes;
+-	unsigned char mask;
+-	unsigned char *a,
+-			   *b;
+-
+-	/* make sure any unused bits are zeroed */
+-	dst = (inet *) palloc0(sizeof(inet));
+-
+-	maxbytes = ip_addrsize(ip);
+-	bits = ip_bits(ip);
+-	a = ip_addr(ip);
+-	b = ip_addr(dst);
+-
+-	for (byte = 0; byte < maxbytes; byte++)
+-	{
+-		if (bits >= 8)
+-		{
+-			mask = 0x00;
+-			bits -= 8;
+-		}
+-		else if (bits == 0)
+-			mask = 0xff;
+-		else
+-		{
+-			mask = 0xff >> bits;
+-			bits = 0;
+-		}
+-
+-		b[byte] = a[byte] | mask;
+-	}
+-
+-	ip_family(dst) = ip_family(ip);
+-	ip_bits(dst) = ip_bits(ip);
+-	SET_INET_VARSIZE(dst);
+-
+-	PG_RETURN_INET_P(dst);
++	elog(ERROR, "network_broadcast is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

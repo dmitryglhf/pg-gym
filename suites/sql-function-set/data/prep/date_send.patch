@@ -1,0 +1,25 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..abf3a5d 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -224,18 +224,11 @@ date_recv(PG_FUNCTION_ARGS)
+ 	PG_RETURN_DATEADT(result);
+ }
+ 
+-/*
+- *		date_send			- converts date to binary format
+- */
+ Datum
+ date_send(PG_FUNCTION_ARGS)
+ {
+-	DateADT		date = PG_GETARG_DATEADT(0);
+-	StringInfoData buf;
+-
+-	pq_begintypsend(&buf);
+-	pq_sendint32(&buf, date);
+-	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
++	elog(ERROR, "date_send is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

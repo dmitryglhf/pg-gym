@@ -1,0 +1,17 @@
+{
+  "func": "make_timestamp",
+  "variants": [
+    {
+      "arguments": "int4 int4 int4 int4 int4 float8",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "construct timestamp"
+    }
+  ],
+  "description": "Create timestamp from year, month, day, hour, minute and seconds fields (negative years signify BC)",
+  "examples": [
+    "make_timestamp(2013, 7, 15, 8, 15, 23.5) -> 2013-07-15 08:15:23.5"
+  ],
+  "mode": "stub"
+}

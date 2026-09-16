@@ -1,0 +1,18 @@
+{
+  "func": "time_mi_time",
+  "mode": "stub",
+  "patch": "prep/time_mi_time.patch",
+  "symbols": [
+    "time_mi_time"
+  ],
+  "units": {
+    "time_mi_time": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* time_mi_time()\n * Subtract two times to produce an interval.\n */\nDatum\ntime_mi_time(PG_FUNCTION_ARGS)\n{\n\tTimeADT\t\ttime1 = PG_GETARG_TIMEADT(0);\n\tTimeADT\t\ttime2 = PG_GETARG_TIMEADT(1);\n\tInterval   *result;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\tresult->month = 0;\n\tresult->day = 0;\n\tresult->time = time1 - time2;\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

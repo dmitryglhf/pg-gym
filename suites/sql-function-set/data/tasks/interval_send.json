@@ -1,0 +1,15 @@
+{
+  "func": "interval_send",
+  "variants": [
+    {
+      "arguments": "interval",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

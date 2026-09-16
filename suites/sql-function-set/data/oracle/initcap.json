@@ -1,0 +1,31 @@
+{
+  "func": "initcap",
+  "mode": "stub",
+  "patch": "prep/initcap.patch",
+  "symbols": [
+    "initcap"
+  ],
+  "units": {
+    "initcap": {
+      "file": "src/backend/utils/adt/oracle_compat.c",
+      "code": "/********************************************************************\n *\n * initcap\n *\n * Syntax:\n *\n *\t text initcap(text string)\n *\n * Purpose:\n *\n *\t Returns string, with first letter of each word in uppercase, all\n *\t other letters in lowercase. A word is defined as a sequence of\n *\t alphanumeric characters, delimited by non-alphanumeric\n *\t characters.\n *\n ********************************************************************/\n\nDatum\ninitcap(PG_FUNCTION_ARGS)\n{\n\ttext\t   *in_string = PG_GETARG_TEXT_PP(0);\n\tchar\t   *out_string;\n\ttext\t   *result;\n\n\tout_string = str_initcap(VARDATA_ANY(in_string),\n\t\t\t\t\t\t\t VARSIZE_ANY_EXHDR(in_string),\n\t\t\t\t\t\t\t PG_GET_COLLATION());\n\tresult = cstring_to_text(out_string);\n\tpfree(out_string);\n\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "collate",
+    "collate.utf8",
+    "strings"
+  ],
+  "category": "string",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 21,
+  "oracle_diff_by_file": {
+    "strings": 5,
+    "collate": 6,
+    "collate.utf8": 10
+  }
+}

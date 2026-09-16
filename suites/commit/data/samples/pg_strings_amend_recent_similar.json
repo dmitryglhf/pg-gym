@@ -1,0 +1,36 @@
+{
+  "name": "pg_strings_amend_recent_similar",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e09adb5b9fc9dec27c7ff9e9592723d7d8098b03",
+  "parent": "a220e40d11063cf2e43bdfb5e1ca872fe201f37d",
+  "date": "2025-09-13",
+  "subject": "Amend recent fix for SIMILAR TO regex conversion.",
+  "area": "SIMILAR TO, character classes",
+  "licence": "PostgreSQL",
+  "goal": "SIMILAR TO conversion mishandles a closing bracket immediately after an escaped character at the beginning of a character class. It can keep the class open and change the meaning of the remaining pattern.\n\nFor `f1 SIMILAR TO '[|a]%' ESCAPE '|'`, EXPLAIN must show an equivalent regular expression in which the bracket closes that character class and the trailing percent remains the wildcard outside it. Matching results must follow SQL SIMILAR TO semantics. Escaped brackets elsewhere, ordinary character classes and patterns without ESCAPE must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/regexp.c",
+      "added": 70,
+      "deleted": 27
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/strings.sql",
+    "src/test/regress/expected/strings.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "strings"
+    ],
+    "command": "make -C src/test/regress check TESTS=strings"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

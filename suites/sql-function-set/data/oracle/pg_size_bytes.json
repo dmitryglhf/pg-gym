@@ -1,0 +1,29 @@
+{
+  "func": "pg_size_bytes",
+  "mode": "stub",
+  "patch": "prep/pg_size_bytes.patch",
+  "symbols": [
+    "pg_size_bytes"
+  ],
+  "units": {
+    "pg_size_bytes": {
+      "file": "src/backend/utils/adt/dbsize.c",
+      "code": "/*\n * Convert a human-readable size to a size in bytes\n */\nDatum\npg_size_bytes(PG_FUNCTION_ARGS)\n{\n\ttext\t   *arg = PG_GETARG_TEXT_PP(0);\n\tchar\t   *str,\n\t\t\t   *strptr,\n\t\t\t   *endptr;\n\tchar\t\tsaved_char;\n\tNumeric\t\tnum;\n\tint64\t\tresult;\n\tbool\t\thave_digits = false;\n\n\tstr = text_to_cstring(arg);\n\n\t/* Skip leading whitespace */\n\tstrptr = str;\n\twhile (isspace((unsigned char) *strptr))\n\t\tstrptr++;\n\n\t/* Check that we have a valid number and determine where it ends */\n\tendptr = strptr;\n\n\t/* Part (1): sign */\n\tif (*endptr == '-' || *endptr == '+')\n\t\tendptr++;\n\n\t/* Part (2): main digit string */\n\tif (isdigit((unsigned char) *endptr))\n\t{\n\t\thave_digits = true;\n\t\tdo\n\t\t\tendptr++;\n\t\twhile (isdigit((unsigned char) *endptr));\n\t}\n\n\t/* Part (3): optional decimal point and fractional digits */\n\tif (*endptr == '.')\n\t{\n\t\tendptr++;\n\t\tif (isdigit((unsigned char) *endptr))\n\t\t{\n\t\t\thave_digits = true;\n\t\t\tdo\n\t\t\t\tendptr++;\n\t\t\twhile (isdigit((unsigned char) *endptr));\n\t\t}\n\t}\n\n\t/* Complain if we don't have a valid number at this point */\n\tif (!have_digits)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"invalid size: \\\"%s\\\"\", str)));\n\n\t/* Part (4): optional exponent */\n\tif (*endptr == 'e' || *endptr == 'E')\n\t{\n\t\tlong\t\texponent;\n\t\tchar\t   *cp;\n\n\t\t/*\n\t\t * Note we might one day support EB units, so if what follows 'E'\n\t\t * isn't a number, just treat it all as a unit to be parsed.\n\t\t */\n\t\texponent = strtol(endptr + 1, &cp, 10);\n\t\t(void) exponent;\t\t/* Silence -Wunused-result warnings */\n\t\tif (cp > endptr + 1)\n\t\t\tendptr = cp;\n\t}\n\n\t/*\n\t * Parse the number, saving the next character, which may be the first\n\t * character of the unit string.\n\t */\n\tsaved_char = *endptr;\n\t*endptr = '\\0';\n\n\tnum = DatumGetNumeric(DirectFunctionCall3(numeric_in,\n\t\t\t\t\t\t\t\t\t\t\t  CStringGetDatum(strptr),\n\t\t\t\t\t\t\t\t\t\t\t  ObjectIdGetDatum(InvalidOid),\n\t\t\t\t\t\t\t\t\t\t\t  Int32GetDatum(-1)));\n\n\t*endptr = saved_char;\n\n\t/* Skip whitespace between number and unit */\n\tstrptr = endptr;\n\twhile (isspace((unsigned char) *strptr))\n\t\tstrptr++;\n\n\t/* Handle possible unit */\n\tif (*strptr != '\\0')\n\t{\n\t\tconst struct size_pretty_unit *unit;\n\t\tint64\t\tmultiplier = 0;\n\n\t\t/* Trim any trailing whitespace */\n\t\tendptr = str + VARSIZE_ANY_EXHDR(arg) - 1;\n\n\t\twhile (isspace((unsigned char) *endptr))\n\t\t\tendptr--;\n\n\t\tendptr++;\n\t\t*endptr = '\\0';\n\n\t\tfor (unit = size_pretty_units; unit->name != NULL; unit++)\n\t\t{\n\t\t\t/* Parse the unit case-insensitively */\n\t\t\tif (pg_strcasecmp(strptr, unit->name) == 0)\n\t\t\t\tbreak;\n\t\t}\n\n\t\t/* If not found, look in table of aliases */\n\t\tif (unit->name == NULL)\n\t\t{\n\t\t\tfor (const struct size_bytes_unit_alias *a = size_bytes_aliases; a->alias != NULL; a++)\n\t\t\t{\n\t\t\t\tif (pg_strcasecmp(strptr, a->alias) == 0)\n\t\t\t\t{\n\t\t\t\t\tunit = &size_pretty_units[a->unit_index];\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t/* Verify we found a valid unit in the loop above */\n\t\tif (unit->name == NULL)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"invalid size: \\\"%s\\\"\", text_to_cstring(arg)),\n\t\t\t\t\t errdetail(\"Invalid size unit: \\\"%s\\\".\", strptr),\n\t\t\t\t\t errhint(\"Valid units are \\\"bytes\\\", \\\"B\\\", \\\"kB\\\", \\\"MB\\\", \\\"GB\\\", \\\"TB\\\", and \\\"PB\\\".\")));\n\n\t\tmultiplier = ((int64) 1) << unit->unitbits;\n\n\t\tif (multiplier > 1)\n\t\t{\n\t\t\tNumeric\t\tmul_num;\n\n\t\t\tmul_num = int64_to_numeric(multiplier);\n\n\t\t\tnum = DatumGetNumeric(DirectFunctionCall2(numeric_mul,\n\t\t\t\t\t\t\t\t\t\t\t\t\t  NumericGetDatum(mul_num),\n\t\t\t\t\t\t\t\t\t\t\t\t\t  NumericGetDatum(num)));\n\t\t}\n\t}\n\n\tresult = DatumGetInt64(DirectFunctionCall1(numeric_int8,\n\t\t\t\t\t\t\t\t\t\t\t   NumericGetDatum(num)));\n\n\tPG_RETURN_INT64(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "dbsize",
+    "vacuum_parallel"
+  ],
+  "category": "sysinfo",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 107,
+  "oracle_diff_by_file": {
+    "dbsize": 97,
+    "vacuum_parallel": 10
+  }
+}

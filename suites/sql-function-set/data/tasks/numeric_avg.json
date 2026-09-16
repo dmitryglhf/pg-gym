@@ -1,0 +1,16 @@
+{
+  "func": "numeric_avg",
+  "variants": [
+    {
+      "arguments": "internal",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "aggregate final function"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub",
+  "category": "aggregate"
+}

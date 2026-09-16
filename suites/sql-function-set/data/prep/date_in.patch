@@ -1,0 +1,82 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..eaa8681 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -106,75 +106,11 @@ anytime_typmodout(bool istz, int32 typmod)
+  *****************************************************************************/
+ 
+ 
+-/* date_in()
+- * Given date text string, convert to internal date format.
+- */
+ Datum
+ date_in(PG_FUNCTION_ARGS)
+ {
+-	char	   *str = PG_GETARG_CSTRING(0);
+-	Node	   *escontext = fcinfo->context;
+-	DateADT		date;
+-	fsec_t		fsec;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	int			tzp;
+-	int			dtype;
+-	int			nf;
+-	int			dterr;
+-	char	   *field[MAXDATEFIELDS];
+-	int			ftype[MAXDATEFIELDS];
+-	char		workbuf[MAXDATELEN + 1];
+-	DateTimeErrorExtra extra;
+-
+-	dterr = ParseDateTime(str, workbuf, sizeof(workbuf),
+-						  field, ftype, MAXDATEFIELDS, &nf);
+-	if (dterr == 0)
+-		dterr = DecodeDateTime(field, ftype, nf,
+-							   &dtype, tm, &fsec, &tzp, &extra);
+-	if (dterr != 0)
+-	{
+-		DateTimeParseError(dterr, &extra, str, "date", escontext);
+-		PG_RETURN_NULL();
+-	}
+-
+-	switch (dtype)
+-	{
+-		case DTK_DATE:
+-			break;
+-
+-		case DTK_EPOCH:
+-			GetEpochTime(tm);
+-			break;
+-
+-		case DTK_LATE:
+-			DATE_NOEND(date);
+-			PG_RETURN_DATEADT(date);
+-
+-		case DTK_EARLY:
+-			DATE_NOBEGIN(date);
+-			PG_RETURN_DATEADT(date);
+-
+-		default:
+-			DateTimeParseError(DTERR_BAD_FORMAT, &extra, str, "date", escontext);
+-			PG_RETURN_NULL();
+-	}
+-
+-	/* Prevent overflow in Julian-day routines */
+-	if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
+-		ereturn(escontext, (Datum) 0,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("date out of range: \"%s\"", str)));
+-
+-	date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+-
+-	/* Now check for just-out-of-range dates */
+-	if (!IS_VALID_DATE(date))
+-		ereturn(escontext, (Datum) 0,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("date out of range: \"%s\"", str)));
+-
+-	PG_RETURN_DATEADT(date);
++	elog(ERROR, "date_in is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* date_out()

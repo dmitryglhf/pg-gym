@@ -1,0 +1,18 @@
+{
+  "func": "network",
+  "variants": [
+    {
+      "arguments": "inet",
+      "returns": "cidr",
+      "kind": "f",
+      "volatile": "i",
+      "description": "network part of address"
+    }
+  ],
+  "description": "Returns the network part of the address, zeroing out whatever is to the right of the netmask. (This is equivalent to casting the value to cidr.)",
+  "examples": [
+    "network(inet '192.168.1.5/24') -> 192.168.1.0/24"
+  ],
+  "mode": "stub",
+  "category": "network"
+}

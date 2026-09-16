@@ -1,0 +1,44 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..5dd6f2e 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3336,16 +3336,11 @@ timestamptz_mi_interval_internal(TimestampTz timestamp,
+ 	return timestamptz_pl_interval_internal(timestamp, &tspan, attimezone);
+ }
+ 
+-/* timestamptz_pl_interval()
+- * Add an interval to a timestamptz, in the session timezone.
+- */
+ Datum
+ timestamptz_pl_interval(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-
+-	PG_RETURN_TIMESTAMP(timestamptz_pl_interval_internal(timestamp, span, NULL));
++	elog(ERROR, "timestamptz_pl_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+@@ -3357,18 +3352,11 @@ timestamptz_mi_interval(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(timestamptz_mi_interval_internal(timestamp, span, NULL));
+ }
+ 
+-/* timestamptz_pl_interval_at_zone()
+- * Add an interval to a timestamptz, in the specified timezone.
+- */
+ Datum
+ timestamptz_pl_interval_at_zone(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-	text	   *zone = PG_GETARG_TEXT_PP(2);
+-	pg_tz	   *attimezone = lookup_timezone(zone);
+-
+-	PG_RETURN_TIMESTAMP(timestamptz_pl_interval_internal(timestamp, span, attimezone));
++	elog(ERROR, "timestamptz_pl_interval_at_zone is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

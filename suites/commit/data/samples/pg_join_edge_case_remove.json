@@ -1,0 +1,36 @@
+{
+  "name": "pg_join_edge_case_remove",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "cdcec567da1ba72e1cf9daa8356463ca23682f54",
+  "parent": "355faed5a24998859a8477cc17e6cd62a0de2214",
+  "date": "2026-07-18",
+  "subject": "Fix edge case in remove_useless_result_rtes() with outer joins.",
+  "area": "planner, removal of one-row relations",
+  "licence": "PostgreSQL",
+  "goal": "Removing a trivial one-row relation from a join tree can also remove the only place where a computed value receives outer-join null extension, producing a constant instead of NULL.\n\nReproduce it with a VALUES relation left joined to a nested subquery whose innermost `SELECT WHERE false` feeds a computed constant and another left join. The two outer VALUES rows must each return NULL for that computed column, not the constant 7. Join simplification may still remove relations when no output expression depends on their null-extension behavior, and unaffected result plans must stay stable.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/prep/prepjointree.c",
+      "added": 51,
+      "deleted": 13
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "join"
+    ],
+    "command": "make -C src/test/regress check TESTS=join"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

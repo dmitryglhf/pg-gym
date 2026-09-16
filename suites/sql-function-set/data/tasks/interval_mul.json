@@ -1,0 +1,15 @@
+{
+  "func": "interval_mul",
+  "variants": [
+    {
+      "arguments": "interval float8",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

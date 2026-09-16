@@ -1,0 +1,37 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..084a40f 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1514,30 +1514,11 @@ time_out(PG_FUNCTION_ARGS)
+ 	PG_RETURN_CSTRING(result);
+ }
+ 
+-/*
+- *		time_recv			- converts external binary format to time
+- */
+ Datum
+ time_recv(PG_FUNCTION_ARGS)
+ {
+-	StringInfo	buf = (StringInfo) PG_GETARG_POINTER(0);
+-
+-#ifdef NOT_USED
+-	Oid			typelem = PG_GETARG_OID(1);
+-#endif
+-	int32		typmod = PG_GETARG_INT32(2);
+-	TimeADT		result;
+-
+-	result = pq_getmsgint64(buf);
+-
+-	if (result < INT64CONST(0) || result > USECS_PER_DAY)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("time out of range")));
+-
+-	AdjustTimeForTypmod(&result, typmod);
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "time_recv is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

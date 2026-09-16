@@ -1,0 +1,18 @@
+{
+  "func": "timetz_hash_extended",
+  "mode": "stub",
+  "patch": "prep/timetz_hash_extended.patch",
+  "symbols": [
+    "timetz_hash_extended"
+  ],
+  "units": {
+    "timetz_hash_extended": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntimetz_hash_extended(PG_FUNCTION_ARGS)\n{\n\tTimeTzADT  *key = PG_GETARG_TIMETZADT_P(0);\n\tDatum\t\tseed = PG_GETARG_DATUM(1);\n\tuint64\t\tthash;\n\n\t/* Same approach as timetz_hash */\n\tthash = DatumGetUInt64(DirectFunctionCall2(hashint8extended,\n\t\t\t\t\t\t\t\t\t\t\t   Int64GetDatumFast(key->time),\n\t\t\t\t\t\t\t\t\t\t\t   seed));\n\tthash ^= DatumGetUInt64(hash_uint32_extended(key->zone,\n\t\t\t\t\t\t\t\t\t\t\t\t DatumGetInt64(seed)));\n\tPG_RETURN_UINT64(thash);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

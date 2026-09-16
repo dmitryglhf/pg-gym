@@ -1,0 +1,132 @@
+diff --git a/src/backend/utils/adt/datetime.c b/src/backend/utils/adt/datetime.c
+index 7abdc62..3f4761b 100644
+--- a/src/backend/utils/adt/datetime.c
++++ b/src/backend/utils/adt/datetime.c
+@@ -4993,125 +4993,11 @@ FetchDynamicTimeZone(TimeZoneAbbrevTable *tbl, const datetkn *tp,
+ }
+ 
+ 
+-/*
+- * This set-returning function reads all the available time zone abbreviations
+- * and returns a set of (abbrev, utc_offset, is_dst).
+- */
+ Datum
+ pg_timezone_abbrevs(PG_FUNCTION_ARGS)
+ {
+-	FuncCallContext *funcctx;
+-	int		   *pindex;
+-	Datum		result;
+-	HeapTuple	tuple;
+-	Datum		values[3];
+-	bool		nulls[3] = {0};
+-	const datetkn *tp;
+-	char		buffer[TOKMAXLEN + 1];
+-	int			gmtoffset;
+-	bool		is_dst;
+-	unsigned char *p;
+-	struct pg_itm_in itm_in;
+-	Interval   *resInterval;
+-
+-	/* stuff done only on the first call of the function */
+-	if (SRF_IS_FIRSTCALL())
+-	{
+-		TupleDesc	tupdesc;
+-		MemoryContext oldcontext;
+-
+-		/* create a function context for cross-call persistence */
+-		funcctx = SRF_FIRSTCALL_INIT();
+-
+-		/*
+-		 * switch to memory context appropriate for multiple function calls
+-		 */
+-		oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+-
+-		/* allocate memory for user context */
+-		pindex = (int *) palloc(sizeof(int));
+-		*pindex = 0;
+-		funcctx->user_fctx = (void *) pindex;
+-
+-		if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
+-			elog(ERROR, "return type must be a row type");
+-		funcctx->tuple_desc = tupdesc;
+-
+-		MemoryContextSwitchTo(oldcontext);
+-	}
+-
+-	/* stuff done on every call of the function */
+-	funcctx = SRF_PERCALL_SETUP();
+-	pindex = (int *) funcctx->user_fctx;
+-
+-	if (zoneabbrevtbl == NULL ||
+-		*pindex >= zoneabbrevtbl->numabbrevs)
+-		SRF_RETURN_DONE(funcctx);
+-
+-	tp = zoneabbrevtbl->abbrevs + *pindex;
+-
+-	switch (tp->type)
+-	{
+-		case TZ:
+-			gmtoffset = tp->value;
+-			is_dst = false;
+-			break;
+-		case DTZ:
+-			gmtoffset = tp->value;
+-			is_dst = true;
+-			break;
+-		case DYNTZ:
+-			{
+-				/* Determine the current meaning of the abbrev */
+-				pg_tz	   *tzp;
+-				DateTimeErrorExtra extra;
+-				TimestampTz now;
+-				int			isdst;
+-
+-				tzp = FetchDynamicTimeZone(zoneabbrevtbl, tp, &extra);
+-				if (tzp == NULL)
+-					DateTimeParseError(DTERR_BAD_ZONE_ABBREV, &extra,
+-									   NULL, NULL, NULL);
+-				now = GetCurrentTransactionStartTimestamp();
+-				gmtoffset = -DetermineTimeZoneAbbrevOffsetTS(now,
+-															 tp->token,
+-															 tzp,
+-															 &isdst);
+-				is_dst = (bool) isdst;
+-				break;
+-			}
+-		default:
+-			elog(ERROR, "unrecognized timezone type %d", (int) tp->type);
+-			gmtoffset = 0;		/* keep compiler quiet */
+-			is_dst = false;
+-			break;
+-	}
+-
+-	/*
+-	 * Convert name to text, using upcasing conversion that is the inverse of
+-	 * what ParseDateTime() uses.
+-	 */
+-	strlcpy(buffer, tp->token, sizeof(buffer));
+-	for (p = (unsigned char *) buffer; *p; p++)
+-		*p = pg_toupper(*p);
+-
+-	values[0] = CStringGetTextDatum(buffer);
+-
+-	/* Convert offset (in seconds) to an interval; can't overflow */
+-	MemSet(&itm_in, 0, sizeof(struct pg_itm_in));
+-	itm_in.tm_usec = (int64) gmtoffset * USECS_PER_SEC;
+-	resInterval = (Interval *) palloc(sizeof(Interval));
+-	(void) itmin2interval(&itm_in, resInterval);
+-	values[1] = IntervalPGetDatum(resInterval);
+-
+-	values[2] = BoolGetDatum(is_dst);
+-
+-	(*pindex)++;
+-
+-	tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+-	result = HeapTupleGetDatum(tuple);
+-
+-	SRF_RETURN_NEXT(funcctx, result);
++	elog(ERROR, "pg_timezone_abbrevs is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

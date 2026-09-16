@@ -1,0 +1,36 @@
+{
+  "name": "pg_privileges_sort_do_default",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e8d22095e5df4d22513ce553998eef899f5f0692",
+  "parent": "7b434f96462f309098603b01bbc4b319312252c4",
+  "date": "2025-08-22",
+  "subject": "Sort DO_DEFAULT_ACL dump objects independent of OIDs.",
+  "area": "pg_dump, object sort order",
+  "licence": "PostgreSQL",
+  "goal": "Two ALTER DEFAULT PRIVILEGES entries for different roles but the same schema and object type can become indistinguishable to pg_dump's object ordering. An assert-enabled build may fail, and otherwise dump order can depend on database OIDs, producing spurious differences between equivalent databases.\n\n    ALTER DEFAULT PRIVILEGES FOR ROLE pg_signal_backend\n        REVOKE INSERT ON TABLES FROM pg_signal_backend;\n    ALTER DEFAULT PRIVILEGES FOR ROLE pg_read_all_settings\n        REVOKE INSERT ON TABLES FROM pg_read_all_settings;\n\nTwo such entries have to come out in a deterministic order based only on database contents, never on OIDs. Their order must remain stable through the dump/restore checks, while the relative order of every other kind of dumpable object stays unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/bin/pg_dump/pg_dump_sort.c",
+      "added": 13,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "privileges"
+    ],
+    "command": "make -C src/test/regress check TESTS=privileges"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_sqljson_copy_paste_error",
+  "area": "SQL/JSON, object keys",
+  "goal": "JSON_OBJECT can accept a key whose value is converted to JSON by a user-defined implicit cast, even though the converted value is JSON rather than a scalar SQL value suitable for an object key.\n\nCreate an enum and an implicit cast from it to json, then use an enum value as a JSON_OBJECT key. The command must fail with `key value must be scalar, not array, composite, or json`. Ordinary scalar keys, including enums without such a JSON cast, and JSON values on the value side must retain their behavior.",
+  "func": "pg_sqljson_copy_paste_error",
+  "graded_by": [
+    "src/test/regress/sql/sqljson.sql",
+    "src/test/regress/expected/sqljson.out"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "func": "array_cat",
+  "variants": [
+    {
+      "arguments": "anycompatiblearray anycompatiblearray",
+      "returns": "anycompatiblearray",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "Concatenates two arrays (same as the anycompatiblearray || anycompatiblearray operator).",
+  "examples": [
+    "array_cat(ARRAY[1,2,3], ARRAY[4,5]) -> {1,2,3,4,5}"
+  ],
+  "mode": "stub",
+  "category": "array"
+}

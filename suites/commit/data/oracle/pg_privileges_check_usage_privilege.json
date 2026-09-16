@@ -1,0 +1,27 @@
+{
+  "func": "pg_privileges_check_usage_privilege",
+  "sha": "67135960559d5e623757ffa8ec0ab4d94293dfc2",
+  "parent": "d1c8aa0b09f18bba1343ce2e4aa537a17a8a972f",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_privileges_check_usage_privilege.patch",
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c\nindex 2d9047f5..d042d90a 100644\n--- a/src/backend/commands/tablecmds.c\n+++ b/src/backend/commands/tablecmds.c\n@@ -16536,6 +16536,7 @@ ATExecAddOf(Relation rel, const TypeName *ofTypename, LOCKMODE lockmode)\n \tObjectAddress tableobj,\n \t\t\t\ttypeobj;\n \tHeapTuple\tclasstuple;\n+\tAclResult\taclresult;\n \n \t/* Validate the type. */\n \ttypetuple = typenameType(NULL, ofTypename, NULL);\n@@ -16543,6 +16544,10 @@ ATExecAddOf(Relation rel, const TypeName *ofTypename, LOCKMODE lockmode)\n \ttypeform = (Form_pg_type) GETSTRUCT(typetuple);\n \ttypeid = typeform->oid;\n \n+\taclresult = object_aclcheck(TypeRelationId, typeid, GetUserId(), ACL_USAGE);\n+\tif (aclresult != ACLCHECK_OK)\n+\t\taclcheck_error_type(aclresult, typeid);\n+\n \t/* Fail if the table has any inheritance parents. */\n \tinheritsRelation = table_open(InheritsRelationId, AccessShareLock);\n \tScanKeyInit(&key,\n",
+  "test": "diff --git a/src/test/regress/expected/privileges.out b/src/test/regress/expected/privileges.out\nindex 78149a80..4fbcfb1b 100644\n--- a/src/test/regress/expected/privileges.out\n+++ b/src/test/regress/expected/privileges.out\n@@ -1335,6 +1335,9 @@ CREATE TABLE test5a (a int, b priv_testdomain1);\n ERROR:  permission denied for type priv_testdomain1\n CREATE TABLE test6a OF priv_testtype1;\n ERROR:  permission denied for type priv_testtype1\n+CREATE TABLE test6a2 (a int, b text);\n+ALTER TABLE test6a2 OF priv_testtype1;\n+ERROR:  permission denied for type priv_testtype1\n CREATE TABLE test10a (a int[], b priv_testtype1[]);\n ERROR:  permission denied for type priv_testtype1\n CREATE TABLE test9a (a int, b int);\n@@ -1382,6 +1385,8 @@ CREATE FUNCTION priv_testfunc7b(a int DEFAULT ('(0,1)'::priv_testtype1).a) RETUR\n CREATE OPERATOR !! (PROCEDURE = priv_testfunc5b, RIGHTARG = priv_testdomain1);\n CREATE TABLE test5b (a int, b priv_testdomain1);\n CREATE TABLE test6b OF priv_testtype1;\n+CREATE TABLE test6b2 (a int, b text);\n+ALTER TABLE test6b2 OF priv_testtype1;\n CREATE TABLE test10b (a int[], b priv_testtype1[]);\n CREATE TABLE test9b (a int, b int);\n ALTER TABLE test9b ADD COLUMN c priv_testdomain1;\n@@ -1423,6 +1428,7 @@ DROP FUNCTION priv_testfunc6b(b int);\n DROP FUNCTION priv_testfunc7b(a int);\n DROP TABLE test5b;\n DROP TABLE test6b;\n+DROP TABLE test6b2;\n DROP TABLE test9b;\n DROP TABLE test10b;\n DROP TYPE test7b;\ndiff --git a/src/test/regress/sql/privileges.sql b/src/test/regress/sql/privileges.sql\nindex 8fc81eae..0b7625ef 100644\n--- a/src/test/regress/sql/privileges.sql\n+++ b/src/test/regress/sql/privileges.sql\n@@ -941,6 +941,8 @@ CREATE OPERATOR !+! (PROCEDURE = int4pl, LEFTARG = priv_testdomain1, RIGHTARG =\n \n CREATE TABLE test5a (a int, b priv_testdomain1);\n CREATE TABLE test6a OF priv_testtype1;\n+CREATE TABLE test6a2 (a int, b text);\n+ALTER TABLE test6a2 OF priv_testtype1;\n CREATE TABLE test10a (a int[], b priv_testtype1[]);\n \n CREATE TABLE test9a (a int, b int);\n@@ -989,6 +991,8 @@ CREATE OPERATOR !! (PROCEDURE = priv_testfunc5b, RIGHTARG = priv_testdomain1);\n \n CREATE TABLE test5b (a int, b priv_testdomain1);\n CREATE TABLE test6b OF priv_testtype1;\n+CREATE TABLE test6b2 (a int, b text);\n+ALTER TABLE test6b2 OF priv_testtype1;\n CREATE TABLE test10b (a int[], b priv_testtype1[]);\n \n CREATE TABLE test9b (a int, b int);\n@@ -1036,6 +1040,7 @@ DROP FUNCTION priv_testfunc6b(b int);\n DROP FUNCTION priv_testfunc7b(a int);\n DROP TABLE test5b;\n DROP TABLE test6b;\n+DROP TABLE test6b2;\n DROP TABLE test9b;\n DROP TABLE test10b;\n DROP TYPE test7b;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=privileges",
+  "expected_tests": [
+    "privileges"
+  ],
+  "failing_tests": [
+    "privileges"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 4,
+  "oracle_diff_by_file": {
+    "privileges": 4
+  }
+}

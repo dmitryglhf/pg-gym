@@ -1,0 +1,64 @@
+{
+  "func": "timestamp_out",
+  "mode": "stub",
+  "patch": "prep/timestamp_out.patch",
+  "symbols": [
+    "timestamp_out"
+  ],
+  "units": {
+    "timestamp_out": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamp_out()\n * Convert a timestamp to external form.\n */\nDatum\ntimestamp_out(PG_FUNCTION_ARGS)\n{\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(0);\n\tchar\t   *result;\n\tstruct pg_tm tt,\n\t\t\t   *tm = &tt;\n\tfsec_t\t\tfsec;\n\tchar\t\tbuf[MAXDATELEN + 1];\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tEncodeSpecialTimestamp(timestamp, buf);\n\telse if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0)\n\t\tEncodeDateTime(tm, fsec, false, 0, NULL, DateStyle, buf);\n\telse\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tresult = pstrdup(buf);\n\tPG_RETURN_CSTRING(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "alter_table",
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "copy2",
+    "date",
+    "expressions",
+    "fast_default",
+    "horology",
+    "interval",
+    "json",
+    "jsonb",
+    "merge",
+    "partition_prune",
+    "rangetypes",
+    "rules",
+    "sqljson_queryfuncs",
+    "timestamp",
+    "timestamptz",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2194,
+  "oracle_diff_by_file": {
+    "rangetypes": 6,
+    "date": 10,
+    "timestamp": 725,
+    "timestamptz": 197,
+    "interval": 35,
+    "horology": 728,
+    "expressions": 5,
+    "brin": 2,
+    "brin_bloom": 2,
+    "brin_multi": 18,
+    "merge": 26,
+    "rules": 13,
+    "window": 80,
+    "json": 109,
+    "jsonb": 107,
+    "sqljson_queryfuncs": 15,
+    "copy2": 40,
+    "alter_table": 10,
+    "partition_prune": 14,
+    "fast_default": 52
+  }
+}

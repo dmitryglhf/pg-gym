@@ -1,0 +1,32 @@
+{
+  "func": "set_masklen",
+  "mode": "stub",
+  "patch": "prep/set_masklen.patch",
+  "symbols": [
+    "cidr_set_masklen",
+    "inet_set_masklen"
+  ],
+  "units": {
+    "cidr_set_masklen": {
+      "file": "src/backend/utils/adt/network.c",
+      "code": "Datum\ncidr_set_masklen(PG_FUNCTION_ARGS)\n{\n\tinet\t   *src = PG_GETARG_INET_PP(0);\n\tint\t\t\tbits = PG_GETARG_INT32(1);\n\n\tif (bits == -1)\n\t\tbits = ip_maxbits(src);\n\n\tif ((bits < 0) || (bits > ip_maxbits(src)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"invalid mask length: %d\", bits)));\n\n\tPG_RETURN_INET_P(cidr_set_masklen_internal(src, bits));\n}\n\n"
+    },
+    "inet_set_masklen": {
+      "file": "src/backend/utils/adt/network.c",
+      "code": "Datum\ninet_set_masklen(PG_FUNCTION_ARGS)\n{\n\tinet\t   *src = PG_GETARG_INET_PP(0);\n\tint\t\t\tbits = PG_GETARG_INT32(1);\n\tinet\t   *dst;\n\n\tif (bits == -1)\n\t\tbits = ip_maxbits(src);\n\n\tif ((bits < 0) || (bits > ip_maxbits(src)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"invalid mask length: %d\", bits)));\n\n\t/* clone the original data */\n\tdst = (inet *) palloc(VARSIZE_ANY(src));\n\tmemcpy(dst, src, VARSIZE_ANY(src));\n\n\tip_bits(dst) = bits;\n\n\tPG_RETURN_INET_P(dst);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "inet"
+  ],
+  "category": "network",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 83,
+  "oracle_diff_by_file": {
+    "inet": 83
+  }
+}

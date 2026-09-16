@@ -1,0 +1,46 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..c68044e 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -4214,39 +4214,11 @@ interval_avg(PG_FUNCTION_ARGS)
+ 							   Float8GetDatum((double) state->N));
+ }
+ 
+-/* sum(interval) aggregate final function */
+ Datum
+ interval_sum(PG_FUNCTION_ARGS)
+ {
+-	IntervalAggState *state;
+-	Interval   *result;
+-
+-	state = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);
+-
+-	/* If there were no non-null inputs, return NULL */
+-	if (state == NULL || IA_TOTAL_COUNT(state) == 0)
+-		PG_RETURN_NULL();
+-
+-	/*
+-	 * Aggregating infinities that all have the same sign produces infinity
+-	 * with that sign.  Aggregating infinities with different signs results in
+-	 * an error.
+-	 */
+-	if (state->pInfcount > 0 && state->nInfcount > 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("interval out of range")));
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	if (state->pInfcount > 0)
+-		INTERVAL_NOEND(result);
+-	else if (state->nInfcount > 0)
+-		INTERVAL_NOBEGIN(result);
+-	else
+-		memcpy(result, &state->sumX, sizeof(Interval));
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_sum is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamp_age()

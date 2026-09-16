@@ -1,0 +1,15 @@
+{
+  "func": "time_mi_time",
+  "variants": [
+    {
+      "arguments": "time time",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

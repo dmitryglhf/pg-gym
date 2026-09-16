@@ -1,0 +1,23 @@
+{
+  "func": "xmlcomment",
+  "mode": "stub",
+  "patch": "prep/xmlcomment.patch",
+  "symbols": [
+    "xmlcomment"
+  ],
+  "units": {
+    "xmlcomment": {
+      "file": "src/backend/utils/adt/xml.c",
+      "code": "Datum\nxmlcomment(PG_FUNCTION_ARGS)\n{\n#ifdef USE_LIBXML\n\ttext\t   *arg = PG_GETARG_TEXT_PP(0);\n\tchar\t   *argdata = VARDATA_ANY(arg);\n\tint\t\t\tlen = VARSIZE_ANY_EXHDR(arg);\n\tStringInfoData buf;\n\tint\t\t\ti;\n\n\t/* check for \"--\" in string or \"-\" at the end */\n\tfor (i = 1; i < len; i++)\n\t{\n\t\tif (argdata[i] == '-' && argdata[i - 1] == '-')\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_XML_COMMENT),\n\t\t\t\t\t errmsg(\"invalid XML comment\")));\n\t}\n\tif (len > 0 && argdata[len - 1] == '-')\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_XML_COMMENT),\n\t\t\t\t errmsg(\"invalid XML comment\")));\n\n\tinitStringInfo(&buf);\n\tappendStringInfoString(&buf, \"<!--\");\n\tappendStringInfoText(&buf, arg);\n\tappendStringInfoString(&buf, \"-->\");\n\n\tPG_RETURN_XML_P(stringinfo_to_xmltype(&buf));\n#else\n\tNO_XML_SUPPORT();\n\treturn 0;\n#endif\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [],
+  "category": "xml",
+  "usable": false,
+  "verify_status": "no_coverage",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

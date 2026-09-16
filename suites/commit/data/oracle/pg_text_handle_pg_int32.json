@@ -1,0 +1,27 @@
+{
+  "func": "pg_text_handle_pg_int32",
+  "sha": "3103bdafde6b0dfa8edbcefb48ac51097c6a9c1e",
+  "parent": "04c25af21c02bf2c5152c3c8ab2ba877c231a598",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_text_handle_pg_int32.patch",
+  "test_files": [
+    "src/test/regress/sql/text.sql",
+    "src/test/regress/expected/text.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c\nindex 15d2cabb..c4d469a5 100644\n--- a/src/backend/utils/adt/varlena.c\n+++ b/src/backend/utils/adt/varlena.c\n@@ -5616,7 +5616,17 @@ text_right(PG_FUNCTION_ARGS)\n \tint\t\t\toff;\n \n \tif (n < 0)\n-\t\tn = -n;\n+\t{\n+\t\t/*\n+\t\t * Negating PG_INT32_MIN would overflow, so clamp instead.  Any n whose\n+\t\t * absolute value is at least the string's length skips the whole\n+\t\t * string, and len can't exceed PG_INT32_MAX, so this is equivalent.\n+\t\t */\n+\t\tif (unlikely(n == PG_INT32_MIN))\n+\t\t\tn = PG_INT32_MAX;\n+\t\telse\n+\t\t\tn = -n;\n+\t}\n \telse\n \t\tn = pg_mbstrlen_with_len(p, len) - n;\n \toff = pg_mbcharcliplen(p, len, n);\n",
+  "test": "diff --git a/src/test/regress/expected/text.out b/src/test/regress/expected/text.out\nindex 4c65b238..53f050bb 100644\n--- a/src/test/regress/expected/text.out\n+++ b/src/test/regress/expected/text.out\n@@ -116,6 +116,14 @@ select i, left('ahoj', i), right('ahoj', i) from generate_series(-5, 5) t(i) ord\n   5 | ahoj | ahoj\n (11 rows)\n \n+-- the most negative value must skip the whole string, same as any other n\n+-- whose absolute value exceeds its length\n+select left('ahoj', (-2147483648)::int4), right('ahoj', (-2147483648)::int4);\n+ left | right \n+------+-------\n+      | \n+(1 row)\n+\n select quote_literal('');\n  quote_literal \n ---------------\ndiff --git a/src/test/regress/sql/text.sql b/src/test/regress/sql/text.sql\nindex 540e5512..3a9be863 100644\n--- a/src/test/regress/sql/text.sql\n+++ b/src/test/regress/sql/text.sql\n@@ -37,6 +37,9 @@ select concat_ws('',10,20,null,30);\n select concat_ws(NULL,10,20,null,30) is null;\n select reverse('abcde');\n select i, left('ahoj', i), right('ahoj', i) from generate_series(-5, 5) t(i) order by i;\n+-- the most negative value must skip the whole string, same as any other n\n+-- whose absolute value exceeds its length\n+select left('ahoj', (-2147483648)::int4), right('ahoj', (-2147483648)::int4);\n select quote_literal('');\n select quote_literal('abc''');\n select quote_literal(e'\\\\');\n",
+  "oracle_command": "make -C src/test/regress check TESTS=text",
+  "expected_tests": [
+    "text"
+  ],
+  "failing_tests": [
+    "text"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2,
+  "oracle_diff_by_file": {
+    "text": 2
+  }
+}

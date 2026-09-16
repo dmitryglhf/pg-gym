@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..b126fec 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -795,10 +795,8 @@ date_gt_timestamp(PG_FUNCTION_ARGS)
+ Datum
+ date_le_timestamp(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal = PG_GETARG_DATEADT(0);
+-	Timestamp	dt2 = PG_GETARG_TIMESTAMP(1);
+-
+-	PG_RETURN_BOOL(date_cmp_timestamp_internal(dateVal, dt2) <= 0);
++	elog(ERROR, "date_le_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

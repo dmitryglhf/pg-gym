@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..abc80a1 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2523,10 +2523,8 @@ timetz_ge(PG_FUNCTION_ARGS)
+ Datum
+ timetz_cmp(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *time1 = PG_GETARG_TIMETZADT_P(0);
+-	TimeTzADT  *time2 = PG_GETARG_TIMETZADT_P(1);
+-
+-	PG_RETURN_INT32(timetz_cmp_internal(time1, time2));
++	elog(ERROR, "timetz_cmp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

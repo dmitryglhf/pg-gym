@@ -1,0 +1,31 @@
+{
+  "func": "numeric_avg",
+  "mode": "stub",
+  "patch": "prep/numeric_avg.patch",
+  "symbols": [
+    "numeric_avg"
+  ],
+  "units": {
+    "numeric_avg": {
+      "file": "src/backend/utils/adt/numeric.c",
+      "code": "Datum\nnumeric_avg(PG_FUNCTION_ARGS)\n{\n\tNumericAggState *state;\n\tDatum\t\tN_datum;\n\tDatum\t\tsumX_datum;\n\tNumericVar\tsumX_var;\n\n\tstate = PG_ARGISNULL(0) ? NULL : (NumericAggState *) PG_GETARG_POINTER(0);\n\n\t/* If there were no non-null inputs, return NULL */\n\tif (state == NULL || NA_TOTAL_COUNT(state) == 0)\n\t\tPG_RETURN_NULL();\n\n\tif (state->NaNcount > 0)\t/* there was at least one NaN input */\n\t\tPG_RETURN_NUMERIC(make_result(&const_nan));\n\n\t/* adding plus and minus infinities gives NaN */\n\tif (state->pInfcount > 0 && state->nInfcount > 0)\n\t\tPG_RETURN_NUMERIC(make_result(&const_nan));\n\tif (state->pInfcount > 0)\n\t\tPG_RETURN_NUMERIC(make_result(&const_pinf));\n\tif (state->nInfcount > 0)\n\t\tPG_RETURN_NUMERIC(make_result(&const_ninf));\n\n\tN_datum = NumericGetDatum(int64_to_numeric(state->N));\n\n\tinit_var(&sumX_var);\n\taccum_sum_final(&state->sumX, &sumX_var);\n\tsumX_datum = NumericGetDatum(make_result(&sumX_var));\n\tfree_var(&sumX_var);\n\n\tPG_RETURN_DATUM(DirectFunctionCall2(numeric_div, sumX_datum, N_datum));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "aggregates",
+    "numeric",
+    "window"
+  ],
+  "category": "aggregate",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 53,
+  "oracle_diff_by_file": {
+    "numeric": 5,
+    "aggregates": 40,
+    "window": 8
+  }
+}

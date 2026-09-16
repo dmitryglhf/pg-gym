@@ -1,0 +1,25 @@
+{
+  "func": "npoints",
+  "variants": [
+    {
+      "arguments": "path",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "number of points"
+    },
+    {
+      "arguments": "polygon",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "number of points"
+    }
+  ],
+  "description": "Returns the number of points. Available for path, polygon.",
+  "examples": [
+    "npoints(path '[(0,0),(1,1),(2,0)]') -> 3"
+  ],
+  "mode": "stub",
+  "category": "geometric"
+}

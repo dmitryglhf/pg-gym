@@ -1,0 +1,18 @@
+{
+  "func": "masklen",
+  "variants": [
+    {
+      "arguments": "inet",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "netmask length"
+    }
+  ],
+  "description": "Returns the netmask length in bits.",
+  "examples": [
+    "masklen(inet '192.168.1.5/24') -> 24"
+  ],
+  "mode": "stub",
+  "category": "network"
+}

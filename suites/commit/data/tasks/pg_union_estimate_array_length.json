@@ -1,0 +1,10 @@
+{
+  "name": "pg_union_estimate_array_length",
+  "area": "planner estimates, set operations",
+  "goal": "Planning nested set operations over differently typed arrays can fail while estimating an array expression introduced by type coercion. The internal reference created for a set-operation output does not identify a base relation.\n\nEXPLAIN VERBOSE for `SELECT NULL::int[] UNION ALL SELECT NULL::int[] UNION ALL SELECT NULL::bigint[]` must succeed and show the required coercion to the common array type without a lookup error. Executing it must return three null array rows. Array predicates over ordinary relation columns and set operations without array coercion must keep their current estimates and plans.",
+  "func": "pg_union_estimate_array_length",
+  "graded_by": [
+    "src/test/regress/sql/union.sql",
+    "src/test/regress/expected/union.out"
+  ]
+}

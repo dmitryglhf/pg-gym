@@ -1,0 +1,18 @@
+{
+  "func": "date_smaller",
+  "mode": "stub",
+  "patch": "prep/date_smaller.patch",
+  "symbols": [
+    "date_smaller"
+  ],
+  "units": {
+    "date_smaller": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ndate_smaller(PG_FUNCTION_ARGS)\n{\n\tDateADT\t\tdateVal1 = PG_GETARG_DATEADT(0);\n\tDateADT\t\tdateVal2 = PG_GETARG_DATEADT(1);\n\n\tPG_RETURN_DATEADT((dateVal1 < dateVal2) ? dateVal1 : dateVal2);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

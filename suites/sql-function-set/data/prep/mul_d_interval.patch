@@ -1,0 +1,18 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..c88028f 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3690,11 +3690,8 @@ out_of_range:
+ Datum
+ mul_d_interval(PG_FUNCTION_ARGS)
+ {
+-	/* Args are float8 and Interval *, but leave them as generic Datum */
+-	Datum		factor = PG_GETARG_DATUM(0);
+-	Datum		span = PG_GETARG_DATUM(1);
+-
+-	return DirectFunctionCall2(interval_mul, span, factor);
++	elog(ERROR, "mul_d_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

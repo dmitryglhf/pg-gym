@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_cmp_timestamptz",
+  "mode": "stub",
+  "patch": "prep/timestamp_cmp_timestamptz.patch",
+  "symbols": [
+    "timestamp_cmp_timestamptz"
+  ],
+  "units": {
+    "timestamp_cmp_timestamptz": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_cmp_timestamptz(PG_FUNCTION_ARGS)\n{\n\tTimestamp\ttimestampVal = PG_GETARG_TIMESTAMP(0);\n\tTimestampTz dt2 = PG_GETARG_TIMESTAMPTZ(1);\n\n\tPG_RETURN_INT32(timestamp_cmp_timestamptz_internal(timestampVal, dt2));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

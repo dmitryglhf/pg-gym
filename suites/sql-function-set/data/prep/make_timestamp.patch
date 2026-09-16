@@ -1,0 +1,31 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..1caca27 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -647,24 +647,11 @@ make_timestamp_internal(int year, int month, int day,
+ 	return result;
+ }
+ 
+-/*
+- * make_timestamp() - timestamp constructor
+- */
+ Datum
+ make_timestamp(PG_FUNCTION_ARGS)
+ {
+-	int32		year = PG_GETARG_INT32(0);
+-	int32		month = PG_GETARG_INT32(1);
+-	int32		mday = PG_GETARG_INT32(2);
+-	int32		hour = PG_GETARG_INT32(3);
+-	int32		min = PG_GETARG_INT32(4);
+-	float8		sec = PG_GETARG_FLOAT8(5);
+-	Timestamp	result;
+-
+-	result = make_timestamp_internal(year, month, mday,
+-									 hour, min, sec);
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "make_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

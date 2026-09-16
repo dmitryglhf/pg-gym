@@ -1,0 +1,15 @@
+{
+  "func": "time_recv",
+  "variants": [
+    {
+      "arguments": "internal oid int4",
+      "returns": "time",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_alter_table_stop_creating_constraints",
+  "area": "partitioning, DETACH CONCURRENTLY",
+  "goal": "ALTER TABLE ... DETACH PARTITION ... CONCURRENTLY leaves behind a table constraint on the detached table that restates the partition constraint the table has just lost.\n\nUnder hash partitioning that constraint's expression names the OID of the partitioned table the detached table no longer belongs to. The table is damaged from then on. pg_dump cannot produce a restorable dump of it, and once the former parent is gone the table cannot even be inserted into.\n\n    CREATE TABLE hash_parted2 (a int) PARTITION BY HASH (a);\n    CREATE TABLE part_hp PARTITION OF hash_parted2 FOR VALUES WITH (MODULUS 2, REMAINDER 0);\n    ALTER TABLE hash_parted2 DETACH PARTITION part_hp CONCURRENTLY;\n    DROP TABLE hash_parted2;\n    INSERT INTO part_hp VALUES (1);\n\nA table detached from a hash-partitioned parent has to survive the parent being dropped and accept rows afterwards. Detaching from a range or list partitioned table must go on leaving exactly the substitute constraint it leaves today, and every other effect of DETACH, concurrent or not, must be unchanged.",
+  "func": "pg_alter_table_stop_creating_constraints",
+  "graded_by": [
+    "src/test/regress/sql/alter_table.sql",
+    "src/test/regress/expected/alter_table.out"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "pg_hash_part_prevent_satisfies_hash",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "52af6fef43755de40472149c9d7f1adc9bf77b5e",
+  "parent": "a240e8cd23532931ca1e5216f4f42e91fac36dfe",
+  "date": "2026-07-06",
+  "subject": "Prevent satisfies_hash_partition from crashing with VARIADIC NULL.",
+  "area": "hash partitioning, satisfies_hash_partition",
+  "licence": "PostgreSQL",
+  "goal": "satisfies_hash_partition() is variadic in its last argument. Passing VARIADIC NULL in place of a list of values crashes the backend.\n\n    SELECT satisfies_hash_partition('mchash'::regclass, 4, 0, VARIADIC NULL::int[]);\n\nIt has to answer instead, and answer what the same call written without VARIADIC answers for all-NULL values, which is false. Calls with real values must keep returning what they return now, and the existing errors for a wrong number of arguments must stay.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/partitioning/partbounds.c",
+      "added": 13,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/hash_part.sql",
+    "src/test/regress/expected/hash_part.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "hash_part"
+    ],
+    "command": "make -C src/test/regress check TESTS=hash_part"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

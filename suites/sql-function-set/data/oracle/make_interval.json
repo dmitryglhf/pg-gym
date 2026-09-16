@@ -1,0 +1,26 @@
+{
+  "func": "make_interval",
+  "mode": "stub",
+  "patch": "prep/make_interval.patch",
+  "symbols": [
+    "make_interval"
+  ],
+  "units": {
+    "make_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * make_interval - numeric Interval constructor\n */\nDatum\nmake_interval(PG_FUNCTION_ARGS)\n{\n\tint32\t\tyears = PG_GETARG_INT32(0);\n\tint32\t\tmonths = PG_GETARG_INT32(1);\n\tint32\t\tweeks = PG_GETARG_INT32(2);\n\tint32\t\tdays = PG_GETARG_INT32(3);\n\tint32\t\thours = PG_GETARG_INT32(4);\n\tint32\t\tmins = PG_GETARG_INT32(5);\n\tdouble\t\tsecs = PG_GETARG_FLOAT8(6);\n\tInterval   *result;\n\n\t/*\n\t * Reject out-of-range inputs.  We reject any input values that cause\n\t * integer overflow of the corresponding interval fields.\n\t */\n\tif (isinf(secs) || isnan(secs))\n\t\tgoto out_of_range;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\t/* years and months -> months */\n\tif (pg_mul_s32_overflow(years, MONTHS_PER_YEAR, &result->month) ||\n\t\tpg_add_s32_overflow(result->month, months, &result->month))\n\t\tgoto out_of_range;\n\n\t/* weeks and days -> days */\n\tif (pg_mul_s32_overflow(weeks, DAYS_PER_WEEK, &result->day) ||\n\t\tpg_add_s32_overflow(result->day, days, &result->day))\n\t\tgoto out_of_range;\n\n\t/* hours and mins -> usecs (cannot overflow 64-bit) */\n\tresult->time = hours * USECS_PER_HOUR + mins * USECS_PER_MINUTE;\n\n\t/* secs -> usecs */\n\tsecs = rint(float8_mul(secs, USECS_PER_SEC));\n\tif (!FLOAT8_FITS_IN_INT64(secs) ||\n\t\tpg_add_s64_overflow(result->time, (int64) secs, &result->time))\n\t\tgoto out_of_range;\n\n\t/* make sure that the result is finite */\n\tif (INTERVAL_NOT_FINITE(result))\n\t\tgoto out_of_range;\n\n\tPG_RETURN_INTERVAL_P(result);\n\nout_of_range:\n\tereport(ERROR,\n\t\t\terrcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\terrmsg(\"interval out of range\"));\n\n\tPG_RETURN_NULL();\t\t\t/* keep compiler quiet */\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "interval"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 62,
+  "oracle_diff_by_file": {
+    "interval": 62
+  }
+}

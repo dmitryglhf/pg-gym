@@ -1,0 +1,38 @@
+{
+  "func": "isempty",
+  "mode": "stub",
+  "patch": "prep/isempty.patch",
+  "symbols": [
+    "multirange_empty",
+    "range_empty"
+  ],
+  "units": {
+    "multirange_empty": {
+      "file": "src/backend/utils/adt/multirangetypes.c",
+      "code": "/* is multirange empty? */\nDatum\nmultirange_empty(PG_FUNCTION_ARGS)\n{\n\tMultirangeType *mr = PG_GETARG_MULTIRANGE_P(0);\n\n\tPG_RETURN_BOOL(MultirangeIsEmpty(mr));\n}\n\n"
+    },
+    "range_empty": {
+      "file": "src/backend/utils/adt/rangetypes.c",
+      "code": "/* is range empty? */\nDatum\nrange_empty(PG_FUNCTION_ARGS)\n{\n\tRangeType  *r1 = PG_GETARG_RANGE_P(0);\n\tchar\t\tflags = range_get_flags(r1);\n\n\tPG_RETURN_BOOL(flags & RANGE_EMPTY);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "amutils",
+    "brin",
+    "multirangetypes",
+    "rangetypes"
+  ],
+  "category": "range",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 368,
+  "oracle_diff_by_file": {
+    "rangetypes": 20,
+    "multirangetypes": 15,
+    "brin": 306,
+    "amutils": 27
+  }
+}

@@ -1,0 +1,34 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..af28562 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1959,27 +1959,11 @@ timestamptz_time(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMEADT(result);
+ }
+ 
+-/* datetime_timestamp()
+- * Convert date and time to timestamp data type.
+- */
+ Datum
+ datetime_timestamp(PG_FUNCTION_ARGS)
+ {
+-	DateADT		date = PG_GETARG_DATEADT(0);
+-	TimeADT		time = PG_GETARG_TIMEADT(1);
+-	Timestamp	result;
+-
+-	result = date2timestamp(date);
+-	if (!TIMESTAMP_NOT_FINITE(result))
+-	{
+-		result += time;
+-		if (!IS_VALID_TIMESTAMP(result))
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("timestamp out of range")));
+-	}
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "datetime_timestamp is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* time_interval()

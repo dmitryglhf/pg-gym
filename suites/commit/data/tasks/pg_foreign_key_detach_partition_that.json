@@ -1,0 +1,10 @@
+{
+  "name": "pg_foreign_key_detach_partition_that",
+  "area": "foreign keys, DETACH PARTITION",
+  "goal": "DETACH PARTITION can fail when the partition has its own foreign key referencing a partitioned table. The command reports that it cannot find an ON INSERT check trigger even though the constraint is valid before detaching.\n\nCreate the referenced partitioned table, give one of its partitions an independent foreign key, and detach that partition. Detach must succeed and leave the now-standalone table with the appropriate enforceable foreign-key constraint and triggers. Parent-level foreign keys, partitions without their own foreign keys, and normal attach behavior must remain unchanged.",
+  "func": "pg_foreign_key_detach_partition_that",
+  "graded_by": [
+    "src/test/regress/sql/foreign_key.sql",
+    "src/test/regress/expected/foreign_key.out"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "func": "date_mi_interval",
+  "variants": [
+    {
+      "arguments": "date interval",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

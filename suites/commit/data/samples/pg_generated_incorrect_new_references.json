@@ -1,0 +1,36 @@
+{
+  "name": "pg_generated_incorrect_new_references",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "9d6208939a0ad05171e37a106f02c55a591a26f1",
+  "parent": "e381843cfaf47f0055a786c4fa4ca7125be6f65e",
+  "date": "2026-04-21",
+  "subject": "Fix incorrect NEW references to generated columns in rule rewriting",
+  "area": "rewrite rules, generated columns",
+  "licence": "PostgreSQL",
+  "goal": "In an INSERT or UPDATE rule, references to NEW for a stored generated column can see NULL or the old generated value rather than the value recomputed from the new base columns. The same mistake affects rule qualifications.\n\nCreate a table with `b GENERATED ALWAYS AS (a * 2)`, rules that log OLD.b and NEW.b, and a rule qualification such as `NEW.b > 100`. Inserts and updates, including updates fed by subqueries, must expose the freshly generated value through NEW; OLD must retain the prior row. A qualification must decide from that same new value. Ordinary columns and legal generated-column behavior outside rules must not change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/rewrite/rewriteHandler.c",
+      "added": 129,
+      "deleted": 5
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "generated"
+    ],
+    "command": "make -C src/test/regress check TESTS=generated"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

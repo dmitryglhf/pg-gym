@@ -1,0 +1,102 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..c820471 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -1040,95 +1040,11 @@ interval_send(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
+ }
+ 
+-/*
+- * The interval typmod stores a "range" in its high 16 bits and a "precision"
+- * in its low 16 bits.  Both contribute to defining the resolution of the
+- * type.  Range addresses resolution granules larger than one second, and
+- * precision specifies resolution below one second.  This representation can
+- * express all SQL standard resolutions, but we implement them all in terms of
+- * truncating rightward from some position.  Range is a bitmap of permitted
+- * fields, but only the temporally-smallest such field is significant to our
+- * calculations.  Precision is a count of sub-second decimal places to retain.
+- * Setting all bits (INTERVAL_FULL_PRECISION) gives the same truncation
+- * semantics as choosing MAX_INTERVAL_PRECISION.
+- */
+ Datum
+ intervaltypmodin(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);
+-	int32	   *tl;
+-	int			n;
+-	int32		typmod;
+-
+-	tl = ArrayGetIntegerTypmods(ta, &n);
+-
+-	/*
+-	 * tl[0] - interval range (fields bitmask)	tl[1] - precision (optional)
+-	 *
+-	 * Note we must validate tl[0] even though it's normally guaranteed
+-	 * correct by the grammar --- consider SELECT 'foo'::"interval"(1000).
+-	 */
+-	if (n > 0)
+-	{
+-		switch (tl[0])
+-		{
+-			case INTERVAL_MASK(YEAR):
+-			case INTERVAL_MASK(MONTH):
+-			case INTERVAL_MASK(DAY):
+-			case INTERVAL_MASK(HOUR):
+-			case INTERVAL_MASK(MINUTE):
+-			case INTERVAL_MASK(SECOND):
+-			case INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH):
+-			case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR):
+-			case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
+-			case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+-			case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
+-			case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+-			case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+-			case INTERVAL_FULL_RANGE:
+-				/* all OK */
+-				break;
+-			default:
+-				ereport(ERROR,
+-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-						 errmsg("invalid INTERVAL type modifier")));
+-		}
+-	}
+-
+-	if (n == 1)
+-	{
+-		if (tl[0] != INTERVAL_FULL_RANGE)
+-			typmod = INTERVAL_TYPMOD(INTERVAL_FULL_PRECISION, tl[0]);
+-		else
+-			typmod = -1;
+-	}
+-	else if (n == 2)
+-	{
+-		if (tl[1] < 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("INTERVAL(%d) precision must not be negative",
+-							tl[1])));
+-		if (tl[1] > MAX_INTERVAL_PRECISION)
+-		{
+-			ereport(WARNING,
+-					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-					 errmsg("INTERVAL(%d) precision reduced to maximum allowed, %d",
+-							tl[1], MAX_INTERVAL_PRECISION)));
+-			typmod = INTERVAL_TYPMOD(MAX_INTERVAL_PRECISION, tl[0]);
+-		}
+-		else
+-			typmod = INTERVAL_TYPMOD(tl[1], tl[0]);
+-	}
+-	else
+-	{
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("invalid INTERVAL type modifier")));
+-		typmod = 0;				/* keep compiler quiet */
+-	}
+-
+-	PG_RETURN_INT32(typmod);
++	elog(ERROR, "intervaltypmodin is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

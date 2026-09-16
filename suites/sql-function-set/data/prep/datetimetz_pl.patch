@@ -1,0 +1,54 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..7682bf8 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2876,47 +2876,11 @@ timestamptz_timetz(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/* datetimetz_timestamptz()
+- * Convert date and timetz to timestamp with time zone data type.
+- * Timestamp is stored in GMT, so add the time zone
+- * stored with the timetz to the result.
+- * - thomas 2000-03-10
+- */
+ Datum
+ datetimetz_timestamptz(PG_FUNCTION_ARGS)
+ {
+-	DateADT		date = PG_GETARG_DATEADT(0);
+-	TimeTzADT  *time = PG_GETARG_TIMETZADT_P(1);
+-	TimestampTz result;
+-
+-	if (DATE_IS_NOBEGIN(date))
+-		TIMESTAMP_NOBEGIN(result);
+-	else if (DATE_IS_NOEND(date))
+-		TIMESTAMP_NOEND(result);
+-	else
+-	{
+-		/*
+-		 * Date's range is wider than timestamp's, so check for boundaries.
+-		 * Since dates have the same minimum values as timestamps, only upper
+-		 * boundary need be checked for overflow.
+-		 */
+-		if (date >= (TIMESTAMP_END_JULIAN - POSTGRES_EPOCH_JDATE))
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("date out of range for timestamp")));
+-		result = date * USECS_PER_DAY + time->time + time->zone * USECS_PER_SEC;
+-
+-		/*
+-		 * Since it is possible to go beyond allowed timestamptz range because
+-		 * of time zone, check for allowed timestamp range after adding tz.
+-		 */
+-		if (!IS_VALID_TIMESTAMP(result))
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("date out of range for timestamp")));
+-	}
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "datetimetz_timestamptz is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

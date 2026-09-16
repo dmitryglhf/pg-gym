@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..0c44e02 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1565,9 +1565,8 @@ timetypmodin(PG_FUNCTION_ARGS)
+ Datum
+ timetypmodout(PG_FUNCTION_ARGS)
+ {
+-	int32		typmod = PG_GETARG_INT32(0);
+-
+-	PG_RETURN_CSTRING(anytime_typmodout(false, typmod));
++	elog(ERROR, "timetypmodout is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,16 @@
+{
+  "func": "uuid_extract_timestamp",
+  "variants": [
+    {
+      "arguments": "uuid",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "extract timestamp from UUID"
+    }
+  ],
+  "description": "There are also functions to extract data from UUIDs: This function extracts a timestamp with time zone from UUID version 1. For other versions, this function returns null. Note that the extracted timestamp is not necessarily exactly equal to the time the UUID was generated; this depends on the implementation that generated the UUID.",
+  "examples": [],
+  "mode": "stub",
+  "category": "uuid"
+}

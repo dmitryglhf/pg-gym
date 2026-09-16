@@ -1,0 +1,10 @@
+{
+  "name": "pg_sqljson_queryfuncs_error_reporting_sql",
+  "area": "SQL/JSON, path type errors",
+  "goal": "SQL/JSON query functions report a misleading type or point at the wrong expression when the path expression is not jsonpath.\n\nFor JSON_QUERY with a constructed expression cast to date, the error must say `JSON path expression must be of type jsonpath, not of type date` and position the cursor at that path expression. A column of a domain or user-defined type named `jsonpaths` must be named as that actual type in the corresponding JSON_VALUE error. Valid jsonpath expressions, implicit coercions that are supported today and other argument errors must be unchanged.",
+  "func": "pg_sqljson_queryfuncs_error_reporting_sql",
+  "graded_by": [
+    "src/test/regress/sql/sqljson_queryfuncs.sql",
+    "src/test/regress/expected/sqljson_queryfuncs.out"
+  ]
+}

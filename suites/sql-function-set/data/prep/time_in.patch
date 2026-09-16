@@ -1,0 +1,54 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..d247016 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1366,47 +1366,11 @@ timestamptz_date(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*****************************************************************************
+- *	 Time ADT
+- *****************************************************************************/
+-
+ Datum
+ time_in(PG_FUNCTION_ARGS)
+ {
+-	char	   *str = PG_GETARG_CSTRING(0);
+-#ifdef NOT_USED
+-	Oid			typelem = PG_GETARG_OID(1);
+-#endif
+-	int32		typmod = PG_GETARG_INT32(2);
+-	Node	   *escontext = fcinfo->context;
+-	TimeADT		result;
+-	fsec_t		fsec;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	int			tz;
+-	int			nf;
+-	int			dterr;
+-	char		workbuf[MAXDATELEN + 1];
+-	char	   *field[MAXDATEFIELDS];
+-	int			dtype;
+-	int			ftype[MAXDATEFIELDS];
+-	DateTimeErrorExtra extra;
+-
+-	dterr = ParseDateTime(str, workbuf, sizeof(workbuf),
+-						  field, ftype, MAXDATEFIELDS, &nf);
+-	if (dterr == 0)
+-		dterr = DecodeTimeOnly(field, ftype, nf,
+-							   &dtype, tm, &fsec, &tz, &extra);
+-	if (dterr != 0)
+-	{
+-		DateTimeParseError(dterr, &extra, str, "time", escontext);
+-		PG_RETURN_NULL();
+-	}
+-
+-	tm2time(tm, fsec, &result);
+-	AdjustTimeForTypmod(&result, typmod);
+-
+-	PG_RETURN_TIMEADT(result);
++	elog(ERROR, "time_in is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* tm2time()

@@ -1,0 +1,23 @@
+{
+  "func": "pg_privileges_sort_do_default",
+  "sha": "e8d22095e5df4d22513ce553998eef899f5f0692",
+  "parent": "7b434f96462f309098603b01bbc4b319312252c4",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_privileges_sort_do_default.patch",
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "reference": "diff --git a/src/bin/pg_dump/pg_dump_sort.c b/src/bin/pg_dump/pg_dump_sort.c\nindex ffaceb93..fecf80d2 100644\n--- a/src/bin/pg_dump/pg_dump_sort.c\n+++ b/src/bin/pg_dump/pg_dump_sort.c\n@@ -417,6 +417,19 @@ DOTypeNameCompare(const void *p1, const void *p2)\n \t\t\t\treturn cmpval;\n \t\t}\n \t}\n+\telse if (obj1->objType == DO_DEFAULT_ACL)\n+\t{\n+\t\tDefaultACLInfo *daclobj1 = *(DefaultACLInfo *const *) p1;\n+\t\tDefaultACLInfo *daclobj2 = *(DefaultACLInfo *const *) p2;\n+\n+\t\t/*\n+\t\t * Sort by defaclrole, per pg_default_acl_role_nsp_obj_index.  The\n+\t\t * (namespace, name) match (defaclnamespace, defaclobjtype).\n+\t\t */\n+\t\tcmpval = strcmp(daclobj1->defaclrole, daclobj2->defaclrole);\n+\t\tif (cmpval != 0)\n+\t\t\treturn cmpval;\n+\t}\n \telse if (obj1->objType == DO_PUBLICATION_REL)\n \t{\n \t\tPublicationRelInfo *probj1 = *(PublicationRelInfo *const *) p1;\n",
+  "test": "diff --git a/src/test/regress/expected/privileges.out b/src/test/regress/expected/privileges.out\nindex cf5f9fd6..697fd9d4 100644\n--- a/src/test/regress/expected/privileges.out\n+++ b/src/test/regress/expected/privileges.out\n@@ -2825,6 +2825,11 @@ DROP USER regress_priv_user6;\n DROP USER regress_priv_user7;\n DROP USER regress_priv_user8; -- does not exist\n ERROR:  role \"regress_priv_user8\" does not exist\n+-- leave some default ACLs for pg_upgrade's dump-restore test input.\n+ALTER DEFAULT PRIVILEGES FOR ROLE pg_signal_backend\n+\tREVOKE INSERT ON TABLES FROM pg_signal_backend;\n+ALTER DEFAULT PRIVILEGES FOR ROLE pg_read_all_settings\n+\tREVOKE INSERT ON TABLES FROM pg_read_all_settings;\n -- permissions with LOCK TABLE\n CREATE USER regress_locktable_user;\n CREATE TABLE lock_table (a int);\ndiff --git a/src/test/regress/sql/privileges.sql b/src/test/regress/sql/privileges.sql\nindex e93b179b..d964d91e 100644\n--- a/src/test/regress/sql/privileges.sql\n+++ b/src/test/regress/sql/privileges.sql\n@@ -1764,6 +1764,13 @@ DROP USER regress_priv_user7;\n DROP USER regress_priv_user8; -- does not exist\n \n \n+-- leave some default ACLs for pg_upgrade's dump-restore test input.\n+ALTER DEFAULT PRIVILEGES FOR ROLE pg_signal_backend\n+\tREVOKE INSERT ON TABLES FROM pg_signal_backend;\n+ALTER DEFAULT PRIVILEGES FOR ROLE pg_read_all_settings\n+\tREVOKE INSERT ON TABLES FROM pg_read_all_settings;\n+\n+\n -- permissions with LOCK TABLE\n CREATE USER regress_locktable_user;\n CREATE TABLE lock_table (a int);\n",
+  "oracle_command": "make -C src/test/regress check TESTS=privileges",
+  "expected_tests": [
+    "privileges"
+  ],
+  "failing_tests": [],
+  "usable": false,
+  "verify_status": "no_coverage",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

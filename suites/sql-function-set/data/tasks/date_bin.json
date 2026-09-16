@@ -1,0 +1,26 @@
+{
+  "func": "date_bin",
+  "variants": [
+    {
+      "arguments": "interval timestamp timestamp",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "bin timestamp into specified interval"
+    },
+    {
+      "arguments": "interval timestamptz timestamptz",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "bin timestamp with time zone into specified interval"
+    }
+  ],
+  "description": "Bin input into specified interval aligned with specified origin\nThe function date_bin bins the input timestamp into the specified interval (the stride) aligned with a specified origin.\nsource is a value expression of type timestamp or timestamp with time zone. (Values of type date are cast automatically to timestamp.) stride is a value expression of type interval. The return value is likewise of type timestamp or timestamp with time zone, and it marks the beginning of the bin into which the source is placed.\nExamples:\nIn the case of full units (1 minute, 1 hour, etc.), it gives the same result as the analogous date_trunc call, but the difference is that date_bin can truncate to an arbitrary interval.\nThe stride interval must be greater than zero and cannot contain units of month or larger.",
+  "examples": [
+    "date_bin('15 minutes', timestamp '2001-02-16 20:38:40', timestamp '2001-02-16 20:05:00') -> 2001-02-16 20:35:00",
+    "SELECT date_bin('15 minutes', TIMESTAMP '2020-02-11 15:44:17', TIMESTAMP '2001-01-01') -> 2020-02-11 15:30:00",
+    "SELECT date_bin('15 minutes', TIMESTAMP '2020-02-11 15:44:17', TIMESTAMP '2001-01-01 00:02:30') -> 2020-02-11 15:32:30"
+  ],
+  "mode": "stub"
+}

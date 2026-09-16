@@ -1,0 +1,15 @@
+{
+  "func": "datetime_pl",
+  "variants": [
+    {
+      "arguments": "date time",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_hash_extended",
+  "mode": "stub",
+  "patch": "prep/timestamp_hash_extended.patch",
+  "symbols": [
+    "timestamp_hash_extended"
+  ],
+  "units": {
+    "timestamp_hash_extended": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_hash_extended(PG_FUNCTION_ARGS)\n{\n\treturn hashint8extended(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

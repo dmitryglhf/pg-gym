@@ -1,0 +1,15 @@
+{
+  "func": "timetz_larger",
+  "variants": [
+    {
+      "arguments": "timetz timetz",
+      "returns": "timetz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "larger of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

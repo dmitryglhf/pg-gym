@@ -1,0 +1,16 @@
+{
+  "func": "current_schema",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "name",
+      "kind": "f",
+      "volatile": "s",
+      "description": "current schema name"
+    }
+  ],
+  "description": "Returns the name of the schema that is first in the search path (or a null value if the search path is empty). This is the schema that will be used for any tables or other named objects that are created without specifying a target schema.",
+  "examples": [],
+  "mode": "stub",
+  "category": "sysinfo"
+}

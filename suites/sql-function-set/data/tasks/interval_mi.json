@@ -1,0 +1,15 @@
+{
+  "func": "interval_mi",
+  "variants": [
+    {
+      "arguments": "interval interval",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

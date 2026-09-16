@@ -1,0 +1,70 @@
+{
+  "func": "timezone",
+  "mode": "stub",
+  "patch": "prep/timezone.patch",
+  "symbols": [
+    "timestamp_at_local",
+    "timestamp_izone",
+    "timestamp_zone",
+    "timestamptz_at_local",
+    "timestamptz_izone",
+    "timestamptz_zone",
+    "timetz_at_local",
+    "timetz_izone",
+    "timetz_zone"
+  ],
+  "units": {
+    "timestamp_at_local": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamp_at_local()\n * timestamptz_at_local()\n *\n * The regression tests do not like two functions with the same proargs and\n * prosrc but different proname, but the grammar for AT LOCAL needs an\n * overloaded name to handle both types of timestamp, so we make simple\n * wrappers for it.\n */\nDatum\ntimestamp_at_local(PG_FUNCTION_ARGS)\n{\n\treturn timestamp_timestamptz(fcinfo);\n}\n\n"
+    },
+    "timestamp_izone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamp_izone()\n * Encode timestamp type with specified time interval as time zone.\n */\nDatum\ntimestamp_izone(PG_FUNCTION_ARGS)\n{\n\tInterval   *zone = PG_GETARG_INTERVAL_P(0);\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(1);\n\tTimestampTz result;\n\tint\t\t\ttz;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMPTZ(timestamp);\n\n\tif (INTERVAL_NOT_FINITE(zone))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"interval time zone \\\"%s\\\" must be finite\",\n\t\t\t\t\t\tDatumGetCString(DirectFunctionCall1(interval_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tPointerGetDatum(zone))))));\n\n\tif (zone->month != 0 || zone->day != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"interval time zone \\\"%s\\\" must not include months or days\",\n\t\t\t\t\t\tDatumGetCString(DirectFunctionCall1(interval_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tPointerGetDatum(zone))))));\n\n\ttz = zone->time / USECS_PER_SEC;\n\n\tresult = dt2local(timestamp, tz);\n\n\tif (!IS_VALID_TIMESTAMP(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\t\t\t\t\t\t\t\t/* timestamp_izone() */\n\n"
+    },
+    "timestamp_zone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\ttimestamp_zone()\n *\tEncode timestamp type with specified time zone.\n *\tThis function is just timestamp2timestamptz() except instead of\n *\tshifting to the global timezone, we shift to the specified timezone.\n *\tThis is different from the other AT TIME ZONE cases because instead\n *\tof shifting _to_ a new time zone, it sets the time to _be_ the\n *\tspecified timezone.\n */\nDatum\ntimestamp_zone(PG_FUNCTION_ARGS)\n{\n\ttext\t   *zone = PG_GETARG_TEXT_PP(0);\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(1);\n\tTimestampTz result;\n\tint\t\t\ttz;\n\tchar\t\ttzname[TZ_STRLEN_MAX + 1];\n\tint\t\t\ttype,\n\t\t\t\tval;\n\tpg_tz\t   *tzp;\n\tstruct pg_tm tm;\n\tfsec_t\t\tfsec;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMPTZ(timestamp);\n\n\t/*\n\t * Look up the requested timezone.\n\t */\n\ttext_to_cstring_buffer(zone, tzname, sizeof(tzname));\n\n\ttype = DecodeTimezoneName(tzname, &val, &tzp);\n\n\tif (type == TZNAME_FIXED_OFFSET)\n\t{\n\t\t/* fixed-offset abbreviation */\n\t\ttz = val;\n\t\tresult = dt2local(timestamp, tz);\n\t}\n\telse if (type == TZNAME_DYNTZ)\n\t{\n\t\t/* dynamic-offset abbreviation, resolve using specified time */\n\t\tif (timestamp2tm(timestamp, NULL, &tm, &fsec, NULL, tzp) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t\ttz = -DetermineTimeZoneAbbrevOffset(&tm, tzname, tzp);\n\t\tresult = dt2local(timestamp, tz);\n\t}\n\telse\n\t{\n\t\t/* full zone name, rotate to that zone */\n\t\tif (timestamp2tm(timestamp, NULL, &tm, &fsec, NULL, tzp) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t\ttz = DetermineTimeZoneOffset(&tm, tzp);\n\t\tif (tm2timestamp(&tm, fsec, &tz, &result) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\n\tif (!IS_VALID_TIMESTAMP(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\n\n"
+    },
+    "timestamptz_at_local": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamptz_at_local(PG_FUNCTION_ARGS)\n{\n\treturn timestamptz_timestamp(fcinfo);\n}\n"
+    },
+    "timestamptz_izone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_izone()\n * Encode timestamp with time zone type with specified time interval as time zone.\n * Returns a timestamp without time zone.\n */\nDatum\ntimestamptz_izone(PG_FUNCTION_ARGS)\n{\n\tInterval   *zone = PG_GETARG_INTERVAL_P(0);\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);\n\tTimestamp\tresult;\n\tint\t\t\ttz;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMP(timestamp);\n\n\tif (INTERVAL_NOT_FINITE(zone))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"interval time zone \\\"%s\\\" must be finite\",\n\t\t\t\t\t\tDatumGetCString(DirectFunctionCall1(interval_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tPointerGetDatum(zone))))));\n\n\tif (zone->month != 0 || zone->day != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"interval time zone \\\"%s\\\" must not include months or days\",\n\t\t\t\t\t\tDatumGetCString(DirectFunctionCall1(interval_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tPointerGetDatum(zone))))));\n\n\ttz = -(zone->time / USECS_PER_SEC);\n\n\tresult = dt2local(timestamp, tz);\n\n\tif (!IS_VALID_TIMESTAMP(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    },
+    "timestamptz_zone": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_zone()\n * Evaluate timestamp with time zone type at the specified time zone.\n * Returns a timestamp without time zone.\n */\nDatum\ntimestamptz_zone(PG_FUNCTION_ARGS)\n{\n\ttext\t   *zone = PG_GETARG_TEXT_PP(0);\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);\n\tTimestamp\tresult;\n\tint\t\t\ttz;\n\tchar\t\ttzname[TZ_STRLEN_MAX + 1];\n\tint\t\t\ttype,\n\t\t\t\tval;\n\tpg_tz\t   *tzp;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMP(timestamp);\n\n\t/*\n\t * Look up the requested timezone.\n\t */\n\ttext_to_cstring_buffer(zone, tzname, sizeof(tzname));\n\n\ttype = DecodeTimezoneName(tzname, &val, &tzp);\n\n\tif (type == TZNAME_FIXED_OFFSET)\n\t{\n\t\t/* fixed-offset abbreviation */\n\t\ttz = -val;\n\t\tresult = dt2local(timestamp, tz);\n\t}\n\telse if (type == TZNAME_DYNTZ)\n\t{\n\t\t/* dynamic-offset abbreviation, resolve using specified time */\n\t\tint\t\t\tisdst;\n\n\t\ttz = DetermineTimeZoneAbbrevOffsetTS(timestamp, tzname, tzp, &isdst);\n\t\tresult = dt2local(timestamp, tz);\n\t}\n\telse\n\t{\n\t\t/* full zone name, rotate from that zone */\n\t\tstruct pg_tm tm;\n\t\tfsec_t\t\tfsec;\n\n\t\tif (timestamp2tm(timestamp, &tz, &tm, &fsec, NULL, tzp) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t\tif (tm2timestamp(&tm, fsec, NULL, &result) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\n\tif (!IS_VALID_TIMESTAMP(result))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    },
+    "timetz_at_local": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timetz_at_local()\n *\n * Unlike for timestamp[tz]_at_local, the type for timetz does not flip between\n * time with/without time zone, so we cannot just call the conversion function.\n */\nDatum\ntimetz_at_local(PG_FUNCTION_ARGS)\n{\n\tDatum\t\ttime = PG_GETARG_DATUM(0);\n\tconst char *tzn = pg_get_timezone_name(session_timezone);\n\tDatum\t\tzone = PointerGetDatum(cstring_to_text(tzn));\n\n\treturn DirectFunctionCall2(timetz_zone, zone, time);\n}\n"
+    },
+    "timetz_izone": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timetz_izone()\n * Encode time with time zone type with specified time interval as time zone.\n */\nDatum\ntimetz_izone(PG_FUNCTION_ARGS)\n{\n\tInterval   *zone = PG_GETARG_INTERVAL_P(0);\n\tTimeTzADT  *time = PG_GETARG_TIMETZADT_P(1);\n\tTimeTzADT  *result;\n\tint\t\t\ttz;\n\n\tif (INTERVAL_NOT_FINITE(zone))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"interval time zone \\\"%s\\\" must be finite\",\n\t\t\t\t\t\tDatumGetCString(DirectFunctionCall1(interval_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tPointerGetDatum(zone))))));\n\n\tif (zone->month != 0 || zone->day != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"interval time zone \\\"%s\\\" must not include months or days\",\n\t\t\t\t\t\tDatumGetCString(DirectFunctionCall1(interval_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tPointerGetDatum(zone))))));\n\n\ttz = -(zone->time / USECS_PER_SEC);\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\n\tresult->time = time->time + (time->zone - tz) * USECS_PER_SEC;\n\t/* C99 modulo has the wrong sign convention for negative input */\n\twhile (result->time < INT64CONST(0))\n\t\tresult->time += USECS_PER_DAY;\n\tif (result->time >= USECS_PER_DAY)\n\t\tresult->time %= USECS_PER_DAY;\n\n\tresult->zone = tz;\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    },
+    "timetz_zone": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timetz_zone()\n * Encode time with time zone type with specified time zone.\n * Applies DST rules as of the transaction start time.\n */\nDatum\ntimetz_zone(PG_FUNCTION_ARGS)\n{\n\ttext\t   *zone = PG_GETARG_TEXT_PP(0);\n\tTimeTzADT  *t = PG_GETARG_TIMETZADT_P(1);\n\tTimeTzADT  *result;\n\tint\t\t\ttz;\n\tchar\t\ttzname[TZ_STRLEN_MAX + 1];\n\tint\t\t\ttype,\n\t\t\t\tval;\n\tpg_tz\t   *tzp;\n\n\t/*\n\t * Look up the requested timezone.\n\t */\n\ttext_to_cstring_buffer(zone, tzname, sizeof(tzname));\n\n\ttype = DecodeTimezoneName(tzname, &val, &tzp);\n\n\tif (type == TZNAME_FIXED_OFFSET)\n\t{\n\t\t/* fixed-offset abbreviation */\n\t\ttz = -val;\n\t}\n\telse if (type == TZNAME_DYNTZ)\n\t{\n\t\t/* dynamic-offset abbreviation, resolve using transaction start time */\n\t\tTimestampTz now = GetCurrentTransactionStartTimestamp();\n\t\tint\t\t\tisdst;\n\n\t\ttz = DetermineTimeZoneAbbrevOffsetTS(now, tzname, tzp, &isdst);\n\t}\n\telse\n\t{\n\t\t/* Get the offset-from-GMT that is valid now for the zone name */\n\t\tTimestampTz now = GetCurrentTransactionStartTimestamp();\n\t\tstruct pg_tm tm;\n\t\tfsec_t\t\tfsec;\n\n\t\tif (timestamp2tm(now, &tz, &tm, &fsec, NULL, tzp) != 0)\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\n\tresult->time = t->time + (t->zone - tz) * USECS_PER_SEC;\n\t/* C99 modulo has the wrong sign convention for negative input */\n\twhile (result->time < INT64CONST(0))\n\t\tresult->time += USECS_PER_DAY;\n\tif (result->time >= USECS_PER_DAY)\n\t\tresult->time %= USECS_PER_DAY;\n\n\tresult->zone = tz;\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "interval",
+    "timestamptz",
+    "timetz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 396,
+  "oracle_diff_by_file": {
+    "timetz": 32,
+    "timestamptz": 336,
+    "interval": 28
+  }
+}

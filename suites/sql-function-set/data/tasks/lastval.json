@@ -1,0 +1,16 @@
+{
+  "func": "lastval",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "v",
+      "description": "current value from last used sequence"
+    }
+  ],
+  "description": "Returns the value most recently returned by nextval in the current session. This function is identical to currval, except that instead of taking the sequence name as an argument it refers to whichever sequence nextval was most recently applied to in the current session. It is an error to call lastval if nextval has not yet been called in the current session.\nThis function requires USAGE or SELECT privilege on the last used sequence.",
+  "examples": [],
+  "mode": "stub",
+  "category": "sequence"
+}

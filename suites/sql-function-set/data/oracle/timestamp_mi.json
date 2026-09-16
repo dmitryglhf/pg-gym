@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_mi",
+  "mode": "stub",
+  "patch": "prep/timestamp_mi.patch",
+  "symbols": [
+    "timestamp_mi"
+  ],
+  "units": {
+    "timestamp_mi": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_mi(PG_FUNCTION_ARGS)\n{\n\tTimestamp\tdt1 = PG_GETARG_TIMESTAMP(0);\n\tTimestamp\tdt2 = PG_GETARG_TIMESTAMP(1);\n\tInterval   *result;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\t/*\n\t * Handle infinities.\n\t *\n\t * We treat anything that amounts to \"infinity - infinity\" as an error,\n\t * since the interval type has nothing equivalent to NaN.\n\t */\n\tif (TIMESTAMP_NOT_FINITE(dt1) || TIMESTAMP_NOT_FINITE(dt2))\n\t{\n\t\tif (TIMESTAMP_IS_NOBEGIN(dt1))\n\t\t{\n\t\t\tif (TIMESTAMP_IS_NOBEGIN(dt2))\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t\t errmsg(\"interval out of range\")));\n\t\t\telse\n\t\t\t\tINTERVAL_NOBEGIN(result);\n\t\t}\n\t\telse if (TIMESTAMP_IS_NOEND(dt1))\n\t\t{\n\t\t\tif (TIMESTAMP_IS_NOEND(dt2))\n\t\t\t\tereport(ERROR,\n\t\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t\t errmsg(\"interval out of range\")));\n\t\t\telse\n\t\t\t\tINTERVAL_NOEND(result);\n\t\t}\n\t\telse if (TIMESTAMP_IS_NOBEGIN(dt2))\n\t\t\tINTERVAL_NOEND(result);\n\t\telse\t\t\t\t\t/* TIMESTAMP_IS_NOEND(dt2) */\n\t\t\tINTERVAL_NOBEGIN(result);\n\n\t\tPG_RETURN_INTERVAL_P(result);\n\t}\n\n\tif (unlikely(pg_sub_s64_overflow(dt1, dt2, &result->time)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tresult->month = 0;\n\tresult->day = 0;\n\n\t/*----------\n\t *\tThis is wrong, but removing it breaks a lot of regression tests.\n\t *\tFor example:\n\t *\n\t *\ttest=> SET timezone = 'EST5EDT';\n\t *\ttest=> SELECT\n\t *\ttest-> ('2005-10-30 13:22:00-05'::timestamptz -\n\t *\ttest(>\t'2005-10-29 13:22:00-04'::timestamptz);\n\t *\t?column?\n\t *\t----------------\n\t *\t 1 day 01:00:00\n\t *\t (1 row)\n\t *\n\t *\tso adding that to the first timestamp gets:\n\t *\n\t *\t test=> SELECT\n\t *\t test-> ('2005-10-29 13:22:00-04'::timestamptz +\n\t *\t test(> ('2005-10-30 13:22:00-05'::timestamptz -\n\t *\t test(>  '2005-10-29 13:22:00-04'::timestamptz)) at time zone 'EST';\n\t *\t\ttimezone\n\t *\t--------------------\n\t *\t2005-10-30 14:22:00\n\t *\t(1 row)\n\t *----------\n\t */\n\tresult = DatumGetIntervalP(DirectFunctionCall1(interval_justify_hours,\n\t\t\t\t\t\t\t\t\t\t\t\t   IntervalPGetDatum(result)));\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

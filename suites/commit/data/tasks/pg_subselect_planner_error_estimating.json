@@ -1,0 +1,10 @@
+{
+  "name": "pg_subselect_planner_error_estimating",
+  "area": "planner, SubPlan cost estimation",
+  "goal": "The planner can fail with \"no relation entry for relid N\" while estimating a SubPlan whose test expression contains an aggregate expression from the parent query.\n\n    explain (costs off)\n    select (1 = any(array_agg(f1))) = any (select false) from int4_tbl;\n\nThe query has to plan and return true. The SubPlan's test expression must still contribute to its estimated cost, and no existing plan or row estimate may change.",
+  "func": "pg_subselect_planner_error_estimating",
+  "graded_by": [
+    "src/test/regress/sql/subselect.sql",
+    "src/test/regress/expected/subselect.out"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "func": "interval_sum",
+  "mode": "stub",
+  "patch": "prep/interval_sum.patch",
+  "symbols": [
+    "interval_sum"
+  ],
+  "units": {
+    "interval_sum": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* sum(interval) aggregate final function */\nDatum\ninterval_sum(PG_FUNCTION_ARGS)\n{\n\tIntervalAggState *state;\n\tInterval   *result;\n\n\tstate = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);\n\n\t/* If there were no non-null inputs, return NULL */\n\tif (state == NULL || IA_TOTAL_COUNT(state) == 0)\n\t\tPG_RETURN_NULL();\n\n\t/*\n\t * Aggregating infinities that all have the same sign produces infinity\n\t * with that sign.  Aggregating infinities with different signs results in\n\t * an error.\n\t */\n\tif (state->pInfcount > 0 && state->nInfcount > 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\tif (state->pInfcount > 0)\n\t\tINTERVAL_NOEND(result);\n\telse if (state->nInfcount > 0)\n\t\tINTERVAL_NOBEGIN(result);\n\telse\n\t\tmemcpy(result, &state->sumX, sizeof(Interval));\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 24,
+  "oracle_diff_by_file": {
+    "window": 24
+  }
+}

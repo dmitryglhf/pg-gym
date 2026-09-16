@@ -1,0 +1,10 @@
+{
+  "name": "pg_copy2_validation_copy_force",
+  "area": "COPY, option validation",
+  "goal": "COPY's FORCE_NOT_NULL and FORCE_NULL take either a column list or `*` for every column. Written with a column list they are rejected outside CSV mode and rejected in COPY TO. Written as `*` they are accepted in both, where they mean nothing. FORCE_QUOTE, which has the same two forms, is validated in both.\n\nThe all-column form has to be validated exactly like the column-list form. Every combination that is legal today must stay legal.",
+  "func": "pg_copy2_validation_copy_force",
+  "graded_by": [
+    "src/test/regress/sql/copy2.sql",
+    "src/test/regress/expected/copy2.out"
+  ]
+}

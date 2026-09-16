@@ -1,0 +1,26 @@
+{
+  "func": "make_date",
+  "mode": "stub",
+  "patch": "prep/make_date.patch",
+  "symbols": [
+    "make_date"
+  ],
+  "units": {
+    "make_date": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/*\n *\t\tmake_date\t\t\t- date constructor\n */\nDatum\nmake_date(PG_FUNCTION_ARGS)\n{\n\tstruct pg_tm tm;\n\tDateADT\t\tdate;\n\tint\t\t\tdterr;\n\tbool\t\tbc = false;\n\n\ttm.tm_year = PG_GETARG_INT32(0);\n\ttm.tm_mon = PG_GETARG_INT32(1);\n\ttm.tm_mday = PG_GETARG_INT32(2);\n\n\t/* Handle negative years as BC */\n\tif (tm.tm_year < 0)\n\t{\n\t\tbc = true;\n\t\ttm.tm_year = -tm.tm_year;\n\t}\n\n\tdterr = ValidateDate(DTK_DATE_M, false, false, bc, &tm);\n\n\tif (dterr != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),\n\t\t\t\t errmsg(\"date field value out of range: %d-%02d-%02d\",\n\t\t\t\t\t\ttm.tm_year, tm.tm_mon, tm.tm_mday)));\n\n\t/* Prevent overflow in Julian-day routines */\n\tif (!IS_VALID_JULIAN(tm.tm_year, tm.tm_mon, tm.tm_mday))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"date out of range: %d-%02d-%02d\",\n\t\t\t\t\t\ttm.tm_year, tm.tm_mon, tm.tm_mday)));\n\n\tdate = date2j(tm.tm_year, tm.tm_mon, tm.tm_mday) - POSTGRES_EPOCH_JDATE;\n\n\t/* Now check for just-out-of-range dates */\n\tif (!IS_VALID_DATE(date))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"date out of range: %d-%02d-%02d\",\n\t\t\t\t\t\ttm.tm_year, tm.tm_mon, tm.tm_mday)));\n\n\tPG_RETURN_DATEADT(date);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "date"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 18,
+  "oracle_diff_by_file": {
+    "date": 18
+  }
+}

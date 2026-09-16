@@ -1,0 +1,18 @@
+{
+  "func": "interval_hash_extended",
+  "mode": "stub",
+  "patch": "prep/interval_hash_extended.patch",
+  "symbols": [
+    "interval_hash_extended"
+  ],
+  "units": {
+    "interval_hash_extended": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ninterval_hash_extended(PG_FUNCTION_ARGS)\n{\n\tInterval   *interval = PG_GETARG_INTERVAL_P(0);\n\tINT128\t\tspan = interval_cmp_value(interval);\n\tint64\t\tspan64;\n\n\t/* Same approach as interval_hash */\n\tspan64 = int128_to_int64(span);\n\n\treturn DirectFunctionCall2(hashint8extended, Int64GetDatumFast(span64),\n\t\t\t\t\t\t\t   PG_GETARG_DATUM(1));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

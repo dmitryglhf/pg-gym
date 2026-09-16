@@ -1,0 +1,10 @@
+{
+  "name": "pg_with_parse_cte_c",
+  "area": "parser, CTE dependency analysis",
+  "goal": "References to an outer CTE from a nested WITH attached to INSERT, UPDATE, DELETE or MERGE are missed during dependency analysis. Illegal recursion can then survive parsing and reach an assertion failure or worse, and legal CTEs can be placed in an unusable order.\n\n    WITH RECURSIVE x(n) AS (\n      WITH sub_cte AS (SELECT * FROM x)\n      DELETE FROM graph RETURNING f)\n        SELECT * FROM x;\n\nThat has to be refused at parse time, with the complaint a recursive query containing a data-modifying statement already draws. References from inside a nested WITH also have to count towards the order the CTEs are evaluated in. Every WITH that is legal today must stay legal, must keep the same evaluation order, and the errors already raised for bad recursion must keep their present wording and position.",
+  "func": "pg_with_parse_cte_c",
+  "graded_by": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ]
+}

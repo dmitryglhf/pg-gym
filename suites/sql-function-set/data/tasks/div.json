@@ -1,0 +1,18 @@
+{
+  "func": "div",
+  "variants": [
+    {
+      "arguments": "numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "trunc(x/y)"
+    }
+  ],
+  "description": "Integer quotient of y/x (truncates towards zero)",
+  "examples": [
+    "div(9, 4) -> 2"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

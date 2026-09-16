@@ -1,0 +1,18 @@
+{
+  "func": "timetz_smaller",
+  "mode": "stub",
+  "patch": "prep/timetz_smaller.patch",
+  "symbols": [
+    "timetz_smaller"
+  ],
+  "units": {
+    "timetz_smaller": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "Datum\ntimetz_smaller(PG_FUNCTION_ARGS)\n{\n\tTimeTzADT  *time1 = PG_GETARG_TIMETZADT_P(0);\n\tTimeTzADT  *time2 = PG_GETARG_TIMETZADT_P(1);\n\tTimeTzADT  *result;\n\n\tif (timetz_cmp_internal(time1, time2) < 0)\n\t\tresult = time1;\n\telse\n\t\tresult = time2;\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

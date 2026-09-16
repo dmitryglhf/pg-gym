@@ -1,0 +1,29 @@
+{
+  "func": "float8_stddev_samp",
+  "mode": "stub",
+  "patch": "prep/float8_stddev_samp.patch",
+  "symbols": [
+    "float8_stddev_samp"
+  ],
+  "units": {
+    "float8_stddev_samp": {
+      "file": "src/backend/utils/adt/float.c",
+      "code": "Datum\nfloat8_stddev_samp(PG_FUNCTION_ARGS)\n{\n\tArrayType  *transarray = PG_GETARG_ARRAYTYPE_P(0);\n\tfloat8\t   *transvalues;\n\tfloat8\t\tN,\n\t\t\t\tSxx;\n\n\ttransvalues = check_float8_array(transarray, \"float8_stddev_samp\", 3);\n\tN = transvalues[0];\n\t/* ignore Sx */\n\tSxx = transvalues[2];\n\n\t/* Sample stddev is undefined when N is 0 or 1, so return NULL */\n\tif (N <= 1.0)\n\t\tPG_RETURN_NULL();\n\n\t/* Note that Sxx is guaranteed to be non-negative */\n\n\tPG_RETURN_FLOAT8(sqrt(Sxx / (N - 1.0)));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "aggregates",
+    "fast_default"
+  ],
+  "category": "aggregate",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 59,
+  "oracle_diff_by_file": {
+    "aggregates": 35,
+    "fast_default": 24
+  }
+}

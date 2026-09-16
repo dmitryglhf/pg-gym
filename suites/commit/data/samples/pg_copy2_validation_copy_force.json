@@ -1,0 +1,36 @@
+{
+  "name": "pg_copy2_validation_copy_force",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "c06a4746b1be841dee998a75f9a52b2d06348ca7",
+  "parent": "a30c1ca21c584cb0917a5e6fbe086164cd8bec6a",
+  "date": "2024-10-17",
+  "subject": "Fix validation of COPY FORCE_NOT_NULL/FORCE_NULL for the all-column cases",
+  "area": "COPY, option validation",
+  "licence": "PostgreSQL",
+  "goal": "COPY's FORCE_NOT_NULL and FORCE_NULL take either a column list or `*` for every column. Written with a column list they are rejected outside CSV mode and rejected in COPY TO. Written as `*` they are accepted in both, where they mean nothing. FORCE_QUOTE, which has the same two forms, is validated in both.\n\nThe all-column form has to be validated exactly like the column-list form. Every combination that is legal today must stay legal.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/copy.c",
+      "added": 8,
+      "deleted": 4
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/copy2.sql",
+    "src/test/regress/expected/copy2.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "copy2"
+    ],
+    "command": "make -C src/test/regress check TESTS=copy2"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

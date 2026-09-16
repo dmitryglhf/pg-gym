@@ -1,0 +1,27 @@
+{
+  "func": "bound_box",
+  "mode": "stub",
+  "patch": "prep/bound_box.patch",
+  "symbols": [
+    "boxes_bound_box"
+  ],
+  "units": {
+    "boxes_bound_box": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/*\n * Smallest bounding box that includes both of the given boxes\n */\nDatum\nboxes_bound_box(PG_FUNCTION_ARGS)\n{\n\tBOX\t\t   *box1 = PG_GETARG_BOX_P(0),\n\t\t\t   *box2 = PG_GETARG_BOX_P(1),\n\t\t\t   *container;\n\n\tcontainer = (BOX *) palloc(sizeof(BOX));\n\n\tcontainer->high.x = float8_max(box1->high.x, box2->high.x);\n\tcontainer->low.x = float8_min(box1->low.x, box2->low.x);\n\tcontainer->high.y = float8_max(box1->high.y, box2->high.y);\n\tcontainer->low.y = float8_min(box1->low.y, box2->low.y);\n\n\tPG_RETURN_BOX_P(container);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "geometry"
+  ],
+  "category": "geometric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 29,
+  "oracle_diff_by_file": {
+    "geometry": 29
+  }
+}

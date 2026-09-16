@@ -1,0 +1,36 @@
+{
+  "name": "pg_partition_join_freeing_child_join",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "727bc6ac33f63245167b34e553c452c65c7c6d7d",
+  "parent": "a68a7594ca3adc22899a5d06629fb2d0fa6724bc",
+  "date": "2025-02-19",
+  "subject": "Fix freeing a child join's SpecialJoinInfo",
+  "area": "partitionwise joins, planner lifetime",
+  "licence": "PostgreSQL",
+  "goal": "Planning a partitionwise join can access invalid planner state after constructing child joins, leading to a crash or assertion failure on queries that reuse a partitioned relation and contain a subquery predicate.\n\nUse three references to the same partitioned table in a joined query with an IN or equivalent subquery, enable partitionwise joins, and run EXPLAIN. Planning must complete without a crash and the plan must preserve the query's join and subquery semantics. Simpler two-way partitionwise joins and plans with partitionwise joins disabled must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/path/joinrels.c",
+      "added": 25,
+      "deleted": 9
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/partition_join.sql",
+    "src/test/regress/expected/partition_join.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "partition_join"
+    ],
+    "command": "make -C src/test/regress check TESTS=partition_join"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

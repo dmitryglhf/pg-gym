@@ -1,0 +1,42 @@
+diff --git a/src/backend/utils/adt/tsvector_op.c b/src/backend/utils/adt/tsvector_op.c
+index 8fe02a5..2398507 100644
+--- a/src/backend/utils/adt/tsvector_op.c
++++ b/src/backend/utils/adt/tsvector_op.c
+@@ -167,35 +167,8 @@ TSVECTORCMPFUNC(cmp, +, INT32);
+ Datum
+ tsvector_strip(PG_FUNCTION_ARGS)
+ {
+-	TSVector	in = PG_GETARG_TSVECTOR(0);
+-	TSVector	out;
+-	int			i,
+-				len = 0;
+-	WordEntry  *arrin = ARRPTR(in),
+-			   *arrout;
+-	char	   *cur;
+-
+-	/* Output can't be bigger than input, so no need for overflow checks */
+-	for (i = 0; i < in->size; i++)
+-		len += arrin[i].len;
+-
+-	len = CALCDATASIZE(in->size, len);
+-	out = (TSVector) palloc0(len);
+-	SET_VARSIZE(out, len);
+-	out->size = in->size;
+-	arrout = ARRPTR(out);
+-	cur = STRPTR(out);
+-	for (i = 0; i < in->size; i++)
+-	{
+-		memcpy(cur, STRPTR(in) + arrin[i].pos, arrin[i].len);
+-		arrout[i].haspos = 0;
+-		arrout[i].len = arrin[i].len;
+-		arrout[i].pos = cur - STRPTR(out);
+-		cur += arrout[i].len;
+-	}
+-
+-	PG_FREE_IF_COPY(in, 0);
+-	PG_RETURN_POINTER(out);
++	elog(ERROR, "tsvector_strip is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

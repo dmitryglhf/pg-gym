@@ -1,0 +1,34 @@
+{
+  "func": "unnest",
+  "variants": [
+    {
+      "arguments": "anyarray",
+      "returns": "anyelement",
+      "kind": "f",
+      "volatile": "i",
+      "description": "expand array to set of rows"
+    },
+    {
+      "arguments": "tsvector",
+      "returns": "record",
+      "kind": "f",
+      "volatile": "i",
+      "description": "expand tsvector to set of rows"
+    },
+    {
+      "arguments": "anymultirange",
+      "returns": "anyrange",
+      "kind": "f",
+      "volatile": "i",
+      "description": "expand multirange to set of ranges"
+    }
+  ],
+  "description": "Expands a tsvector into a set of rows, one per lexeme.\nExpands an array into a set of rows. The array's elements are read out in storage order.\nExpands multiple arrays (possibly of different data types) into a set of rows. If the arrays are not all the same length then the shorter ones are padded with NULLs. This form is only allowed in a query's FROM clause.\nExpands a multirange into a set of ranges in ascending order.",
+  "examples": [
+    "unnest(ARRAY[1,2]) -> ",
+    "unnest(ARRAY[['foo','bar'],['baz','quux']]) -> ",
+    "unnest('{[1,2), [3,4)}'::int4multirange) -> "
+  ],
+  "mode": "stub",
+  "category": "srf"
+}

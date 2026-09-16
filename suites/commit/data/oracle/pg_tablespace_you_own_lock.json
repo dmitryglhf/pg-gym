@@ -1,0 +1,27 @@
+{
+  "func": "pg_tablespace_you_own_lock",
+  "sha": "718af10dab446c2ae73fe027a9f65be69bcf2980",
+  "parent": "aefbd6c29fa984e9ab1fd4b0b5d3e3fce4b18b03",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_tablespace_you_own_lock.patch",
+  "test_files": [
+    "src/test/regress/sql/tablespace.sql",
+    "src/test/regress/expected/tablespace.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/cache/syscache.c b/src/backend/utils/cache/syscache.c\nindex 50c9440f..88c47a99 100644\n--- a/src/backend/utils/cache/syscache.c\n+++ b/src/backend/utils/cache/syscache.c\n@@ -287,11 +287,9 @@ HeapTuple\n SearchSysCacheLocked1(int cacheId,\n \t\t\t\t\t  Datum key1)\n {\n+\tCatCache   *cache = SysCache[cacheId];\n \tItemPointerData tid;\n \tLOCKTAG\t\ttag;\n-\tOid\t\t\tdboid =\n-\t\tSysCache[cacheId]->cc_relisshared ? InvalidOid : MyDatabaseId;\n-\tOid\t\t\treloid = cacheinfo[cacheId].reloid;\n \n \t/*----------\n \t * Since inplace updates may happen just before our LockTuple(), we must\n@@ -343,8 +341,15 @@ SearchSysCacheLocked1(int cacheId,\n \n \t\ttid = tuple->t_self;\n \t\tReleaseSysCache(tuple);\n-\t\t/* like: LockTuple(rel, &tid, lockmode) */\n-\t\tSET_LOCKTAG_TUPLE(tag, dboid, reloid,\n+\n+\t\t/*\n+\t\t * Do like LockTuple(rel, &tid, lockmode).  While cc_relisshared won't\n+\t\t * change from one iteration to another, it may have been a temporary\n+\t\t * \"false\" until our first SearchSysCache1().\n+\t\t */\n+\t\tSET_LOCKTAG_TUPLE(tag,\n+\t\t\t\t\t\t  cache->cc_relisshared ? InvalidOid : MyDatabaseId,\n+\t\t\t\t\t\t  cache->cc_reloid,\n \t\t\t\t\t\t  ItemPointerGetBlockNumber(&tid),\n \t\t\t\t\t\t  ItemPointerGetOffsetNumber(&tid));\n \t\t(void) LockAcquire(&tag, lockmode, false, false);\n",
+  "test": "diff --git a/src/test/regress/expected/tablespace.out b/src/test/regress/expected/tablespace.out\nindex 9aabb853..9c561395 100644\n--- a/src/test/regress/expected/tablespace.out\n+++ b/src/test/regress/expected/tablespace.out\n@@ -927,6 +927,11 @@ ALTER INDEX testschema.part_a_idx SET TABLESPACE pg_default;\n -- Fail, not empty\n DROP TABLESPACE regress_tblspace;\n ERROR:  tablespace \"regress_tblspace\" is not empty\n+-- Adequate cache initialization before GRANT\n+\\c -\n+BEGIN;\n+GRANT ALL ON TABLESPACE regress_tblspace TO PUBLIC;\n+ROLLBACK;\n CREATE ROLE regress_tablespace_user1 login;\n CREATE ROLE regress_tablespace_user2 login;\n GRANT USAGE ON SCHEMA testschema TO regress_tablespace_user2;\ndiff --git a/src/test/regress/sql/tablespace.sql b/src/test/regress/sql/tablespace.sql\nindex d274d961..0f9c136d 100644\n--- a/src/test/regress/sql/tablespace.sql\n+++ b/src/test/regress/sql/tablespace.sql\n@@ -396,6 +396,12 @@ ALTER INDEX testschema.part_a_idx SET TABLESPACE pg_default;\n -- Fail, not empty\n DROP TABLESPACE regress_tblspace;\n \n+-- Adequate cache initialization before GRANT\n+\\c -\n+BEGIN;\n+GRANT ALL ON TABLESPACE regress_tblspace TO PUBLIC;\n+ROLLBACK;\n+\n CREATE ROLE regress_tablespace_user1 login;\n CREATE ROLE regress_tablespace_user2 login;\n GRANT USAGE ON SCHEMA testschema TO regress_tablespace_user2;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=tablespace",
+  "expected_tests": [
+    "tablespace"
+  ],
+  "failing_tests": [
+    "tablespace"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 1,
+  "oracle_diff_by_file": {
+    "tablespace": 1
+  }
+}

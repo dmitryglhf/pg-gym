@@ -1,0 +1,15 @@
+{
+  "func": "pg_timezone_abbrevs",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "record",
+      "kind": "f",
+      "volatile": "s",
+      "description": "get the available time zone abbreviations"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

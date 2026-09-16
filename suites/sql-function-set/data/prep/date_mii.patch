@@ -1,0 +1,35 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..a852d3f 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -522,28 +522,11 @@ date_pli(PG_FUNCTION_ARGS)
+ 	PG_RETURN_DATEADT(result);
+ }
+ 
+-/* Subtract a number of days from a date, giving a new date.
+- */
+ Datum
+ date_mii(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal = PG_GETARG_DATEADT(0);
+-	int32		days = PG_GETARG_INT32(1);
+-	DateADT		result;
+-
+-	if (DATE_NOT_FINITE(dateVal))
+-		PG_RETURN_DATEADT(dateVal); /* can't change infinity */
+-
+-	result = dateVal - days;
+-
+-	/* Check for integer overflow and out-of-allowed-range */
+-	if ((days >= 0 ? (result > dateVal) : (result < dateVal)) ||
+-		!IS_VALID_DATE(result))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("date out of range")));
+-
+-	PG_RETURN_DATEADT(result);
++	elog(ERROR, "date_mii is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

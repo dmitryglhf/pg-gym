@@ -1,0 +1,18 @@
+{
+  "func": "interval_avg_combine",
+  "mode": "stub",
+  "patch": "prep/interval_avg_combine.patch",
+  "symbols": [
+    "interval_avg_combine"
+  ],
+  "units": {
+    "interval_avg_combine": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * Combine function for sum() and avg() interval aggregates.\n *\n * Combine the given internal aggregate states and place the combination in\n * the first argument.\n */\nDatum\ninterval_avg_combine(PG_FUNCTION_ARGS)\n{\n\tIntervalAggState *state1;\n\tIntervalAggState *state2;\n\n\tstate1 = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);\n\tstate2 = PG_ARGISNULL(1) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(1);\n\n\tif (state2 == NULL)\n\t{\n\t\t/*\n\t\t * NULL state2 is easy, just return state1, which we know is already\n\t\t * in the agg_context\n\t\t */\n\t\tif (state1 == NULL)\n\t\t\tPG_RETURN_NULL();\n\t\tPG_RETURN_POINTER(state1);\n\t}\n\n\tif (state1 == NULL)\n\t{\n\t\t/* manually copy all fields from state2 to state1 */\n\t\tstate1 = makeIntervalAggState(fcinfo);\n\n\t\tstate1->N = state2->N;\n\t\tstate1->pInfcount = state2->pInfcount;\n\t\tstate1->nInfcount = state2->nInfcount;\n\n\t\tstate1->sumX.day = state2->sumX.day;\n\t\tstate1->sumX.month = state2->sumX.month;\n\t\tstate1->sumX.time = state2->sumX.time;\n\n\t\tPG_RETURN_POINTER(state1);\n\t}\n\n\tstate1->N += state2->N;\n\tstate1->pInfcount += state2->pInfcount;\n\tstate1->nInfcount += state2->nInfcount;\n\n\t/* Accumulate finite interval values, if any. */\n\tif (state2->N > 0)\n\t\tfinite_interval_pl(&state1->sumX, &state2->sumX, &state1->sumX);\n\n\tPG_RETURN_POINTER(state1);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

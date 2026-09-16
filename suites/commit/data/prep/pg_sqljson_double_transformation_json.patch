@@ -1,0 +1,13 @@
+diff --git a/src/backend/parser/parse_expr.c b/src/backend/parser/parse_expr.c
+index 84235420..2258701f 100644
+--- a/src/backend/parser/parse_expr.c
++++ b/src/backend/parser/parse_expr.c
+@@ -3764,7 +3764,7 @@ transformJsonArrayQueryConstructor(ParseState *pstate,
+ 	/* Transform query only for counting target list entries. */
+ 	qpstate = make_parsestate(pstate);
+ 
+-	query = transformStmt(qpstate, copyObject(ctor->query));
++	query = transformStmt(qpstate, ctor->query);
+ 
+ 	if (count_nonjunk_tlist_entries(query->targetList) != 1)
+ 		ereport(ERROR,

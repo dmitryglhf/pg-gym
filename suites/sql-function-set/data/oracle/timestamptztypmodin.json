@@ -1,0 +1,18 @@
+{
+  "func": "timestamptztypmodin",
+  "mode": "stub",
+  "patch": "prep/timestamptztypmodin.patch",
+  "symbols": [
+    "timestamptztypmodin"
+  ],
+  "units": {
+    "timestamptztypmodin": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamptztypmodin(PG_FUNCTION_ARGS)\n{\n\tArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);\n\n\tPG_RETURN_INT32(anytimestamp_typmodin(true, ta));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

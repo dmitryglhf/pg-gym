@@ -1,0 +1,18 @@
+diff --git a/src/backend/catalog/heap.c b/src/backend/catalog/heap.c
+index 4d0e18fb..ee4b718a 100644
+--- a/src/backend/catalog/heap.c
++++ b/src/backend/catalog/heap.c
+@@ -1470,11 +1470,9 @@ heap_create_with_catalog(const char *relname,
+ 		 * access method is.
+ 		 *
+ 		 * No need to add an explicit dependency for the toast table, as the
+-		 * main table depends on it.  Partitioned tables may not have an
+-		 * access method set.
++		 * main table depends on it.
+ 		 */
+-		if ((RELKIND_HAS_TABLE_AM(relkind) && relkind != RELKIND_TOASTVALUE) ||
+-			(relkind == RELKIND_PARTITIONED_TABLE && OidIsValid(accessmtd)))
++		if (RELKIND_HAS_TABLE_AM(relkind) && relkind != RELKIND_TOASTVALUE)
+ 		{
+ 			ObjectAddressSet(referenced, AccessMethodRelationId, accessmtd);
+ 			add_exact_object_address(&referenced, addrs);

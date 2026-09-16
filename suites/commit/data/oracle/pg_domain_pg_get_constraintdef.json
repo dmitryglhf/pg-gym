@@ -1,0 +1,27 @@
+{
+  "func": "pg_domain_pg_get_constraintdef",
+  "sha": "6e793582bc663fb7652834170be8902b982b7bcb",
+  "parent": "7786717b9e5d0e7ad828a7c7a65c74732ec492a9",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_domain_pg_get_constraintdef.patch",
+  "test_files": [
+    "src/test/regress/sql/domain.sql",
+    "src/test/regress/expected/domain.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/ruleutils.c b/src/backend/utils/adt/ruleutils.c\nindex dc6d1d6d..ea5d8683 100644\n--- a/src/backend/utils/adt/ruleutils.c\n+++ b/src/backend/utils/adt/ruleutils.c\n@@ -2499,6 +2499,11 @@ pg_get_constraintdef_worker(Oid constraintId, bool fullCommand,\n \t\t\t\t\t\t\t\t conForm->connoinherit ? \" NO INHERIT\" : \"\");\n \t\t\t\tbreak;\n \t\t\t}\n+\n+\t\tcase CONSTRAINT_NOTNULL:\n+\t\t\tappendStringInfoString(&buf, \"NOT NULL\");\n+\t\t\tbreak;\n+\n \t\tcase CONSTRAINT_TRIGGER:\n \n \t\t\t/*\n",
+  "test": "diff --git a/src/test/regress/expected/domain.out b/src/test/regress/expected/domain.out\nindex f65b6634..42b6559f 100644\n--- a/src/test/regress/expected/domain.out\n+++ b/src/test/regress/expected/domain.out\n@@ -743,6 +743,20 @@ update domnotnull set col1 = null; -- fails\n ERROR:  domain dnotnulltest does not allow null values\n alter domain dnotnulltest drop not null;\n update domnotnull set col1 = null;\n+update domnotnull set col1 = 5;\n+-- these constraints can also be added and removed by name\n+alter domain dnotnulltest add constraint dnotnulltest_notnull not null;\n+update domnotnull set col1 = null;\t\t-- fails\n+ERROR:  domain dnotnulltest does not allow null values\n+select conname, pg_get_constraintdef(oid) from pg_constraint\n+ where contypid = 'dnotnulltest'::regtype;\n+       conname        | pg_get_constraintdef \n+----------------------+----------------------\n+ dnotnulltest_notnull | NOT NULL\n+(1 row)\n+\n+alter domain dnotnulltest drop constraint dnotnulltest_notnull;\n+update domnotnull set col1 = null;\n drop domain dnotnulltest cascade;\n NOTICE:  drop cascades to 2 other objects\n DETAIL:  drop cascades to column col2 of table domnotnull\ndiff --git a/src/test/regress/sql/domain.sql b/src/test/regress/sql/domain.sql\nindex b5a70ee8..ee07b031 100644\n--- a/src/test/regress/sql/domain.sql\n+++ b/src/test/regress/sql/domain.sql\n@@ -429,6 +429,17 @@ alter domain dnotnulltest drop not null;\n \n update domnotnull set col1 = null;\n \n+update domnotnull set col1 = 5;\n+\n+-- these constraints can also be added and removed by name\n+alter domain dnotnulltest add constraint dnotnulltest_notnull not null;\n+update domnotnull set col1 = null;\t\t-- fails\n+select conname, pg_get_constraintdef(oid) from pg_constraint\n+ where contypid = 'dnotnulltest'::regtype;\n+\n+alter domain dnotnulltest drop constraint dnotnulltest_notnull;\n+update domnotnull set col1 = null;\n+\n drop domain dnotnulltest cascade;\n \n -- Test ALTER DOMAIN .. DEFAULT ..\n",
+  "oracle_command": "make -C src/test/regress check TESTS=domain",
+  "expected_tests": [
+    "domain"
+  ],
+  "failing_tests": [
+    "domain"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 5,
+  "oracle_diff_by_file": {
+    "domain": 5
+  }
+}

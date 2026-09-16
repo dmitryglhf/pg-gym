@@ -1,0 +1,27 @@
+{
+  "func": "pg_foreign_data_dependency_fdw_handler",
+  "sha": "876fa84a275eea578b4a89bb910e184f98d991c2",
+  "parent": "8ee536c89517c0d2fc9df2177eb1e51e61367a68",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_foreign_data_dependency_fdw_handler.patch",
+  "test_files": [
+    "src/test/regress/sql/foreign_data.sql",
+    "src/test/regress/expected/foreign_data.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/foreigncmds.c b/src/backend/commands/foreigncmds.c\nindex 17f40599..99d1859e 100644\n--- a/src/backend/commands/foreigncmds.c\n+++ b/src/backend/commands/foreigncmds.c\n@@ -740,6 +740,11 @@ AlterForeignDataWrapper(ParseState *pstate, AlterFdwStmt *stmt)\n \t\tereport(WARNING,\n \t\t\t\t(errmsg(\"changing the foreign-data wrapper handler can change behavior of existing foreign tables\")));\n \t}\n+\telse\n+\t{\n+\t\t/* handler unchanged */\n+\t\tfdwhandler = fdwForm->fdwhandler;\n+\t}\n \n \tif (validator_given)\n \t{\n",
+  "test": "diff --git a/src/test/regress/expected/foreign_data.out b/src/test/regress/expected/foreign_data.out\nindex 741572c3..08b12be7 100644\n--- a/src/test/regress/expected/foreign_data.out\n+++ b/src/test/regress/expected/foreign_data.out\n@@ -106,6 +106,13 @@ ERROR:  conflicting or redundant options\n LINE 1: ...GN DATA WRAPPER test_fdw HANDLER test_fdw_handler HANDLER in...\n                                                              ^\n CREATE FOREIGN DATA WRAPPER test_fdw HANDLER test_fdw_handler;\n+-- should preserve dependency on test_fdw_handler\n+ALTER FOREIGN DATA WRAPPER test_fdw VALIDATOR postgresql_fdw_validator;\n+WARNING:  changing the foreign-data wrapper validator can cause the options for dependent objects to become invalid\n+DROP FUNCTION test_fdw_handler(); -- ERROR\n+ERROR:  cannot drop function test_fdw_handler() because other objects depend on it\n+DETAIL:  foreign-data wrapper test_fdw depends on function test_fdw_handler()\n+HINT:  Use DROP ... CASCADE to drop the dependent objects too.\n DROP FOREIGN DATA WRAPPER test_fdw;\n -- ALTER FOREIGN DATA WRAPPER\n ALTER FOREIGN DATA WRAPPER foo OPTIONS (nonexistent 'fdw');         -- ERROR\ndiff --git a/src/test/regress/sql/foreign_data.sql b/src/test/regress/sql/foreign_data.sql\nindex 084d5559..0080bfb8 100644\n--- a/src/test/regress/sql/foreign_data.sql\n+++ b/src/test/regress/sql/foreign_data.sql\n@@ -67,6 +67,11 @@ CREATE FUNCTION invalid_fdw_handler() RETURNS int LANGUAGE SQL AS 'SELECT 1;';\n CREATE FOREIGN DATA WRAPPER test_fdw HANDLER invalid_fdw_handler;  -- ERROR\n CREATE FOREIGN DATA WRAPPER test_fdw HANDLER test_fdw_handler HANDLER invalid_fdw_handler;  -- ERROR\n CREATE FOREIGN DATA WRAPPER test_fdw HANDLER test_fdw_handler;\n+\n+-- should preserve dependency on test_fdw_handler\n+ALTER FOREIGN DATA WRAPPER test_fdw VALIDATOR postgresql_fdw_validator;\n+DROP FUNCTION test_fdw_handler(); -- ERROR\n+\n DROP FOREIGN DATA WRAPPER test_fdw;\n \n -- ALTER FOREIGN DATA WRAPPER\n",
+  "oracle_command": "make -C src/test/regress check TESTS=foreign_data",
+  "expected_tests": [
+    "foreign_data"
+  ],
+  "failing_tests": [
+    "foreign_data"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 20,
+  "oracle_diff_by_file": {
+    "foreign_data": 20
+  }
+}

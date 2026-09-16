@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..d1faaf2 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -987,10 +987,8 @@ timestamptz_ne_date(PG_FUNCTION_ARGS)
+ Datum
+ timestamptz_lt_date(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz dt1 = PG_GETARG_TIMESTAMPTZ(0);
+-	DateADT		dateVal = PG_GETARG_DATEADT(1);
+-
+-	PG_RETURN_BOOL(date_cmp_timestamptz_internal(dateVal, dt1) > 0);
++	elog(ERROR, "timestamptz_lt_date is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

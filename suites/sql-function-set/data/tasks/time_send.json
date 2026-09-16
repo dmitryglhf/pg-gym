@@ -1,0 +1,15 @@
+{
+  "func": "time_send",
+  "variants": [
+    {
+      "arguments": "time",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

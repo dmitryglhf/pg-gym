@@ -1,0 +1,18 @@
+{
+  "func": "encode",
+  "variants": [
+    {
+      "arguments": "bytea text",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert bytea value into some ascii-only text string"
+    }
+  ],
+  "description": "Encodes binary data into a textual representation; supported format values are: base64, escape, hex.",
+  "examples": [
+    "encode('123\\000\\001', 'base64') -> MTIzAAE="
+  ],
+  "mode": "stub",
+  "category": "encoding"
+}

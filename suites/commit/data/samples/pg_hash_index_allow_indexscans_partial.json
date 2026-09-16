@@ -1,0 +1,36 @@
+{
+  "name": "pg_hash_index_allow_indexscans_partial",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e79b2766216ab998080725323bcb4f4e87d639cc",
+  "parent": "d7977668eec65363012797302b492adff1578274",
+  "date": "2025-11-27",
+  "subject": "Allow indexscans on partial hash indexes with implied quals.",
+  "area": "planner, partial hash indexes",
+  "licence": "PostgreSQL",
+  "goal": "The planner can fail to generate an index scan for a usable partial hash index when the query condition is also what proves the index predicate. After implication processing, the remaining search-key bookkeeping makes the index look as though it has no usable first-key condition.\n\nCreate a partial hash index such as `ON t USING hash(seqno) WHERE seqno = 9999` and query with `WHERE seqno = 9999`. The query must return the correct row and remain eligible for an Index Scan on that index. Queries that do not imply the predicate must not use it, and partial indexes for other access methods must retain their existing planning behavior.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/path/indxpath.c",
+      "added": 10,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/hash_index.sql",
+    "src/test/regress/expected/hash_index.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "hash_index"
+    ],
+    "command": "make -C src/test/regress check TESTS=hash_index"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

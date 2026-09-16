@@ -1,0 +1,18 @@
+{
+  "func": "array_remove",
+  "variants": [
+    {
+      "arguments": "anycompatiblearray anycompatible",
+      "returns": "anycompatiblearray",
+      "kind": "f",
+      "volatile": "i",
+      "description": "remove any occurrences of an element from an array"
+    }
+  ],
+  "description": "Removes all elements equal to the given value from the array. The array must be one-dimensional. Comparisons are done using IS NOT DISTINCT FROM semantics, so it is possible to remove NULLs.",
+  "examples": [
+    "array_remove(ARRAY[1,2,3,2], 2) -> {1,3}"
+  ],
+  "mode": "stub",
+  "category": "array"
+}

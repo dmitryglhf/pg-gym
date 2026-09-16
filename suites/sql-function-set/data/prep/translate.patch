@@ -1,0 +1,138 @@
+diff --git a/src/backend/utils/adt/oracle_compat.c b/src/backend/utils/adt/oracle_compat.c
+index f93077a..016ac39 100644
+--- a/src/backend/utils/adt/oracle_compat.c
++++ b/src/backend/utils/adt/oracle_compat.c
+@@ -781,131 +781,11 @@ rtrim1(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/********************************************************************
+- *
+- * translate
+- *
+- * Syntax:
+- *
+- *	 text translate(text string, text from, text to)
+- *
+- * Purpose:
+- *
+- *	 Returns string after replacing all occurrences of characters in from
+- *	 with the corresponding character in to.  If from is longer than to,
+- *	 occurrences of the extra characters in from are deleted.
+- *	 Improved by Edwin Ramirez <ramirez@doc.mssm.edu>.
+- *
+- ********************************************************************/
+-
+ Datum
+ translate(PG_FUNCTION_ARGS)
+ {
+-	text	   *string = PG_GETARG_TEXT_PP(0);
+-	text	   *from = PG_GETARG_TEXT_PP(1);
+-	text	   *to = PG_GETARG_TEXT_PP(2);
+-	text	   *result;
+-	char	   *from_ptr,
+-			   *to_ptr,
+-			   *to_end;
+-	char	   *source,
+-			   *target;
+-	const char *source_end;
+-	const char *from_end;
+-	int			m,
+-				fromlen,
+-				tolen,
+-				retlen,
+-				i;
+-	int			bytelen;
+-	int			len;
+-	int			source_len;
+-	int			from_index;
+-
+-	m = VARSIZE_ANY_EXHDR(string);
+-	if (m <= 0)
+-		PG_RETURN_TEXT_P(string);
+-	source = VARDATA_ANY(string);
+-	source_end = source + m;
+-
+-	fromlen = VARSIZE_ANY_EXHDR(from);
+-	from_ptr = VARDATA_ANY(from);
+-	from_end = from_ptr + fromlen;
+-	tolen = VARSIZE_ANY_EXHDR(to);
+-	to_ptr = VARDATA_ANY(to);
+-	to_end = to_ptr + tolen;
+-
+-	/*
+-	 * The worst-case expansion is to substitute a max-length character for a
+-	 * single-byte character at each position of the string.
+-	 */
+-	if (unlikely(pg_mul_s32_overflow(pg_database_encoding_max_length(), m,
+-									 &bytelen)) ||
+-		unlikely(pg_add_s32_overflow(bytelen, VARHDRSZ, &bytelen)) ||
+-		unlikely(!AllocSizeIsValid(bytelen)))
+-		ereport(ERROR,
+-				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+-				 errmsg("requested length too large")));
+-
+-	result = (text *) palloc(bytelen);
+-
+-	target = VARDATA(result);
+-	retlen = 0;
+-
+-	while (m > 0)
+-	{
+-		source_len = pg_mblen_range(source, source_end);
+-		from_index = 0;
+-
+-		for (i = 0; i < fromlen; i += len)
+-		{
+-			len = pg_mblen_range(&from_ptr[i], from_end);
+-			if (len == source_len &&
+-				memcmp(source, &from_ptr[i], len) == 0)
+-				break;
+-
+-			from_index++;
+-		}
+-		if (i < fromlen)
+-		{
+-			/* substitute, or delete if no corresponding "to" character */
+-			char	   *p = to_ptr;
+-
+-			for (i = 0; i < from_index; i++)
+-			{
+-				if (p >= to_end)
+-					break;
+-				p += pg_mblen_range(p, to_end);
+-			}
+-			if (p < to_end)
+-			{
+-				len = pg_mblen_range(p, to_end);
+-				memcpy(target, p, len);
+-				target += len;
+-				retlen += len;
+-			}
+-		}
+-		else
+-		{
+-			/* no match, so copy */
+-			memcpy(target, source, source_len);
+-			target += source_len;
+-			retlen += source_len;
+-		}
+-
+-		source += source_len;
+-		m -= source_len;
+-	}
+-
+-	SET_VARSIZE(result, retlen + VARHDRSZ);
+-
+-	/*
+-	 * The function result is probably much bigger than needed, if we're using
+-	 * a multibyte encoding, but it's not worth reallocating it; the result
+-	 * probably won't live long anyway.
+-	 */
+-
+-	PG_RETURN_TEXT_P(result);
++	elog(ERROR, "translate is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /********************************************************************

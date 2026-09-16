@@ -1,0 +1,77 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..1d6f575 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1290,33 +1290,11 @@ date_timestamp(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(result);
+ }
+ 
+-/* timestamp_date()
+- * Convert timestamp to date data type.
+- */
+ Datum
+ timestamp_date(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(0);
+-	DateADT		result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-
+-	if (TIMESTAMP_IS_NOBEGIN(timestamp))
+-		DATE_NOBEGIN(result);
+-	else if (TIMESTAMP_IS_NOEND(timestamp))
+-		DATE_NOEND(result);
+-	else
+-	{
+-		if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("timestamp out of range")));
+-
+-		result = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+-	}
+-
+-	PG_RETURN_DATEADT(result);
++	elog(ERROR, "timestamp_date is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -1335,34 +1313,11 @@ date_timestamptz(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/* timestamptz_date()
+- * Convert timestamp with time zone to date data type.
+- */
+ Datum
+ timestamptz_date(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMP(0);
+-	DateADT		result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-	int			tz;
+-
+-	if (TIMESTAMP_IS_NOBEGIN(timestamp))
+-		DATE_NOBEGIN(result);
+-	else if (TIMESTAMP_IS_NOEND(timestamp))
+-		DATE_NOEND(result);
+-	else
+-	{
+-		if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("timestamp out of range")));
+-
+-		result = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+-	}
+-
+-	PG_RETURN_DATEADT(result);
++	elog(ERROR, "timestamptz_date is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

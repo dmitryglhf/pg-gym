@@ -1,0 +1,36 @@
+{
+  "name": "pg_triggers_maketransitioncapturestate_return_consistent",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "6342d49d89b95503444bb4fba01b85e1b24e8880",
+  "parent": "c9a1d21352154dbd7a306823af411420dae94ade",
+  "date": "2025-02-13",
+  "subject": "Fix MakeTransitionCaptureState() to return a consistent result",
+  "area": "triggers, transition tables on partitioned tables",
+  "licence": "PostgreSQL",
+  "goal": "A partitioned table carries an UPDATE trigger declared REFERENCING NEW TABLE and, at the same time, a DELETE trigger declared REFERENCING OLD TABLE. For an UPDATE command the state built to capture transition tuples comes out internally inconsistent: the flags that say which transition tables are wanted do not agree with the tuplestores actually handed over.\n\nA cross-partition update on such a table then behaves wrongly, and on some builds crashes.\n\nFor every combination of trigger events and transition tables the flags and the tuplestores have to describe the same thing. A table carrying only one of the two triggers must keep behaving as it does now.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/trigger.c",
+      "added": 4,
+      "deleted": 4
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/triggers.sql",
+    "src/test/regress/expected/triggers.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "triggers"
+    ],
+    "command": "make -C src/test/regress check TESTS=triggers"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

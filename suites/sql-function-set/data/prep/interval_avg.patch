@@ -1,0 +1,51 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..9a46df5 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -4174,44 +4174,11 @@ interval_avg_accum_inv(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(state);
+ }
+ 
+-/* avg(interval) aggregate final function */
+ Datum
+ interval_avg(PG_FUNCTION_ARGS)
+ {
+-	IntervalAggState *state;
+-
+-	state = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);
+-
+-	/* If there were no non-null inputs, return NULL */
+-	if (state == NULL || IA_TOTAL_COUNT(state) == 0)
+-		PG_RETURN_NULL();
+-
+-	/*
+-	 * Aggregating infinities that all have the same sign produces infinity
+-	 * with that sign.  Aggregating infinities with different signs results in
+-	 * an error.
+-	 */
+-	if (state->pInfcount > 0 || state->nInfcount > 0)
+-	{
+-		Interval   *result;
+-
+-		if (state->pInfcount > 0 && state->nInfcount > 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("interval out of range")));
+-
+-		result = (Interval *) palloc(sizeof(Interval));
+-		if (state->pInfcount > 0)
+-			INTERVAL_NOEND(result);
+-		else
+-			INTERVAL_NOBEGIN(result);
+-
+-		PG_RETURN_INTERVAL_P(result);
+-	}
+-
+-	return DirectFunctionCall2(interval_div,
+-							   IntervalPGetDatum(&state->sumX),
+-							   Float8GetDatum((double) state->N));
++	elog(ERROR, "interval_avg is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* sum(interval) aggregate final function */

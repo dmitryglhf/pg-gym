@@ -1,0 +1,10 @@
+{
+  "name": "pg_stats_ext_statisticsobjisvisibleext_pg_temp",
+  "area": "name resolution, extended statistics",
+  "goal": "An unqualified statistics object name is never resolved in the temporary schema. That has been the rule for every namespace search except relations and types since CVE-2007-2138. The test that answers whether a statistics object is visible under the current search path does not follow it, and calls an object created in pg_temp visible.\n\n    CREATE STATISTICS pg_temp.stats_ext_temp ON a, b FROM ab1;\n    SELECT pg_statistics_obj_is_visible(oid) FROM pg_statistic_ext\n     WHERE stxname = 'stats_ext_temp';\n\nThat answers true, while DROP STATISTICS stats_ext_temp cannot find the object at all. The same wrong answer makes psql's \\dX list such objects, and makes pg_describe_object() and the error messages built on it print the name with no schema on the front, as though the bare name would find it.\n\nVisibility has to agree with what an unqualified name actually resolves to, so that query has to answer false and the description has to be schema-qualified. Statistics objects in ordinary schemas, on the search path or not, must be reported exactly as they are now, and no other kind of object's visibility may change.",
+  "func": "pg_stats_ext_statisticsobjisvisibleext_pg_temp",
+  "graded_by": [
+    "src/test/regress/sql/stats_ext.sql",
+    "src/test/regress/expected/stats_ext.out"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "func": "gen_random_uuid",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "uuid",
+      "kind": "f",
+      "volatile": "v",
+      "description": "generate random UUID"
+    }
+  ],
+  "description": "PostgreSQL includes one function to generate a UUID: This function returns a version 4 (random) UUID. This is the most commonly used type of UUID and is appropriate for most applications.",
+  "examples": [],
+  "mode": "stub",
+  "category": "uuid"
+}

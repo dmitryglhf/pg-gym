@@ -1,0 +1,99 @@
+diff --git a/src/backend/utils/adt/numeric.c b/src/backend/utils/adt/numeric.c
+index 14e8895..a082456 100644
+--- a/src/backend/utils/adt/numeric.c
++++ b/src/backend/utils/adt/numeric.c
+@@ -3272,92 +3272,11 @@ numeric_div_opt_error(Numeric num1, Numeric num2, bool *have_error)
+ }
+ 
+ 
+-/*
+- * numeric_div_trunc() -
+- *
+- *	Divide one numeric into another, truncating the result to an integer
+- */
+ Datum
+ numeric_div_trunc(PG_FUNCTION_ARGS)
+ {
+-	Numeric		num1 = PG_GETARG_NUMERIC(0);
+-	Numeric		num2 = PG_GETARG_NUMERIC(1);
+-	NumericVar	arg1;
+-	NumericVar	arg2;
+-	NumericVar	result;
+-	Numeric		res;
+-
+-	/*
+-	 * Handle NaN and infinities
+-	 */
+-	if (NUMERIC_IS_SPECIAL(num1) || NUMERIC_IS_SPECIAL(num2))
+-	{
+-		if (NUMERIC_IS_NAN(num1) || NUMERIC_IS_NAN(num2))
+-			PG_RETURN_NUMERIC(make_result(&const_nan));
+-		if (NUMERIC_IS_PINF(num1))
+-		{
+-			if (NUMERIC_IS_SPECIAL(num2))
+-				PG_RETURN_NUMERIC(make_result(&const_nan)); /* Inf / [-]Inf */
+-			switch (numeric_sign_internal(num2))
+-			{
+-				case 0:
+-					ereport(ERROR,
+-							(errcode(ERRCODE_DIVISION_BY_ZERO),
+-							 errmsg("division by zero")));
+-					break;
+-				case 1:
+-					PG_RETURN_NUMERIC(make_result(&const_pinf));
+-				case -1:
+-					PG_RETURN_NUMERIC(make_result(&const_ninf));
+-			}
+-			Assert(false);
+-		}
+-		if (NUMERIC_IS_NINF(num1))
+-		{
+-			if (NUMERIC_IS_SPECIAL(num2))
+-				PG_RETURN_NUMERIC(make_result(&const_nan)); /* -Inf / [-]Inf */
+-			switch (numeric_sign_internal(num2))
+-			{
+-				case 0:
+-					ereport(ERROR,
+-							(errcode(ERRCODE_DIVISION_BY_ZERO),
+-							 errmsg("division by zero")));
+-					break;
+-				case 1:
+-					PG_RETURN_NUMERIC(make_result(&const_ninf));
+-				case -1:
+-					PG_RETURN_NUMERIC(make_result(&const_pinf));
+-			}
+-			Assert(false);
+-		}
+-		/* by here, num1 must be finite, so num2 is not */
+-
+-		/*
+-		 * POSIX would have us return zero or minus zero if num1 is zero, and
+-		 * otherwise throw an underflow error.  But the numeric type doesn't
+-		 * really do underflow, so let's just return zero.
+-		 */
+-		PG_RETURN_NUMERIC(make_result(&const_zero));
+-	}
+-
+-	/*
+-	 * Unpack the arguments
+-	 */
+-	init_var_from_num(num1, &arg1);
+-	init_var_from_num(num2, &arg2);
+-
+-	init_var(&result);
+-
+-	/*
+-	 * Do the divide and return the result
+-	 */
+-	div_var(&arg1, &arg2, &result, 0, false);
+-
+-	res = make_result(&result);
+-
+-	free_var(&result);
+-
+-	PG_RETURN_NUMERIC(res);
++	elog(ERROR, "numeric_div_trunc is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

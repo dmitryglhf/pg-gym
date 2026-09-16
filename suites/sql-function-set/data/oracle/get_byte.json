@@ -1,0 +1,27 @@
+{
+  "func": "get_byte",
+  "mode": "stub",
+  "patch": "prep/get_byte.patch",
+  "symbols": [
+    "byteaGetByte"
+  ],
+  "units": {
+    "byteaGetByte": {
+      "file": "src/backend/utils/adt/varlena.c",
+      "code": "/*-------------------------------------------------------------\n * byteaGetByte\n *\n * this routine treats \"bytea\" as an array of bytes.\n * It returns the Nth byte (a number between 0 and 255).\n *-------------------------------------------------------------\n */\nDatum\nbyteaGetByte(PG_FUNCTION_ARGS)\n{\n\tbytea\t   *v = PG_GETARG_BYTEA_PP(0);\n\tint32\t\tn = PG_GETARG_INT32(1);\n\tint\t\t\tlen;\n\tint\t\t\tbyte;\n\n\tlen = VARSIZE_ANY_EXHDR(v);\n\n\tif (n < 0 || n >= len)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),\n\t\t\t\t errmsg(\"index %d out of valid range, 0..%d\",\n\t\t\t\t\t\tn, len - 1)));\n\n\tbyte = ((unsigned char *) VARDATA_ANY(v))[n];\n\n\tPG_RETURN_INT32(byte);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "strings"
+  ],
+  "category": "encoding",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 7,
+  "oracle_diff_by_file": {
+    "strings": 7
+  }
+}

@@ -1,0 +1,16 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..41d3973 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -857,9 +857,8 @@ timestamptz_send(PG_FUNCTION_ARGS)
+ Datum
+ timestamptztypmodin(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *ta = PG_GETARG_ARRAYTYPE_P(0);
+-
+-	PG_RETURN_INT32(anytimestamp_typmodin(true, ta));
++	elog(ERROR, "timestamptztypmodin is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

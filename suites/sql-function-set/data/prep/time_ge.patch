@@ -1,0 +1,17 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..47710e2 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1724,10 +1724,8 @@ time_gt(PG_FUNCTION_ARGS)
+ Datum
+ time_ge(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		time1 = PG_GETARG_TIMEADT(0);
+-	TimeADT		time2 = PG_GETARG_TIMEADT(1);
+-
+-	PG_RETURN_BOOL(time1 >= time2);
++	elog(ERROR, "time_ge is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

@@ -1,0 +1,50 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..08ae4f2 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -458,9 +458,8 @@ date_sortsupport(PG_FUNCTION_ARGS)
+ Datum
+ date_finite(PG_FUNCTION_ARGS)
+ {
+-	DateADT		date = PG_GETARG_DATEADT(0);
+-
+-	PG_RETURN_BOOL(!DATE_NOT_FINITE(date));
++	elog(ERROR, "date_finite is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..b7c33ae 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2142,25 +2142,18 @@ dt2local(Timestamp dt, int timezone)
+ }
+ 
+ 
+-/*****************************************************************************
+- *	 PUBLIC ROUTINES														 *
+- *****************************************************************************/
+-
+-
+ Datum
+ timestamp_finite(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(0);
+-
+-	PG_RETURN_BOOL(!TIMESTAMP_NOT_FINITE(timestamp));
++	elog(ERROR, "timestamp_finite is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ interval_finite(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval = PG_GETARG_INTERVAL_P(0);
+-
+-	PG_RETURN_BOOL(!INTERVAL_NOT_FINITE(interval));
++	elog(ERROR, "interval_finite is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

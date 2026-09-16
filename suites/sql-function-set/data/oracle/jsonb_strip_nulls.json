@@ -1,0 +1,27 @@
+{
+  "func": "jsonb_strip_nulls",
+  "mode": "stub",
+  "patch": "prep/jsonb_strip_nulls.patch",
+  "symbols": [
+    "jsonb_strip_nulls"
+  ],
+  "units": {
+    "jsonb_strip_nulls": {
+      "file": "src/backend/utils/adt/jsonfuncs.c",
+      "code": "/*\n * SQL function jsonb_strip_nulls(jsonb) -> jsonb\n */\nDatum\njsonb_strip_nulls(PG_FUNCTION_ARGS)\n{\n\tJsonb\t   *jb = PG_GETARG_JSONB_P(0);\n\tJsonbIterator *it;\n\tJsonbParseState *parseState = NULL;\n\tJsonbValue *res = NULL;\n\tJsonbValue\tv,\n\t\t\t\tk;\n\tJsonbIteratorToken type;\n\tbool\t\tlast_was_key = false;\n\n\tif (JB_ROOT_IS_SCALAR(jb))\n\t\tPG_RETURN_POINTER(jb);\n\n\tit = JsonbIteratorInit(&jb->root);\n\n\twhile ((type = JsonbIteratorNext(&it, &v, false)) != WJB_DONE)\n\t{\n\t\tAssert(!(type == WJB_KEY && last_was_key));\n\n\t\tif (type == WJB_KEY)\n\t\t{\n\t\t\t/* stash the key until we know if it has a null value */\n\t\t\tk = v;\n\t\t\tlast_was_key = true;\n\t\t\tcontinue;\n\t\t}\n\n\t\tif (last_was_key)\n\t\t{\n\t\t\t/* if the last element was a key this one can't be */\n\t\t\tlast_was_key = false;\n\n\t\t\t/* skip this field if value is null */\n\t\t\tif (type == WJB_VALUE && v.type == jbvNull)\n\t\t\t\tcontinue;\n\n\t\t\t/* otherwise, do a delayed push of the key */\n\t\t\t(void) pushJsonbValue(&parseState, WJB_KEY, &k);\n\t\t}\n\n\t\tif (type == WJB_VALUE || type == WJB_ELEM)\n\t\t\tres = pushJsonbValue(&parseState, type, &v);\n\t\telse\n\t\t\tres = pushJsonbValue(&parseState, type, NULL);\n\t}\n\n\tAssert(res != NULL);\n\n\tPG_RETURN_POINTER(JsonbValueToJsonb(res));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "jsonb"
+  ],
+  "category": "json",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 35,
+  "oracle_diff_by_file": {
+    "jsonb": 35
+  }
+}

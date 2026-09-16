@@ -1,0 +1,18 @@
+{
+  "func": "interval_avg_deserialize",
+  "mode": "stub",
+  "patch": "prep/interval_avg_deserialize.patch",
+  "symbols": [
+    "interval_avg_deserialize"
+  ],
+  "units": {
+    "interval_avg_deserialize": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * interval_avg_deserialize\n *\t\tDeserialize bytea into IntervalAggState for interval aggregates.\n */\nDatum\ninterval_avg_deserialize(PG_FUNCTION_ARGS)\n{\n\tbytea\t   *sstate;\n\tIntervalAggState *result;\n\tStringInfoData buf;\n\n\tif (!AggCheckCallContext(fcinfo, NULL))\n\t\telog(ERROR, \"aggregate function called in non-aggregate context\");\n\n\tsstate = PG_GETARG_BYTEA_PP(0);\n\n\t/*\n\t * Initialize a StringInfo so that we can \"receive\" it using the standard\n\t * recv-function infrastructure.\n\t */\n\tinitReadOnlyStringInfo(&buf, VARDATA_ANY(sstate),\n\t\t\t\t\t\t   VARSIZE_ANY_EXHDR(sstate));\n\n\tresult = (IntervalAggState *) palloc0(sizeof(IntervalAggState));\n\n\t/* N */\n\tresult->N = pq_getmsgint64(&buf);\n\n\t/* sumX */\n\tresult->sumX.time = pq_getmsgint64(&buf);\n\tresult->sumX.day = pq_getmsgint(&buf, 4);\n\tresult->sumX.month = pq_getmsgint(&buf, 4);\n\n\t/* pInfcount */\n\tresult->pInfcount = pq_getmsgint64(&buf);\n\n\t/* nInfcount */\n\tresult->nInfcount = pq_getmsgint64(&buf);\n\n\tpq_getmsgend(&buf);\n\n\tPG_RETURN_POINTER(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

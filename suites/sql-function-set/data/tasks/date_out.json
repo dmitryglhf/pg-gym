@@ -1,0 +1,15 @@
+{
+  "func": "date_out",
+  "variants": [
+    {
+      "arguments": "date",
+      "returns": "cstring",
+      "kind": "f",
+      "volatile": "s",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

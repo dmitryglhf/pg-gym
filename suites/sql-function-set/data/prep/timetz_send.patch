@@ -1,0 +1,26 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..d38a506 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2364,19 +2364,11 @@ timetz_recv(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMETZADT_P(result);
+ }
+ 
+-/*
+- *		timetz_send			- converts timetz to binary format
+- */
+ Datum
+ timetz_send(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);
+-	StringInfoData buf;
+-
+-	pq_begintypsend(&buf);
+-	pq_sendint64(&buf, time->time);
+-	pq_sendint32(&buf, time->zone);
+-	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
++	elog(ERROR, "timetz_send is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

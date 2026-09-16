@@ -1,0 +1,39 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..da01ab6 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -778,32 +778,11 @@ float8_timestamptz(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(result);
+ }
+ 
+-/* timestamptz_out()
+- * Convert a timestamp to external form.
+- */
+ Datum
+ timestamptz_out(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+-	char	   *result;
+-	int			tz;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	fsec_t		fsec;
+-	const char *tzn;
+-	char		buf[MAXDATELEN + 1];
+-
+-	if (TIMESTAMP_NOT_FINITE(dt))
+-		EncodeSpecialTimestamp(dt, buf);
+-	else if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) == 0)
+-		EncodeDateTime(tm, fsec, true, tz, tzn, DateStyle, buf);
+-	else
+-		ereport(ERROR,
+-				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-				 errmsg("timestamp out of range")));
+-
+-	result = pstrdup(buf);
+-	PG_RETURN_CSTRING(result);
++	elog(ERROR, "timestamptz_out is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

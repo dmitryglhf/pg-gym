@@ -1,0 +1,27 @@
+{
+  "func": "pg_create_am_dependency_partitioned_table",
+  "sha": "bb584e831288042d9aee368a1c5daa3dafbb95c3",
+  "parent": "e631ed89c2e58464d3969badf2d5d065411b93f0",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_create_am_dependency_partitioned_table.patch",
+  "test_files": [
+    "src/test/regress/sql/create_am.sql",
+    "src/test/regress/expected/create_am.out"
+  ],
+  "reference": "diff --git a/src/backend/catalog/heap.c b/src/backend/catalog/heap.c\nindex ee4b718a..4d0e18fb 100644\n--- a/src/backend/catalog/heap.c\n+++ b/src/backend/catalog/heap.c\n@@ -1470,9 +1470,11 @@ heap_create_with_catalog(const char *relname,\n \t\t * access method is.\n \t\t *\n \t\t * No need to add an explicit dependency for the toast table, as the\n-\t\t * main table depends on it.\n+\t\t * main table depends on it.  Partitioned tables may not have an\n+\t\t * access method set.\n \t\t */\n-\t\tif (RELKIND_HAS_TABLE_AM(relkind) && relkind != RELKIND_TOASTVALUE)\n+\t\tif ((RELKIND_HAS_TABLE_AM(relkind) && relkind != RELKIND_TOASTVALUE) ||\n+\t\t\t(relkind == RELKIND_PARTITIONED_TABLE && OidIsValid(accessmtd)))\n \t\t{\n \t\t\tObjectAddressSet(referenced, AccessMethodRelationId, accessmtd);\n \t\t\tadd_exact_object_address(&referenced, addrs);\n",
+  "test": "diff --git a/src/test/regress/expected/create_am.out b/src/test/regress/expected/create_am.out\nindex 35d4cf1d..c1a95157 100644\n--- a/src/test/regress/expected/create_am.out\n+++ b/src/test/regress/expected/create_am.out\n@@ -343,6 +343,20 @@ ALTER MATERIALIZED VIEW heapmv SET ACCESS METHOD heap, SET ACCESS METHOD heap2;\n ERROR:  cannot have multiple SET ACCESS METHOD subcommands\n DROP MATERIALIZED VIEW heapmv;\n DROP TABLE heaptable;\n+-- Partitioned table with USING\n+CREATE TABLE am_partitioned(x INT, y INT) PARTITION BY hash (x) USING heap2;\n+SELECT pg_describe_object(classid, objid, objsubid) AS obj,\n+       pg_describe_object(refclassid, refobjid, refobjsubid) as refobj\n+  FROM pg_depend, pg_am\n+  WHERE pg_depend.refclassid = 'pg_am'::regclass\n+    AND pg_am.oid = pg_depend.refobjid\n+    AND pg_depend.objid = 'am_partitioned'::regclass;\n+         obj          |       refobj        \n+----------------------+---------------------\n+ table am_partitioned | access method heap2\n+(1 row)\n+\n+DROP TABLE am_partitioned;\n -- Partition hierarchies with access methods\n BEGIN;\n SET LOCAL default_table_access_method = 'heap';\ndiff --git a/src/test/regress/sql/create_am.sql b/src/test/regress/sql/create_am.sql\nindex 825aed32..754fe0c6 100644\n--- a/src/test/regress/sql/create_am.sql\n+++ b/src/test/regress/sql/create_am.sql\n@@ -217,6 +217,16 @@ ALTER MATERIALIZED VIEW heapmv SET ACCESS METHOD heap, SET ACCESS METHOD heap2;\n DROP MATERIALIZED VIEW heapmv;\n DROP TABLE heaptable;\n \n+-- Partitioned table with USING\n+CREATE TABLE am_partitioned(x INT, y INT) PARTITION BY hash (x) USING heap2;\n+SELECT pg_describe_object(classid, objid, objsubid) AS obj,\n+       pg_describe_object(refclassid, refobjid, refobjsubid) as refobj\n+  FROM pg_depend, pg_am\n+  WHERE pg_depend.refclassid = 'pg_am'::regclass\n+    AND pg_am.oid = pg_depend.refobjid\n+    AND pg_depend.objid = 'am_partitioned'::regclass;\n+DROP TABLE am_partitioned;\n+\n -- Partition hierarchies with access methods\n BEGIN;\n SET LOCAL default_table_access_method = 'heap';\n",
+  "oracle_command": "make -C src/test/regress check TESTS=create_am",
+  "expected_tests": [
+    "create_am"
+  ],
+  "failing_tests": [
+    "create_am"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 6,
+  "oracle_diff_by_file": {
+    "create_am": 6
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_ne",
+  "variants": [
+    {
+      "arguments": "timestamp timestamp",
+      "returns": "bool",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

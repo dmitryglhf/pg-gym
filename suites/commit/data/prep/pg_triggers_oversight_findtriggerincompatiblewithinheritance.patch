@@ -1,0 +1,13 @@
+diff --git a/src/backend/commands/trigger.c b/src/backend/commands/trigger.c
+index c8976344..c27d007e 100644
+--- a/src/backend/commands/trigger.c
++++ b/src/backend/commands/trigger.c
+@@ -2279,8 +2279,6 @@ FindTriggerIncompatibleWithInheritance(TriggerDesc *trigdesc)
+ 		{
+ 			Trigger    *trigger = &trigdesc->triggers[i];
+ 
+-			if (!TRIGGER_FOR_ROW(trigger->tgtype))
+-				continue;
+ 			if (trigger->tgoldtable != NULL || trigger->tgnewtable != NULL)
+ 				return trigger->tgname;
+ 		}

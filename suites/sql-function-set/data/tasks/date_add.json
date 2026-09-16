@@ -1,0 +1,24 @@
+{
+  "func": "date_add",
+  "variants": [
+    {
+      "arguments": "timestamptz interval",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "add interval to timestamp with time zone"
+    },
+    {
+      "arguments": "timestamptz interval text",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "add interval to timestamp with time zone in specified time zone"
+    }
+  ],
+  "description": "Add an interval to a timestamp with time zone, computing times of day and daylight-savings adjustments according to the time zone named by the third argument, or the current setting if that is omitted. The form with two arguments is equivalent to the timestamp with time zone + interval operator.",
+  "examples": [
+    "date_add('2021-10-31 00:00:00+02'::timestamptz, '1 day'::interval, 'Europe/Warsaw') -> 2021-10-31 23:00:00+00"
+  ],
+  "mode": "stub"
+}

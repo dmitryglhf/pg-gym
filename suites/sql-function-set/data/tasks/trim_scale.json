@@ -1,0 +1,18 @@
+{
+  "func": "trim_scale",
+  "variants": [
+    {
+      "arguments": "numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "numeric with minimum scale needed to represent the value"
+    }
+  ],
+  "description": "Reduces the value's scale (number of fractional decimal digits) by removing trailing zeroes",
+  "examples": [
+    "trim_scale(8.4100) -> 8.41"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

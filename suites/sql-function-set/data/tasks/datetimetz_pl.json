@@ -1,0 +1,15 @@
+{
+  "func": "datetimetz_pl",
+  "variants": [
+    {
+      "arguments": "date timetz",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": ""
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

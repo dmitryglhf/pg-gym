@@ -1,0 +1,31 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..610f7e7 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3999,24 +3999,11 @@ do_interval_discard(IntervalAggState *state, Interval *newval)
+ 	}
+ }
+ 
+-/*
+- * Transition function for sum() and avg() interval aggregates.
+- */
+ Datum
+ interval_avg_accum(PG_FUNCTION_ARGS)
+ {
+-	IntervalAggState *state;
+-
+-	state = PG_ARGISNULL(0) ? NULL : (IntervalAggState *) PG_GETARG_POINTER(0);
+-
+-	/* Create the state data on the first call */
+-	if (state == NULL)
+-		state = makeIntervalAggState(fcinfo);
+-
+-	if (!PG_ARGISNULL(1))
+-		do_interval_accum(state, PG_GETARG_INTERVAL_P(1));
+-
+-	PG_RETURN_POINTER(state);
++	elog(ERROR, "interval_avg_accum is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

@@ -1,0 +1,23 @@
+{
+  "func": "querytree",
+  "mode": "stub",
+  "patch": "prep/querytree.patch",
+  "symbols": [
+    "tsquerytree"
+  ],
+  "units": {
+    "tsquerytree": {
+      "file": "src/backend/utils/adt/tsquery.c",
+      "code": "/*\n * debug function, used only for view query\n * which will be executed in non-leaf pages in index\n */\nDatum\ntsquerytree(PG_FUNCTION_ARGS)\n{\n\tTSQuery\t\tquery = PG_GETARG_TSQUERY(0);\n\tINFIX\t\tnrm;\n\ttext\t   *res;\n\tQueryItem  *q;\n\tint\t\t\tlen;\n\n\tif (query->size == 0)\n\t{\n\t\tres = (text *) palloc(VARHDRSZ);\n\t\tSET_VARSIZE(res, VARHDRSZ);\n\t\tPG_RETURN_POINTER(res);\n\t}\n\n\tq = clean_NOT(GETQUERY(query), &len);\n\n\tif (!q)\n\t{\n\t\tres = cstring_to_text(\"T\");\n\t}\n\telse\n\t{\n\t\tnrm.curpol = q;\n\t\tnrm.buflen = 32;\n\t\tnrm.cur = nrm.buf = (char *) palloc(sizeof(char) * nrm.buflen);\n\t\t*(nrm.cur) = '\\0';\n\t\tnrm.op = GETOPERAND(query);\n\t\tinfix(&nrm, -1, false);\n\t\tres = cstring_to_text_with_len(nrm.buf, nrm.cur - nrm.buf);\n\t\tpfree(q);\n\t}\n\n\tPG_FREE_IF_COPY(query, 0);\n\n\tPG_RETURN_TEXT_P(res);\n}\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [],
+  "category": "textsearch",
+  "usable": false,
+  "verify_status": "no_coverage",
+  "oracle_diff_lines": 0,
+  "oracle_diff_by_file": {}
+}

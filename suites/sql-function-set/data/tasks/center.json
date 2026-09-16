@@ -1,0 +1,25 @@
+{
+  "func": "center",
+  "variants": [
+    {
+      "arguments": "box",
+      "returns": "point",
+      "kind": "f",
+      "volatile": "i",
+      "description": "center of"
+    },
+    {
+      "arguments": "circle",
+      "returns": "point",
+      "kind": "f",
+      "volatile": "i",
+      "description": "center of"
+    }
+  ],
+  "description": "Computes center point. Available for box, circle.",
+  "examples": [
+    "center(box '(1,2),(0,0)') -> (0.5,1)"
+  ],
+  "mode": "stub",
+  "category": "geometric"
+}

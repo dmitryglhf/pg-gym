@@ -1,0 +1,27 @@
+{
+  "func": "pg_partition_prune_setrefs_c_s",
+  "sha": "0671a71e0210f7a3be55af240e9e7bbbea3cb44d",
+  "parent": "149ed87e22ce70608cc584f2f54c2f12d3a96680",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_partition_prune_setrefs_c_s.patch",
+  "test_files": [
+    "src/test/regress/sql/partition_prune.sql",
+    "src/test/regress/expected/partition_prune.out"
+  ],
+  "reference": "diff --git a/src/backend/optimizer/plan/setrefs.c b/src/backend/optimizer/plan/setrefs.c\nindex 7aed8458..69ff384f 100644\n--- a/src/backend/optimizer/plan/setrefs.c\n+++ b/src/backend/optimizer/plan/setrefs.c\n@@ -1794,6 +1794,12 @@ set_append_references(PlannerInfo *root,\n \t\t\t\tPartitionedRelPruneInfo *pinfo = lfirst(l2);\n \n \t\t\t\tpinfo->rtindex += rtoffset;\n+\t\t\t\tpinfo->initial_pruning_steps =\n+\t\t\t\t\tfix_scan_list(root, pinfo->initial_pruning_steps,\n+\t\t\t\t\t\t\t\t  rtoffset, 1);\n+\t\t\t\tpinfo->exec_pruning_steps =\n+\t\t\t\t\tfix_scan_list(root, pinfo->exec_pruning_steps,\n+\t\t\t\t\t\t\t\t  rtoffset, 1);\n \t\t\t}\n \t\t}\n \t}\n@@ -1870,6 +1876,12 @@ set_mergeappend_references(PlannerInfo *root,\n \t\t\t\tPartitionedRelPruneInfo *pinfo = lfirst(l2);\n \n \t\t\t\tpinfo->rtindex += rtoffset;\n+\t\t\t\tpinfo->initial_pruning_steps =\n+\t\t\t\t\tfix_scan_list(root, pinfo->initial_pruning_steps,\n+\t\t\t\t\t\t\t\t  rtoffset, 1);\n+\t\t\t\tpinfo->exec_pruning_steps =\n+\t\t\t\t\tfix_scan_list(root, pinfo->exec_pruning_steps,\n+\t\t\t\t\t\t\t\t  rtoffset, 1);\n \t\t\t}\n \t\t}\n \t}\n",
+  "test": "diff --git a/src/test/regress/expected/partition_prune.out b/src/test/regress/expected/partition_prune.out\nindex 7ca98397..e202898f 100644\n--- a/src/test/regress/expected/partition_prune.out\n+++ b/src/test/regress/expected/partition_prune.out\n@@ -1875,6 +1875,35 @@ explain (costs off) select * from rparted_by_int2 where a > 100_000_000_000_000;\n (2 rows)\n \n drop table lp, coll_pruning, rlp, mc3p, mc2p, boolpart, iboolpart, boolrangep, rp, coll_pruning_multi, like_op_noprune, lparted_by_int2, rparted_by_int2;\n+-- check that AlternativeSubPlan within a pruning expression gets cleaned up\n+create table asptab (id int primary key) partition by range (id);\n+create table asptab0 partition of asptab for values from (0) to (1);\n+create table asptab1 partition of asptab for values from (1) to (2);\n+explain (costs off)\n+select * from\n+  (select exists (select 1 from int4_tbl tinner where f1 = touter.f1) as b\n+   from int4_tbl touter) ss,\n+  asptab\n+where asptab.id > ss.b::int;\n+                             QUERY PLAN                             \n+--------------------------------------------------------------------\n+ Nested Loop\n+   ->  Seq Scan on int4_tbl touter\n+   ->  Append\n+         ->  Index Only Scan using asptab0_pkey on asptab0 asptab_1\n+               Index Cond: (id > (EXISTS(SubPlan 3))::integer)\n+               SubPlan 4\n+                 ->  Seq Scan on int4_tbl tinner_2\n+         ->  Index Only Scan using asptab1_pkey on asptab1 asptab_2\n+               Index Cond: (id > (EXISTS(SubPlan 3))::integer)\n+         SubPlan 3\n+           ->  Seq Scan on int4_tbl tinner_1\n+                 Filter: (f1 = touter.f1)\n+   SubPlan 2\n+     ->  Seq Scan on int4_tbl tinner\n+(14 rows)\n+\n+drop table asptab;\n --\n -- Test Partition pruning for HASH partitioning\n --\ndiff --git a/src/test/regress/sql/partition_prune.sql b/src/test/regress/sql/partition_prune.sql\nindex a09b27d8..63f1bb5d 100644\n--- a/src/test/regress/sql/partition_prune.sql\n+++ b/src/test/regress/sql/partition_prune.sql\n@@ -369,6 +369,21 @@ explain (costs off) select * from rparted_by_int2 where a > 100_000_000_000_000;\n \n drop table lp, coll_pruning, rlp, mc3p, mc2p, boolpart, iboolpart, boolrangep, rp, coll_pruning_multi, like_op_noprune, lparted_by_int2, rparted_by_int2;\n \n+-- check that AlternativeSubPlan within a pruning expression gets cleaned up\n+\n+create table asptab (id int primary key) partition by range (id);\n+create table asptab0 partition of asptab for values from (0) to (1);\n+create table asptab1 partition of asptab for values from (1) to (2);\n+\n+explain (costs off)\n+select * from\n+  (select exists (select 1 from int4_tbl tinner where f1 = touter.f1) as b\n+   from int4_tbl touter) ss,\n+  asptab\n+where asptab.id > ss.b::int;\n+\n+drop table asptab;\n+\n --\n -- Test Partition pruning for HASH partitioning\n --\n",
+  "oracle_command": "make -C src/test/regress check TESTS=partition_prune",
+  "expected_tests": [
+    "partition_prune"
+  ],
+  "failing_tests": [
+    "partition_prune"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 18,
+  "oracle_diff_by_file": {
+    "partition_prune": 18
+  }
+}

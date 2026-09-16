@@ -1,0 +1,32 @@
+{
+  "func": "lcm",
+  "variants": [
+    {
+      "arguments": "int4 int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "least common multiple"
+    },
+    {
+      "arguments": "int8 int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "least common multiple"
+    },
+    {
+      "arguments": "numeric numeric",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "i",
+      "description": "least common multiple"
+    }
+  ],
+  "description": "Least common multiple (the smallest strictly positive number that is an integral multiple of both inputs); returns 0 if either input is zero; available for integer, bigint, and numeric",
+  "examples": [
+    "lcm(1071, 462) -> 23562"
+  ],
+  "mode": "stub",
+  "category": "numeric"
+}

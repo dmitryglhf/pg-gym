@@ -1,0 +1,18 @@
+{
+  "func": "concat_ws",
+  "variants": [
+    {
+      "arguments": "text any",
+      "returns": "text",
+      "kind": "f",
+      "volatile": "s",
+      "description": "concatenate values with separators"
+    }
+  ],
+  "description": "Concatenates all but the first argument, with separators. The first argument is used as the separator string, and should not be NULL. Other NULL arguments are ignored.",
+  "examples": [
+    "concat_ws(',', 'abcde', 2, NULL, 22) -> abcde,2,22"
+  ],
+  "mode": "stub",
+  "category": "string"
+}

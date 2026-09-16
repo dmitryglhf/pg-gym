@@ -1,0 +1,18 @@
+{
+  "func": "timestamp_mi_interval",
+  "mode": "stub",
+  "patch": "prep/timestamp_mi_interval.patch",
+  "symbols": [
+    "timestamp_mi_interval"
+  ],
+  "units": {
+    "timestamp_mi_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ntimestamp_mi_interval(PG_FUNCTION_ARGS)\n{\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\tInterval\ttspan;\n\n\tinterval_um_internal(span, &tspan);\n\n\treturn DirectFunctionCall2(timestamp_pl_interval,\n\t\t\t\t\t\t\t   TimestampGetDatum(timestamp),\n\t\t\t\t\t\t\t   PointerGetDatum(&tspan));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

@@ -1,0 +1,104 @@
+diff --git a/src/backend/utils/adt/tsvector_op.c b/src/backend/utils/adt/tsvector_op.c
+index 8fe02a5..272e7c4 100644
+--- a/src/backend/utils/adt/tsvector_op.c
++++ b/src/backend/utils/adt/tsvector_op.c
+@@ -824,97 +824,11 @@ array_to_tsvector(PG_FUNCTION_ARGS)
+ 	PG_RETURN_POINTER(tsout);
+ }
+ 
+-/*
+- * ts_filter(): keep only lexemes with given weights in tsvector.
+- */
+ Datum
+ tsvector_filter(PG_FUNCTION_ARGS)
+ {
+-	TSVector	tsin = PG_GETARG_TSVECTOR(0),
+-				tsout;
+-	ArrayType  *weights = PG_GETARG_ARRAYTYPE_P(1);
+-	WordEntry  *arrin = ARRPTR(tsin),
+-			   *arrout;
+-	char	   *datain = STRPTR(tsin),
+-			   *dataout;
+-	Datum	   *dweights;
+-	bool	   *nulls;
+-	int			nweights;
+-	int			i,
+-				j;
+-	int			cur_pos = 0;
+-	char		mask = 0;
+-
+-	deconstruct_array_builtin(weights, CHAROID, &dweights, &nulls, &nweights);
+-
+-	for (i = 0; i < nweights; i++)
+-	{
+-		char		char_weight;
+-
+-		if (nulls[i])
+-			ereport(ERROR,
+-					(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+-					 errmsg("weight array may not contain nulls")));
+-
+-		char_weight = DatumGetChar(dweights[i]);
+-		mask |= 1 << parse_weight(char_weight);
+-	}
+-
+-	/*
+-	 * The output tsvector might be smaller than the input, but it can't be
+-	 * bigger, so VARSIZE(tsin) is surely enough space.  Also, we don't need
+-	 * to worry about overflows below.
+-	 */
+-	tsout = (TSVector) palloc0(VARSIZE(tsin));
+-	tsout->size = tsin->size;
+-	arrout = ARRPTR(tsout);
+-	/* worst-case location of output's lexemes; we may need to adjust below */
+-	dataout = STRPTR(tsout);
+-
+-	for (i = j = 0; i < tsin->size; i++)
+-	{
+-		WordEntryPosVector *posvin,
+-				   *posvout;
+-		int			npos = 0;
+-		int			k;
+-
+-		if (!arrin[i].haspos)
+-			continue;
+-
+-		posvin = _POSVECPTR(tsin, arrin + i);
+-		posvout = (WordEntryPosVector *)
+-			(dataout + SHORTALIGN(cur_pos + arrin[i].len));
+-
+-		for (k = 0; k < posvin->npos; k++)
+-		{
+-			if (mask & (1 << WEP_GETWEIGHT(posvin->pos[k])))
+-				posvout->pos[npos++] = posvin->pos[k];
+-		}
+-
+-		/* if no satisfactory positions found, skip lexeme */
+-		if (!npos)
+-			continue;
+-
+-		arrout[j].haspos = true;
+-		arrout[j].len = arrin[i].len;
+-		arrout[j].pos = cur_pos;
+-
+-		memcpy(dataout + cur_pos, datain + arrin[i].pos, arrin[i].len);
+-		posvout->npos = npos;
+-		cur_pos += SHORTALIGN(arrin[i].len);
+-		cur_pos += POSDATALEN(tsout, arrout + j) * sizeof(WordEntryPos) +
+-			sizeof(uint16);
+-		j++;
+-	}
+-
+-	tsout->size = j;
+-	if (dataout != STRPTR(tsout))
+-		memmove(STRPTR(tsout), dataout, cur_pos);
+-
+-	SET_VARSIZE(tsout, CALCDATASIZE(tsout->size, cur_pos));
+-
+-	PG_FREE_IF_COPY(tsin, 0);
+-	PG_RETURN_POINTER(tsout);
++	elog(ERROR, "tsvector_filter is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

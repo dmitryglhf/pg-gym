@@ -1,0 +1,15 @@
+{
+  "func": "intervaltypmodout",
+  "variants": [
+    {
+      "arguments": "int4",
+      "returns": "cstring",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O typmod"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

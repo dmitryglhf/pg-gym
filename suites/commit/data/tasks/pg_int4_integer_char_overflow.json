@@ -1,0 +1,10 @@
+{
+  "name": "pg_int4_integer_char_overflow",
+  "area": "to_char, integer overflow",
+  "goal": "to_char(int4, format) can overflow while applying a `V` scaling pattern, leading to platform-dependent output instead of the normal integer range error.\n\nExercise values around the int32 boundaries with formats such as `V9`, `9V999999999`, and multipliers at and beyond ten decimal places, including negative inputs. A representable scaled value must format correctly; any unrepresentable int4 product must raise `integer out of range`. Formatting without `V`, and supported numeric and int8 variants, must be unchanged.",
+  "func": "pg_int4_integer_char_overflow",
+  "graded_by": [
+    "src/test/regress/sql/int4.sql",
+    "src/test/regress/expected/int4.out"
+  ]
+}

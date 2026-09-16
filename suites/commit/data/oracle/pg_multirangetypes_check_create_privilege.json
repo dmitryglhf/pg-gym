@@ -1,0 +1,27 @@
+{
+  "func": "pg_multirangetypes_check_create_privilege",
+  "sha": "c27ba08cd5c58659b32805fe807683cde5429ab2",
+  "parent": "d7de7fa84d2492f15747163cbb2f4c5c110ec4a4",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_multirangetypes_check_create_privilege.patch",
+  "test_files": [
+    "src/test/regress/sql/multirangetypes.sql",
+    "src/test/regress/expected/multirangetypes.out"
+  ],
+  "reference": "diff --git a/src/backend/commands/typecmds.c b/src/backend/commands/typecmds.c\nindex 2a1e7133..c81c8810 100644\n--- a/src/backend/commands/typecmds.c\n+++ b/src/backend/commands/typecmds.c\n@@ -1453,6 +1453,13 @@ DefineRange(ParseState *pstate, CreateRangeStmt *stmt)\n \t\t\t/* we can look up the subtype name immediately */\n \t\t\tmultirangeNamespace = QualifiedNameGetCreationNamespace(defGetQualifiedName(defel),\n \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t&multirangeTypeName);\n+\n+\t\t\t/* Check we have creation rights in target namespace */\n+\t\t\taclresult = object_aclcheck(NamespaceRelationId, multirangeNamespace,\n+\t\t\t\t\t\t\t\t\t\tGetUserId(), ACL_CREATE);\n+\t\t\tif (aclresult != ACLCHECK_OK)\n+\t\t\t\taclcheck_error(aclresult, OBJECT_SCHEMA,\n+\t\t\t\t\t\t\t   get_namespace_name(multirangeNamespace));\n \t\t}\n \t\telse\n \t\t\tereport(ERROR,\n",
+  "test": "diff --git a/src/test/regress/expected/multirangetypes.out b/src/test/regress/expected/multirangetypes.out\nindex 8f70b1a3..76ab1430 100644\n--- a/src/test/regress/expected/multirangetypes.out\n+++ b/src/test/regress/expected/multirangetypes.out\n@@ -3145,6 +3145,22 @@ drop type textrange1;\n reset role;\n drop role regress_multirange_owner;\n --\n+-- CREATE TYPE checks for CREATE on multirange schema\n+--\n+create role regress_mr;\n+create schema mr_sch;\n+set role regress_mr;\n+create type mytype as range (subtype=int4, multirange_type_name=mr_sch.mr_type);\n+ERROR:  permission denied for schema mr_sch\n+reset role;\n+grant create on schema mr_sch to regress_mr;\n+set role regress_mr;\n+create type mytype as range (subtype=int4, multirange_type_name=mr_sch.mr_type);\n+reset role;\n+drop type mytype;\n+drop schema mr_sch;\n+drop role regress_mr;\n+--\n -- Test polymorphic type system\n --\n create function anyarray_anymultirange_func(a anyarray, r anymultirange)\ndiff --git a/src/test/regress/sql/multirangetypes.sql b/src/test/regress/sql/multirangetypes.sql\nindex 7d10ddce..c7953aad 100644\n--- a/src/test/regress/sql/multirangetypes.sql\n+++ b/src/test/regress/sql/multirangetypes.sql\n@@ -721,6 +721,22 @@ drop type textrange1;\n reset role;\n drop role regress_multirange_owner;\n \n+--\n+-- CREATE TYPE checks for CREATE on multirange schema\n+--\n+create role regress_mr;\n+create schema mr_sch;\n+set role regress_mr;\n+create type mytype as range (subtype=int4, multirange_type_name=mr_sch.mr_type);\n+reset role;\n+grant create on schema mr_sch to regress_mr;\n+set role regress_mr;\n+create type mytype as range (subtype=int4, multirange_type_name=mr_sch.mr_type);\n+reset role;\n+drop type mytype;\n+drop schema mr_sch;\n+drop role regress_mr;\n+\n --\n -- Test polymorphic type system\n --\n",
+  "oracle_command": "make -C src/test/regress check TESTS=multirangetypes",
+  "expected_tests": [
+    "multirangetypes"
+  ],
+  "failing_tests": [
+    "multirangetypes"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2,
+  "oracle_diff_by_file": {
+    "multirangetypes": 2
+  }
+}

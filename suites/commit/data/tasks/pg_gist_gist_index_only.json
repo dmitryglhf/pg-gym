@@ -1,0 +1,10 @@
+{
+  "name": "pg_gist_gist_index_only",
+  "area": "GiST, index-only scans",
+  "goal": "An index-only scan over a multicolumn GiST index can reconstruct a later column with the wrong layout and return a corrupt value or crash. The common case can hide the fault when preceding values happen to provide favorable alignment.\n\nCreate a table with `(inet, numrange)`, insert a row whose numeric range has long bounds, build a GiST index on both columns, vacuum it, and force an index-only scan selecting the lower and upper bounds. Both bounds must equal the inserted values. Reconstructed values must be correct for every indexed type and column position, while heap scans and ordinary GiST scans remain unchanged.",
+  "func": "pg_gist_gist_index_only",
+  "graded_by": [
+    "src/test/regress/sql/gist.sql",
+    "src/test/regress/expected/gist.out"
+  ]
+}

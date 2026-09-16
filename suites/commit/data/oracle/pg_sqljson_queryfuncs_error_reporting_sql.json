@@ -1,0 +1,27 @@
+{
+  "func": "pg_sqljson_queryfuncs_error_reporting_sql",
+  "sha": "b5511fed500eb526a547f38597307552fa7acd08",
+  "parent": "2fc5c5062207a26b4ea4144a3d70099767eee523",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_sqljson_queryfuncs_error_reporting_sql.patch",
+  "test_files": [
+    "src/test/regress/sql/sqljson_queryfuncs.sql",
+    "src/test/regress/expected/sqljson_queryfuncs.out"
+  ],
+  "reference": "diff --git a/src/backend/parser/parse_expr.c b/src/backend/parser/parse_expr.c\nindex b27e5977..a3356485 100644\n--- a/src/backend/parser/parse_expr.c\n+++ b/src/backend/parser/parse_expr.c\n@@ -4273,6 +4273,9 @@ transformJsonFuncExpr(ParseState *pstate, JsonFuncExpr *func)\n {\n \tJsonExpr   *jsexpr;\n \tNode\t   *path_spec;\n+\tOid\t\t\tpathspec_type;\n+\tint\t\t\tpathspec_loc;\n+\tNode\t   *coerced_path_spec;\n \tconst char *func_name = NULL;\n \tJsonFormatType default_format;\n \n@@ -4488,17 +4491,21 @@ transformJsonFuncExpr(ParseState *pstate, JsonFuncExpr *func)\n \tjsexpr->format = func->context_item->format;\n \n \tpath_spec = transformExprRecurse(pstate, func->pathspec);\n-\tpath_spec = coerce_to_target_type(pstate, path_spec, exprType(path_spec),\n-\t\t\t\t\t\t\t\t\t  JSONPATHOID, -1,\n-\t\t\t\t\t\t\t\t\t  COERCION_EXPLICIT, COERCE_IMPLICIT_CAST,\n-\t\t\t\t\t\t\t\t\t  exprLocation(path_spec));\n-\tif (path_spec == NULL)\n+\tpathspec_type = exprType(path_spec);\n+\tpathspec_loc = exprLocation(path_spec);\n+\tcoerced_path_spec = coerce_to_target_type(pstate, path_spec,\n+\t\t\t\t\t\t\t\t\t\t\t  pathspec_type,\n+\t\t\t\t\t\t\t\t\t\t\t  JSONPATHOID, -1,\n+\t\t\t\t\t\t\t\t\t\t\t  COERCION_EXPLICIT,\n+\t\t\t\t\t\t\t\t\t\t\t  COERCE_IMPLICIT_CAST,\n+\t\t\t\t\t\t\t\t\t\t\t  pathspec_loc);\n+\tif (coerced_path_spec == NULL)\n \t\tereport(ERROR,\n \t\t\t\t(errcode(ERRCODE_DATATYPE_MISMATCH),\n \t\t\t\t errmsg(\"JSON path expression must be of type %s, not of type %s\",\n-\t\t\t\t\t\t\"jsonpath\", format_type_be(exprType(path_spec))),\n-\t\t\t\t parser_errposition(pstate, exprLocation(path_spec))));\n-\tjsexpr->path_spec = path_spec;\n+\t\t\t\t\t\t\"jsonpath\", format_type_be(pathspec_type)),\n+\t\t\t\t parser_errposition(pstate, pathspec_loc)));\n+\tjsexpr->path_spec = coerced_path_spec;\n \n \t/* Transform and coerce the PASSING arguments to jsonb. */\n \ttransformJsonPassingArgs(pstate, func_name,\n",
+  "test": "diff --git a/src/test/regress/expected/sqljson_queryfuncs.out b/src/test/regress/expected/sqljson_queryfuncs.out\nindex 5a35aeb7..53145f50 100644\n--- a/src/test/regress/expected/sqljson_queryfuncs.out\n+++ b/src/test/regress/expected/sqljson_queryfuncs.out\n@@ -1331,6 +1331,10 @@ SELECT JSON_QUERY(jsonb '{\"a\": 123}', '$' || '.' || 'a' WITH WRAPPER);\n  [123]\n (1 row)\n \n+SELECT JSON_QUERY(jsonb '{\"a\": 123}', ('$' || '.' || 'a' || NULL)::date WITH WRAPPER);\n+ERROR:  JSON path expression must be of type jsonpath, not of type date\n+LINE 1: SELECT JSON_QUERY(jsonb '{\"a\": 123}', ('$' || '.' || 'a' || ...\n+                                               ^\n -- Should fail (invalid path)\n SELECT JSON_QUERY(jsonb '{\"a\": 123}', 'error' || ' ' || 'error');\n ERROR:  syntax error at or near \" \" of jsonpath input\n@@ -1355,6 +1359,10 @@ SELECT json_value('\"aaa\"', path RETURNING json) FROM jsonpaths;\n  \"aaa\"\n (1 row)\n \n+SELECT json_value('\"aaa\"', jsonpaths RETURNING json) FROM jsonpaths;\n+ERROR:  JSON path expression must be of type jsonpath, not of type jsonpaths\n+LINE 1: SELECT json_value('\"aaa\"', jsonpaths RETURNING json) FROM js...\n+                                   ^\n -- Test PASSING argument parsing\n SELECT JSON_QUERY(jsonb 'null', '$xyz' PASSING 1 AS xy);\n ERROR:  could not find jsonpath variable \"xyz\"\ndiff --git a/src/test/regress/sql/sqljson_queryfuncs.sql b/src/test/regress/sql/sqljson_queryfuncs.sql\nindex 8d7b225b..a5d5e256 100644\n--- a/src/test/regress/sql/sqljson_queryfuncs.sql\n+++ b/src/test/regress/sql/sqljson_queryfuncs.sql\n@@ -450,6 +450,7 @@ SELECT JSON_VALUE(jsonb '{\"a\": 123}', '$' || '.' || 'a');\n SELECT JSON_VALUE(jsonb '{\"a\": 123}', '$' || '.' || 'b' DEFAULT 'foo' ON EMPTY);\n SELECT JSON_QUERY(jsonb '{\"a\": 123}', '$' || '.' || 'a');\n SELECT JSON_QUERY(jsonb '{\"a\": 123}', '$' || '.' || 'a' WITH WRAPPER);\n+SELECT JSON_QUERY(jsonb '{\"a\": 123}', ('$' || '.' || 'a' || NULL)::date WITH WRAPPER);\n -- Should fail (invalid path)\n SELECT JSON_QUERY(jsonb '{\"a\": 123}', 'error' || ' ' || 'error');\n \n@@ -460,6 +461,7 @@ SELECT JSON_QUERY(NULL FORMAT JSON, '$');\n -- Test non-const jsonpath\n CREATE TEMP TABLE jsonpaths (path) AS SELECT '$';\n SELECT json_value('\"aaa\"', path RETURNING json) FROM jsonpaths;\n+SELECT json_value('\"aaa\"', jsonpaths RETURNING json) FROM jsonpaths;\n \n -- Test PASSING argument parsing\n SELECT JSON_QUERY(jsonb 'null', '$xyz' PASSING 1 AS xy);\n",
+  "oracle_command": "make -C src/test/regress check TESTS=sqljson_queryfuncs",
+  "expected_tests": [
+    "sqljson_queryfuncs"
+  ],
+  "failing_tests": [
+    "sqljson_queryfuncs"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 8,
+  "oracle_diff_by_file": {
+    "sqljson_queryfuncs": 8
+  }
+}

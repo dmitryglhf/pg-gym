@@ -1,0 +1,27 @@
+{
+  "func": "pg_privileges_inconsistent_quoting_role",
+  "sha": "50959f96e7b17c3f225919edbec4072c033aef60",
+  "parent": "24f6c1bd41d0631a04cc956cc8cafa0b117ab625",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_privileges_inconsistent_quoting_role.patch",
+  "test_files": [
+    "src/test/regress/sql/privileges.sql",
+    "src/test/regress/expected/privileges.out"
+  ],
+  "reference": "diff --git a/src/backend/utils/adt/acl.c b/src/backend/utils/adt/acl.c\nindex d7b39140..6c723e0d 100644\n--- a/src/backend/utils/adt/acl.c\n+++ b/src/backend/utils/adt/acl.c\n@@ -130,6 +130,22 @@ static AclResult pg_role_aclcheck(Oid role_oid, Oid roleid, AclMode mode);\n static void RoleMembershipCacheCallback(Datum arg, int cacheid, uint32 hashvalue);\n \n \n+/*\n+ * Test whether an identifier char can be left unquoted in ACLs.\n+ *\n+ * Formerly, we used isalnum() even on non-ASCII characters, resulting in\n+ * unportable behavior.  To ensure dump compatibility with old versions,\n+ * we now treat high-bit-set characters as always requiring quoting during\n+ * putid(), but getid() will always accept them without quotes.\n+ */\n+static inline bool\n+is_safe_acl_char(unsigned char c, bool is_getid)\n+{\n+\tif (IS_HIGHBIT_SET(c))\n+\t\treturn is_getid;\n+\treturn isalnum(c) || c == '_';\n+}\n+\n /*\n  * getid\n  *\t\tConsumes the first alphanumeric string (identifier) found in string\n@@ -155,21 +171,22 @@ getid(const char *s, char *n, Node *escontext)\n \n \twhile (isspace((unsigned char) *s))\n \t\ts++;\n-\t/* This code had better match what putid() does, below */\n \tfor (;\n \t\t *s != '\\0' &&\n-\t\t (isalnum((unsigned char) *s) ||\n-\t\t  *s == '_' ||\n-\t\t  *s == '\"' ||\n-\t\t  in_quotes);\n+\t\t (in_quotes || *s == '\"' || is_safe_acl_char(*s, true));\n \t\t s++)\n \t{\n \t\tif (*s == '\"')\n \t\t{\n+\t\t\tif (!in_quotes)\n+\t\t\t{\n+\t\t\t\tin_quotes = true;\n+\t\t\t\tcontinue;\n+\t\t\t}\n \t\t\t/* safe to look at next char (could be '\\0' though) */\n \t\t\tif (*(s + 1) != '\"')\n \t\t\t{\n-\t\t\t\tin_quotes = !in_quotes;\n+\t\t\t\tin_quotes = false;\n \t\t\t\tcontinue;\n \t\t\t}\n \t\t\t/* it's an escaped double quote; skip the escaping char */\n@@ -203,10 +220,10 @@ putid(char *p, const char *s)\n \tconst char *src;\n \tbool\t\tsafe = true;\n \n+\t/* Detect whether we need to use double quotes */\n \tfor (src = s; *src; src++)\n \t{\n-\t\t/* This test had better match what getid() does, above */\n-\t\tif (!isalnum((unsigned char) *src) && *src != '_')\n+\t\tif (!is_safe_acl_char(*src, false))\n \t\t{\n \t\t\tsafe = false;\n \t\t\tbreak;\n",
+  "test": "diff --git a/src/test/regress/expected/privileges.out b/src/test/regress/expected/privileges.out\nindex e8c668e0..43845b6f 100644\n--- a/src/test/regress/expected/privileges.out\n+++ b/src/test/regress/expected/privileges.out\n@@ -2332,6 +2332,26 @@ SELECT makeaclitem('regress_priv_user1'::regrole, 'regress_priv_user2'::regrole,\n SELECT makeaclitem('regress_priv_user1'::regrole, 'regress_priv_user2'::regrole,\n \t'SELECT, fake_privilege', FALSE);  -- error\n ERROR:  unrecognized privilege type: \"fake_privilege\"\n+-- Test quoting and dequoting of user names in ACLs\n+CREATE ROLE \"regress_\"\"quoted\";\n+SELECT makeaclitem('regress_\"quoted'::regrole, 'regress_\"quoted'::regrole,\n+                   'SELECT', TRUE);\n+               makeaclitem                \n+------------------------------------------\n+ \"regress_\"\"quoted\"=r*/\"regress_\"\"quoted\"\n+(1 row)\n+\n+SELECT '\"regress_\"\"quoted\"=r*/\"regress_\"\"quoted\"'::aclitem;\n+                 aclitem                  \n+------------------------------------------\n+ \"regress_\"\"quoted\"=r*/\"regress_\"\"quoted\"\n+(1 row)\n+\n+SELECT '\"\"=r*/\"\"'::aclitem;  -- used to be misparsed as \"\"\"\"\n+ERROR:  a name must follow the \"/\" sign\n+LINE 1: SELECT '\"\"=r*/\"\"'::aclitem;\n+               ^\n+DROP ROLE \"regress_\"\"quoted\";\n -- Test non-throwing aclitem I/O\n SELECT pg_input_is_valid('regress_priv_user1=r/regress_priv_user2', 'aclitem');\n  pg_input_is_valid \ndiff --git a/src/test/regress/sql/privileges.sql b/src/test/regress/sql/privileges.sql\nindex b7e1cb6c..54b82b61 100644\n--- a/src/test/regress/sql/privileges.sql\n+++ b/src/test/regress/sql/privileges.sql\n@@ -1481,6 +1481,14 @@ SELECT makeaclitem('regress_priv_user1'::regrole, 'regress_priv_user2'::regrole,\n SELECT makeaclitem('regress_priv_user1'::regrole, 'regress_priv_user2'::regrole,\n \t'SELECT, fake_privilege', FALSE);  -- error\n \n+-- Test quoting and dequoting of user names in ACLs\n+CREATE ROLE \"regress_\"\"quoted\";\n+SELECT makeaclitem('regress_\"quoted'::regrole, 'regress_\"quoted'::regrole,\n+                   'SELECT', TRUE);\n+SELECT '\"regress_\"\"quoted\"=r*/\"regress_\"\"quoted\"'::aclitem;\n+SELECT '\"\"=r*/\"\"'::aclitem;  -- used to be misparsed as \"\"\"\"\n+DROP ROLE \"regress_\"\"quoted\";\n+\n -- Test non-throwing aclitem I/O\n SELECT pg_input_is_valid('regress_priv_user1=r/regress_priv_user2', 'aclitem');\n SELECT pg_input_is_valid('regress_priv_user1=r/', 'aclitem');\n",
+  "oracle_command": "make -C src/test/regress check TESTS=privileges",
+  "expected_tests": [
+    "privileges"
+  ],
+  "failing_tests": [
+    "privileges"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 2,
+  "oracle_diff_by_file": {
+    "privileges": 2
+  }
+}

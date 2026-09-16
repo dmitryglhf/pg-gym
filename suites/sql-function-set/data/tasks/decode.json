@@ -1,0 +1,18 @@
+{
+  "func": "decode",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "bytea",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert ascii-encoded text string into bytea value"
+    }
+  ],
+  "description": "Decodes binary data from a textual representation; supported format values are the same as for encode.",
+  "examples": [
+    "decode('MTIzAAE=', 'base64') -> \\x3132330001"
+  ],
+  "mode": "stub",
+  "category": "encoding"
+}

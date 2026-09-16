@@ -1,0 +1,35 @@
+diff --git a/src/backend/utils/adt/arrayfuncs.c b/src/backend/utils/adt/arrayfuncs.c
+index 75cc4ee..a9d37f1 100644
+--- a/src/backend/utils/adt/arrayfuncs.c
++++ b/src/backend/utils/adt/arrayfuncs.c
+@@ -6631,28 +6631,11 @@ array_replace_internal(ArrayType *array,
+ 	return result;
+ }
+ 
+-/*
+- * Remove any occurrences of an element from an array
+- *
+- * If used on a multi-dimensional array this will raise an error.
+- */
+ Datum
+ array_remove(PG_FUNCTION_ARGS)
+ {
+-	ArrayType  *array;
+-	Datum		search = PG_GETARG_DATUM(1);
+-	bool		search_isnull = PG_ARGISNULL(1);
+-
+-	if (PG_ARGISNULL(0))
+-		PG_RETURN_NULL();
+-	array = PG_GETARG_ARRAYTYPE_P(0);
+-
+-	array = array_replace_internal(array,
+-								   search, search_isnull,
+-								   (Datum) 0, true,
+-								   true, PG_GET_COLLATION(),
+-								   fcinfo);
+-	PG_RETURN_ARRAYTYPE_P(array);
++	elog(ERROR, "array_remove is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

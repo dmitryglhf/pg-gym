@@ -1,0 +1,31 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..bdb232e 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1256,24 +1256,11 @@ date_pl_interval(PG_FUNCTION_ARGS)
+ 							   PointerGetDatum(span));
+ }
+ 
+-/* Subtract an interval from a date, giving a new date.
+- * Must handle both positive and negative intervals.
+- *
+- * We implement this by promoting the date to timestamp (without time zone)
+- * and then using the timestamp minus interval function.
+- */
+ Datum
+ date_mi_interval(PG_FUNCTION_ARGS)
+ {
+-	DateADT		dateVal = PG_GETARG_DATEADT(0);
+-	Interval   *span = PG_GETARG_INTERVAL_P(1);
+-	Timestamp	dateStamp;
+-
+-	dateStamp = date2timestamp(dateVal);
+-
+-	return DirectFunctionCall2(timestamp_mi_interval,
+-							   TimestampGetDatum(dateStamp),
+-							   PointerGetDatum(span));
++	elog(ERROR, "date_mi_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* date_timestamp()

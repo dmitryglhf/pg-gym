@@ -1,0 +1,36 @@
+{
+  "name": "pg_inherit_correctly_identify_which",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "54889ea64baaa5970330a0097fb6689ee1af7591",
+  "parent": "ff33df26c2446107a20e3432b4c73850536678b9",
+  "date": "2024-10-12",
+  "subject": "Correctly identify which EC members are computable at a plan node.",
+  "area": "planner, inherited UNION ALL queries",
+  "licence": "PostgreSQL",
+  "goal": "A flattened UNION ALL containing an expression-bearing child can leave ORDER BY unable to match its requested expression to an output column, producing `could not find pathkey item to sort`.\n\nFor example, select `1 - id AS c` from a subquery that unions `id` with `id * 2`, then order by c. The query must plan, return all rows, and sort them by the requested expression. Plain UNION ALL, inherited scans, and ordering without translated child expressions must keep their current plans and results.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/optimizer/path/equivclass.c",
+      "added": 33,
+      "deleted": 38
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/inherit.sql",
+    "src/test/regress/expected/inherit.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "inherit"
+    ],
+    "command": "make -C src/test/regress check TESTS=inherit"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

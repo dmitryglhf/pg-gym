@@ -1,0 +1,36 @@
+{
+  "name": "pg_gist_gist_index_only",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "355faed5a24998859a8477cc17e6cd62a0de2214",
+  "parent": "fc358af65e2a366012804eecb24a319335b80229",
+  "date": "2026-07-17",
+  "subject": "Fix GiST index-only scan column alignment issue.",
+  "area": "GiST, index-only scans",
+  "licence": "PostgreSQL",
+  "goal": "An index-only scan over a multicolumn GiST index can reconstruct a later column with the wrong layout and return a corrupt value or crash. The common case can hide the fault when preceding values happen to provide favorable alignment.\n\nCreate a table with `(inet, numrange)`, insert a row whose numeric range has long bounds, build a GiST index on both columns, vacuum it, and force an index-only scan selecting the lower and upper bounds. Both bounds must equal the inserted values. Reconstructed values must be correct for every indexed type and column position, while heap scans and ordinary GiST scans remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/executor/nodeIndexonlyscan.c",
+      "added": 59,
+      "deleted": 54
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/gist.sql",
+    "src/test/regress/expected/gist.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "gist"
+    ],
+    "command": "make -C src/test/regress check TESTS=gist"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

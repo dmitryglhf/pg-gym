@@ -1,0 +1,15 @@
+{
+  "func": "interval_support",
+  "variants": [
+    {
+      "arguments": "internal",
+      "returns": "internal",
+      "kind": "f",
+      "volatile": "i",
+      "description": "planner support for interval length coercion"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

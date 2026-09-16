@@ -1,0 +1,18 @@
+{
+  "func": "interval_hash",
+  "mode": "stub",
+  "patch": "prep/interval_hash.patch",
+  "symbols": [
+    "interval_hash"
+  ],
+  "units": {
+    "interval_hash": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n * Hashing for intervals\n *\n * We must produce equal hashvals for values that interval_cmp_internal()\n * considers equal.  So, compute the net span the same way it does,\n * and then hash that.\n */\nDatum\ninterval_hash(PG_FUNCTION_ARGS)\n{\n\tInterval   *interval = PG_GETARG_INTERVAL_P(0);\n\tINT128\t\tspan = interval_cmp_value(interval);\n\tint64\t\tspan64;\n\n\t/*\n\t * Use only the least significant 64 bits for hashing.  The upper 64 bits\n\t * seldom add any useful information, and besides we must do it like this\n\t * for compatibility with hashes calculated before use of INT128 was\n\t * introduced.\n\t */\n\tspan64 = int128_to_int64(span);\n\n\treturn DirectFunctionCall1(hashint8, Int64GetDatumFast(span64));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

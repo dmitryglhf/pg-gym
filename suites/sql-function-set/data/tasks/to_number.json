@@ -1,0 +1,18 @@
+{
+  "func": "to_number",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "numeric",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert text to numeric"
+    }
+  ],
+  "description": "Converts string to numeric according to the given format.",
+  "examples": [
+    "to_number('12,454.8-', '99G999D9S') -> -12454.8"
+  ],
+  "mode": "stub",
+  "category": "formatting"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_window_possible_crash_during",
+  "area": "executor, WindowAgg run conditions",
+  "goal": "A WindowAgg node with a run condition may stop evaluating window functions for the rest of a partition once the condition turns false. On the topmost WindowAgg node a later row can then be projected carrying window function results that were computed for an earlier row.\n\nWhere such a result is of a by-reference type the memory behind it may be gone already, and the backend can crash.\n\nIt takes all three of: a run condition, a PARTITION BY clause, and a window function in the same node returning a by-reference type, such as lead() or lag() over a text column.\n\nEvery row projected has to carry values belonging to that row. Queries with no run condition must be unaffected.",
+  "func": "pg_window_possible_crash_during",
+  "graded_by": [
+    "src/test/regress/sql/window.sql",
+    "src/test/regress/expected/window.out"
+  ]
+}

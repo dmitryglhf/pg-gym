@@ -1,0 +1,10 @@
+{
+  "name": "pg_limit_deparsing_fetch_first",
+  "area": "deparsing, FETCH FIRST",
+  "goal": "The grammar accepts only a restricted expression after FETCH FIRST, so printing a stored query back out has to produce something that parser will accept again. For expressions that are not a bare integer literal it does not.\n\nTo reach it, define a view ordered and limited with FETCH FIRST 5::bigint ROWS WITH TIES, then read its definition back and try to run it.\n\nA printed definition has to parse back into the same query. LIMIT, and FETCH FIRST without WITH TIES, must keep printing as they do now.",
+  "func": "pg_limit_deparsing_fetch_first",
+  "graded_by": [
+    "src/test/regress/sql/limit.sql",
+    "src/test/regress/expected/limit.out"
+  ]
+}

@@ -1,0 +1,108 @@
+name: pg-gym
+x-worker: &worker
+  image: pg-gym-api:${PG_GYM_VERSION:-0.2.0}
+  user: "${PG_GYM_UID:-1000}:${PG_GYM_GID:-1000}"
+  group_add: ["${PG_GYM_DOCKER_GID:-0}"]
+  restart: unless-stopped
+  stop_grace_period: 45s
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  depends_on:
+    api: {condition: service_healthy}
+  networks: [control, tasks, serving]
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  environment: &worker-env
+    PG_GYM_API_URL: http://api:8001
+    PG_GYM_TASK_API_URL: http://api:8001
+    PG_GYM_SECRET_DIR: /secrets
+    PG_GYM_WORKER_DATA: /worker
+    PG_GYM_SERVING_NETWORK: pg-gym-serving
+    PG_GYM_VLLM_IMAGE: ${PG_GYM_VLLM_IMAGE:-vllm/vllm-openai:v0.27.0}
+    POSTGRES_GYM_DOCKER_NETWORK: pg-gym-tasks
+    POSTGRES_GYM_TASK_IMAGE: ${POSTGRES_GYM_TASK_IMAGE:-postgres-gym-task:17.11}
+    PG_GYM_TASK_CPUS: ${PG_GYM_TASK_CPUS:-4}
+    PG_GYM_TASK_MEMORY: ${PG_GYM_TASK_MEMORY:-8g}
+    HF_HOME: /worker/hf-cache
+  volumes:
+    - ./worker-data:/worker
+    - ./secrets/worker-token:/secrets/worker-token:ro
+    - /var/run/docker.sock:/var/run/docker.sock
+  command: [server, worker, --id, cpu]
+services:
+  web:
+    image: pg-gym-web:${PG_GYM_VERSION:-0.2.0}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment: {PG_GYM_API_URL: 'http://api:8001'}
+    ports: ["${PG_GYM_BIND:-127.0.0.1}:${PG_GYM_PORT:-8000}:8000"]
+    networks: [control]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, deno, eval, "const r = await fetch('http://localhost:8000/api/v1/health'); if (!r.ok) Deno.exit(1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+  api:
+    image: pg-gym-api:${PG_GYM_VERSION:-0.2.0}
+    user: "${PG_GYM_UID:-1000}:${PG_GYM_GID:-1000}"
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PG_GYM_DATA: /data
+      PG_GYM_SECRET_DIR: /secrets
+      PG_GYM_OPEN_REGISTRATION: ${PG_GYM_OPEN_REGISTRATION:-0}
+      PG_GYM_ORIGIN: ${PG_GYM_ORIGIN:-http://localhost:8000}
+      PG_GYM_SECURE_COOKIE: ${PG_GYM_SECURE_COOKIE:-0}
+      PG_GYM_ALLOWED_HOSTS: ${PG_GYM_ALLOWED_HOSTS:-localhost,127.0.0.1,host.docker.internal}
+    volumes:
+      - ./data:/data
+      - ./secrets:/secrets:ro
+    networks: [control, tasks, serving]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  worker:
+    <<: *worker
+  worker-gpu:
+    <<: *worker
+    image: pg-gym-gpu:${PG_GYM_VERSION:-0.2.0}
+    profiles: [gpu]
+    environment:
+      <<: *worker-env
+      PG_GYM_GPU: ${PG_GYM_GPU:-0}
+      PG_GYM_CUDA_DEVICE: "0"
+      TRITON_CACHE_DIR: /worker/triton
+      TORCHINDUCTOR_CACHE_DIR: /worker/torchinductor
+    volumes:
+      - ./gpu-worker-data:/worker
+      - ./secrets/worker-token:/secrets/worker-token:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${PG_GYM_GPU:-0}"]
+              capabilities: [gpu]
+    command: [server, worker, --id, gpu]
+networks:
+  control:
+    name: pg-gym-control
+  tasks:
+    name: pg-gym-tasks
+    internal: true
+  serving:
+    name: pg-gym-serving

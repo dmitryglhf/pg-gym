@@ -1,0 +1,36 @@
+{
+  "name": "pg_inherit_need_do_commandcounterincrement",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "0941aadcd55b58a03af5d06f3374ca168522097f",
+  "parent": "b19893b94bdea3b206cb544619d84cea6276f648",
+  "date": "2025-04-02",
+  "subject": "Need to do CommandCounterIncrement after StoreAttrMissingVal.",
+  "area": "ALTER TABLE, multiple inheritance",
+  "licence": "PostgreSQL",
+  "goal": "A single ALTER TABLE containing multiple ADD COLUMN actions can fail in a diamond-shaped inheritance hierarchy when a later action needs to see catalog changes made by an earlier one.\n\nCreate a table inheriting the same ancestor through two paths, then run a command such as `ALTER TABLE child ADD COLUMN i int, ADD COLUMN j bigint DEFAULT 1`. The command must succeed atomically, and catalog inspection of every descendant must show both columns with the correct inheritance and default metadata. Single-action ALTER TABLE and non-diamond inheritance must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/tablecmds.c",
+      "added": 2,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/inherit.sql",
+    "src/test/regress/expected/inherit.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "inherit"
+    ],
+    "command": "make -C src/test/regress check TESTS=inherit"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

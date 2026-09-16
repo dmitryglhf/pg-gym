@@ -1,0 +1,15 @@
+{
+  "func": "interval_avg_deserialize",
+  "variants": [
+    {
+      "arguments": "bytea internal",
+      "returns": "internal",
+      "kind": "f",
+      "volatile": "i",
+      "description": "aggregate deserial function"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

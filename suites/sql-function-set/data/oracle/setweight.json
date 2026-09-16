@@ -1,0 +1,32 @@
+{
+  "func": "setweight",
+  "mode": "stub",
+  "patch": "prep/setweight.patch",
+  "symbols": [
+    "tsvector_setweight",
+    "tsvector_setweight_by_filter"
+  ],
+  "units": {
+    "tsvector_setweight": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "Datum\ntsvector_setweight(PG_FUNCTION_ARGS)\n{\n\tTSVector\tin = PG_GETARG_TSVECTOR(0);\n\tchar\t\tcw = PG_GETARG_CHAR(1);\n\tTSVector\tout;\n\tint\t\t\ti,\n\t\t\t\tj;\n\tWordEntry  *entry;\n\tWordEntryPos *p;\n\tint\t\t\tw = parse_weight(cw);\n\n\tout = (TSVector) palloc(VARSIZE(in));\n\tmemcpy(out, in, VARSIZE(in));\n\tentry = ARRPTR(out);\n\ti = out->size;\n\twhile (i--)\n\t{\n\t\tif ((j = POSDATALEN(out, entry)) != 0)\n\t\t{\n\t\t\tp = POSDATAPTR(out, entry);\n\t\t\twhile (j--)\n\t\t\t{\n\t\t\t\tWEP_SETWEIGHT(*p, w);\n\t\t\t\tp++;\n\t\t\t}\n\t\t}\n\t\tentry++;\n\t}\n\n\tPG_FREE_IF_COPY(in, 0);\n\tPG_RETURN_POINTER(out);\n}\n\n"
+    },
+    "tsvector_setweight_by_filter": {
+      "file": "src/backend/utils/adt/tsvector_op.c",
+      "code": "/*\n * setweight(tsin tsvector, char_weight \"char\", lexemes \"text\"[])\n *\n * Assign weight w to elements of tsin that are listed in lexemes.\n */\nDatum\ntsvector_setweight_by_filter(PG_FUNCTION_ARGS)\n{\n\tTSVector\ttsin = PG_GETARG_TSVECTOR(0);\n\tchar\t\tchar_weight = PG_GETARG_CHAR(1);\n\tArrayType  *lexemes = PG_GETARG_ARRAYTYPE_P(2);\n\n\tTSVector\ttsout;\n\tint\t\t\ti,\n\t\t\t\tj,\n\t\t\t\tnlexemes,\n\t\t\t\tweight;\n\tWordEntry  *entry;\n\tDatum\t   *dlexemes;\n\tbool\t   *nulls;\n\n\tweight = parse_weight(char_weight);\n\n\ttsout = (TSVector) palloc(VARSIZE(tsin));\n\tmemcpy(tsout, tsin, VARSIZE(tsin));\n\tentry = ARRPTR(tsout);\n\n\tdeconstruct_array_builtin(lexemes, TEXTOID, &dlexemes, &nulls, &nlexemes);\n\n\t/*\n\t * Assuming that lexemes array is significantly shorter than tsvector we\n\t * can iterate through lexemes performing binary search of each lexeme\n\t * from lexemes in tsvector.\n\t */\n\tfor (i = 0; i < nlexemes; i++)\n\t{\n\t\tchar\t   *lex;\n\t\tint\t\t\tlex_len,\n\t\t\t\t\tlex_pos;\n\n\t\t/* Ignore null array elements, they surely don't match */\n\t\tif (nulls[i])\n\t\t\tcontinue;\n\n\t\tlex = VARDATA(dlexemes[i]);\n\t\tlex_len = VARSIZE(dlexemes[i]) - VARHDRSZ;\n\t\tlex_pos = tsvector_bsearch(tsout, lex, lex_len);\n\n\t\tif (lex_pos >= 0 && (j = POSDATALEN(tsout, entry + lex_pos)) != 0)\n\t\t{\n\t\t\tWordEntryPos *p = POSDATAPTR(tsout, entry + lex_pos);\n\n\t\t\twhile (j--)\n\t\t\t{\n\t\t\t\tWEP_SETWEIGHT(*p, weight);\n\t\t\t\tp++;\n\t\t\t}\n\t\t}\n\t}\n\n\tPG_FREE_IF_COPY(tsin, 0);\n\tPG_FREE_IF_COPY(lexemes, 2);\n\n\tPG_RETURN_POINTER(tsout);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "tstypes"
+  ],
+  "category": "textsearch",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 30,
+  "oracle_diff_by_file": {
+    "tstypes": 30
+  }
+}

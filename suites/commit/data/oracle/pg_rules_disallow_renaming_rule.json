@@ -1,0 +1,27 @@
+{
+  "func": "pg_rules_disallow_renaming_rule",
+  "sha": "e99fb3262441b47d88632b2857f03083be67f3e3",
+  "parent": "86992769e8fb75910858f64172797f4f011e4f02",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_rules_disallow_renaming_rule.patch",
+  "test_files": [
+    "src/test/regress/sql/rules.sql",
+    "src/test/regress/expected/rules.out"
+  ],
+  "reference": "diff --git a/src/backend/rewrite/rewriteDefine.c b/src/backend/rewrite/rewriteDefine.c\nindex 6cc9a8d8b..601242ea2 100644\n--- a/src/backend/rewrite/rewriteDefine.c\n+++ b/src/backend/rewrite/rewriteDefine.c\n@@ -390,26 +390,11 @@ DefineQueryRewrite(const char *rulename,\n \t\t * ... and finally the rule must be named _RETURN.\n \t\t */\n \t\tif (strcmp(rulename, ViewSelectRuleName) != 0)\n-\t\t{\n-\t\t\t/*\n-\t\t\t * In versions before 7.3, the expected name was _RETviewname. For\n-\t\t\t * backwards compatibility with old pg_dump output, accept that\n-\t\t\t * and silently change it to _RETURN.  Since this is just a quick\n-\t\t\t * backwards-compatibility hack, limit the number of characters\n-\t\t\t * checked to a few less than NAMEDATALEN; this saves having to\n-\t\t\t * worry about where a multibyte character might have gotten\n-\t\t\t * truncated.\n-\t\t\t */\n-\t\t\tif (strncmp(rulename, \"_RET\", 4) != 0 ||\n-\t\t\t\tstrncmp(rulename + 4, RelationGetRelationName(event_relation),\n-\t\t\t\t\t\tNAMEDATALEN - 4 - 4) != 0)\n-\t\t\t\tereport(ERROR,\n-\t\t\t\t\t\t(errcode(ERRCODE_INVALID_OBJECT_DEFINITION),\n-\t\t\t\t\t\t errmsg(\"view rule for \\\"%s\\\" must be named \\\"%s\\\"\",\n-\t\t\t\t\t\t\t\tRelationGetRelationName(event_relation),\n-\t\t\t\t\t\t\t\tViewSelectRuleName)));\n-\t\t\trulename = pstrdup(ViewSelectRuleName);\n-\t\t}\n+\t\t\tereport(ERROR,\n+\t\t\t\t\t(errcode(ERRCODE_INVALID_OBJECT_DEFINITION),\n+\t\t\t\t\t errmsg(\"view rule for \\\"%s\\\" must be named \\\"%s\\\"\",\n+\t\t\t\t\t\t\tRelationGetRelationName(event_relation),\n+\t\t\t\t\t\t\tViewSelectRuleName)));\n \t}\n \telse\n \t{\n@@ -844,6 +829,17 @@ RenameRewriteRule(RangeVar *relation, const char *oldName,\n \t\t\t\t(errcode(ERRCODE_INVALID_OBJECT_DEFINITION),\n \t\t\t\t errmsg(\"renaming an ON SELECT rule is not allowed\")));\n \n+\t/*\n+\t * Conversely, if it's not an ON SELECT rule then it must *not* be named\n+\t * _RETURN.\n+\t */\n+\tif (strcmp(newName, ViewSelectRuleName) == 0)\n+\t\tereport(ERROR,\n+\t\t\t\t(errcode(ERRCODE_INVALID_OBJECT_DEFINITION),\n+\t\t\t\t errmsg(\"non-view rule for \\\"%s\\\" must not be named \\\"%s\\\"\",\n+\t\t\t\t\t\tRelationGetRelationName(targetrel),\n+\t\t\t\t\t\tViewSelectRuleName)));\n+\n \t/* OK, do the update */\n \tnamestrcpy(&(ruleform->rulename), newName);\n \n",
+  "test": "diff --git a/src/test/regress/expected/rules.out b/src/test/regress/expected/rules.out\nindex 13178e2b3..60eb4c431 100644\n--- a/src/test/regress/expected/rules.out\n+++ b/src/test/regress/expected/rules.out\n@@ -3199,6 +3199,8 @@ ALTER RULE NewInsertRule ON rule_v1 RENAME TO \"_RETURN\"; -- already exists\n ERROR:  rule \"_RETURN\" for relation \"rule_v1\" already exists\n ALTER RULE \"_RETURN\" ON rule_v1 RENAME TO abc; -- ON SELECT rule cannot be renamed\n ERROR:  renaming an ON SELECT rule is not allowed\n+ALTER RULE rtest_t4_ins1 ON rtest_t4 RENAME TO \"_RETURN\"; -- also disallowed\n+ERROR:  non-view rule for \"rtest_t4\" must not be named \"_RETURN\"\n DROP VIEW rule_v1;\n DROP TABLE rule_t1;\n --\ndiff --git a/src/test/regress/sql/rules.sql b/src/test/regress/sql/rules.sql\nindex 4a5fa5058..999b53f51 100644\n--- a/src/test/regress/sql/rules.sql\n+++ b/src/test/regress/sql/rules.sql\n@@ -1087,6 +1087,7 @@ SELECT * FROM rule_v1;\n ALTER RULE InsertRule ON rule_v1 RENAME TO NewInsertRule; -- doesn't exist\n ALTER RULE NewInsertRule ON rule_v1 RENAME TO \"_RETURN\"; -- already exists\n ALTER RULE \"_RETURN\" ON rule_v1 RENAME TO abc; -- ON SELECT rule cannot be renamed\n+ALTER RULE rtest_t4_ins1 ON rtest_t4 RENAME TO \"_RETURN\"; -- also disallowed\n \n DROP VIEW rule_v1;\n DROP TABLE rule_t1;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=rules",
+  "expected_tests": [
+    "rules"
+  ],
+  "failing_tests": [
+    "rules"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 1,
+  "oracle_diff_by_file": {
+    "rules": 1
+  }
+}

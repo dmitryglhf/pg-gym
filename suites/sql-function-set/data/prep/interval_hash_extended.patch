@@ -1,0 +1,22 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..eaa8ffd 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -2614,15 +2614,8 @@ interval_hash(PG_FUNCTION_ARGS)
+ Datum
+ interval_hash_extended(PG_FUNCTION_ARGS)
+ {
+-	Interval   *interval = PG_GETARG_INTERVAL_P(0);
+-	INT128		span = interval_cmp_value(interval);
+-	int64		span64;
+-
+-	/* Same approach as interval_hash */
+-	span64 = int128_to_int64(span);
+-
+-	return DirectFunctionCall2(hashint8extended, Int64GetDatumFast(span64),
+-							   PG_GETARG_DATUM(1));
++	elog(ERROR, "interval_hash_extended is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* overlaps_timestamp() --- implements the SQL OVERLAPS operator.

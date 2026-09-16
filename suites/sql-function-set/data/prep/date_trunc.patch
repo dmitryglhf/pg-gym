@@ -1,0 +1,300 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..7f64736 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -4623,138 +4623,11 @@ timestamp_bin(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMESTAMP(result);
+ }
+ 
+-/* timestamp_trunc()
+- * Truncate timestamp to specified units.
+- */
+ Datum
+ timestamp_trunc(PG_FUNCTION_ARGS)
+ {
+-	text	   *units = PG_GETARG_TEXT_PP(0);
+-	Timestamp	timestamp = PG_GETARG_TIMESTAMP(1);
+-	Timestamp	result;
+-	int			type,
+-				val;
+-	char	   *lowunits;
+-	fsec_t		fsec;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		PG_RETURN_TIMESTAMP(timestamp);
+-
+-	lowunits = downcase_truncate_identifier(VARDATA_ANY(units),
+-											VARSIZE_ANY_EXHDR(units),
+-											false);
+-
+-	type = DecodeUnits(0, lowunits, &val);
+-
+-	if (type == UNITS)
+-	{
+-		if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("timestamp out of range")));
+-
+-		switch (val)
+-		{
+-			case DTK_WEEK:
+-				{
+-					int			woy;
+-
+-					woy = date2isoweek(tm->tm_year, tm->tm_mon, tm->tm_mday);
+-
+-					/*
+-					 * If it is week 52/53 and the month is January, then the
+-					 * week must belong to the previous year. Also, some
+-					 * December dates belong to the next year.
+-					 */
+-					if (woy >= 52 && tm->tm_mon == 1)
+-						--tm->tm_year;
+-					if (woy <= 1 && tm->tm_mon == MONTHS_PER_YEAR)
+-						++tm->tm_year;
+-					isoweek2date(woy, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+-					tm->tm_hour = 0;
+-					tm->tm_min = 0;
+-					tm->tm_sec = 0;
+-					fsec = 0;
+-					break;
+-				}
+-			case DTK_MILLENNIUM:
+-				/* see comments in timestamptz_trunc */
+-				if (tm->tm_year > 0)
+-					tm->tm_year = ((tm->tm_year + 999) / 1000) * 1000 - 999;
+-				else
+-					tm->tm_year = -((999 - (tm->tm_year - 1)) / 1000) * 1000 + 1;
+-				/* FALL THRU */
+-			case DTK_CENTURY:
+-				/* see comments in timestamptz_trunc */
+-				if (tm->tm_year > 0)
+-					tm->tm_year = ((tm->tm_year + 99) / 100) * 100 - 99;
+-				else
+-					tm->tm_year = -((99 - (tm->tm_year - 1)) / 100) * 100 + 1;
+-				/* FALL THRU */
+-			case DTK_DECADE:
+-				/* see comments in timestamptz_trunc */
+-				if (val != DTK_MILLENNIUM && val != DTK_CENTURY)
+-				{
+-					if (tm->tm_year > 0)
+-						tm->tm_year = (tm->tm_year / 10) * 10;
+-					else
+-						tm->tm_year = -((8 - (tm->tm_year - 1)) / 10) * 10;
+-				}
+-				/* FALL THRU */
+-			case DTK_YEAR:
+-				tm->tm_mon = 1;
+-				/* FALL THRU */
+-			case DTK_QUARTER:
+-				tm->tm_mon = (3 * ((tm->tm_mon - 1) / 3)) + 1;
+-				/* FALL THRU */
+-			case DTK_MONTH:
+-				tm->tm_mday = 1;
+-				/* FALL THRU */
+-			case DTK_DAY:
+-				tm->tm_hour = 0;
+-				/* FALL THRU */
+-			case DTK_HOUR:
+-				tm->tm_min = 0;
+-				/* FALL THRU */
+-			case DTK_MINUTE:
+-				tm->tm_sec = 0;
+-				/* FALL THRU */
+-			case DTK_SECOND:
+-				fsec = 0;
+-				break;
+-
+-			case DTK_MILLISEC:
+-				fsec = (fsec / 1000) * 1000;
+-				break;
+-
+-			case DTK_MICROSEC:
+-				break;
+-
+-			default:
+-				ereport(ERROR,
+-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+-						 errmsg("unit \"%s\" not supported for type %s",
+-								lowunits, format_type_be(TIMESTAMPOID))));
+-				result = 0;
+-		}
+-
+-		if (tm2timestamp(tm, fsec, NULL, &result) != 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("timestamp out of range")));
+-	}
+-	else
+-	{
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("unit \"%s\" not recognized for type %s",
+-						lowunits, format_type_be(TIMESTAMPOID))));
+-		result = 0;
+-	}
+-
+-	PG_RETURN_TIMESTAMP(result);
++	elog(ERROR, "timestamp_trunc is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamptz_bin()
+@@ -4975,148 +4848,25 @@ timestamptz_trunc_internal(text *units, TimestampTz timestamp, pg_tz *tzp)
+ 	return result;
+ }
+ 
+-/* timestamptz_trunc()
+- * Truncate timestamptz to specified units in session timezone.
+- */
+ Datum
+ timestamptz_trunc(PG_FUNCTION_ARGS)
+ {
+-	text	   *units = PG_GETARG_TEXT_PP(0);
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);
+-	TimestampTz result;
+-
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		PG_RETURN_TIMESTAMPTZ(timestamp);
+-
+-	result = timestamptz_trunc_internal(units, timestamp, session_timezone);
+-
+-	PG_RETURN_TIMESTAMPTZ(result);
++	elog(ERROR, "timestamptz_trunc is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* timestamptz_trunc_zone()
+- * Truncate timestamptz to specified units in specified timezone.
+- */
+ Datum
+ timestamptz_trunc_zone(PG_FUNCTION_ARGS)
+ {
+-	text	   *units = PG_GETARG_TEXT_PP(0);
+-	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);
+-	text	   *zone = PG_GETARG_TEXT_PP(2);
+-	TimestampTz result;
+-	pg_tz	   *tzp;
+-
+-	/*
+-	 * timestamptz_zone() doesn't look up the zone for infinite inputs, so we
+-	 * don't do so here either.
+-	 */
+-	if (TIMESTAMP_NOT_FINITE(timestamp))
+-		PG_RETURN_TIMESTAMP(timestamp);
+-
+-	/*
+-	 * Look up the requested timezone.
+-	 */
+-	tzp = lookup_timezone(zone);
+-
+-	result = timestamptz_trunc_internal(units, timestamp, tzp);
+-
+-	PG_RETURN_TIMESTAMPTZ(result);
++	elog(ERROR, "timestamptz_trunc_zone is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/* interval_trunc()
+- * Extract specified field from interval.
+- */
+ Datum
+ interval_trunc(PG_FUNCTION_ARGS)
+ {
+-	text	   *units = PG_GETARG_TEXT_PP(0);
+-	Interval   *interval = PG_GETARG_INTERVAL_P(1);
+-	Interval   *result;
+-	int			type,
+-				val;
+-	char	   *lowunits;
+-	struct pg_itm tt,
+-			   *tm = &tt;
+-
+-	result = (Interval *) palloc(sizeof(Interval));
+-
+-	if (INTERVAL_NOT_FINITE(interval))
+-	{
+-		memcpy(result, interval, sizeof(Interval));
+-		PG_RETURN_INTERVAL_P(result);
+-	}
+-
+-	lowunits = downcase_truncate_identifier(VARDATA_ANY(units),
+-											VARSIZE_ANY_EXHDR(units),
+-											false);
+-
+-	type = DecodeUnits(0, lowunits, &val);
+-
+-	if (type == UNITS)
+-	{
+-		interval2itm(*interval, tm);
+-		switch (val)
+-		{
+-			case DTK_MILLENNIUM:
+-				/* caution: C division may have negative remainder */
+-				tm->tm_year = (tm->tm_year / 1000) * 1000;
+-				/* FALL THRU */
+-			case DTK_CENTURY:
+-				/* caution: C division may have negative remainder */
+-				tm->tm_year = (tm->tm_year / 100) * 100;
+-				/* FALL THRU */
+-			case DTK_DECADE:
+-				/* caution: C division may have negative remainder */
+-				tm->tm_year = (tm->tm_year / 10) * 10;
+-				/* FALL THRU */
+-			case DTK_YEAR:
+-				tm->tm_mon = 0;
+-				/* FALL THRU */
+-			case DTK_QUARTER:
+-				tm->tm_mon = 3 * (tm->tm_mon / 3);
+-				/* FALL THRU */
+-			case DTK_MONTH:
+-				tm->tm_mday = 0;
+-				/* FALL THRU */
+-			case DTK_DAY:
+-				tm->tm_hour = 0;
+-				/* FALL THRU */
+-			case DTK_HOUR:
+-				tm->tm_min = 0;
+-				/* FALL THRU */
+-			case DTK_MINUTE:
+-				tm->tm_sec = 0;
+-				/* FALL THRU */
+-			case DTK_SECOND:
+-				tm->tm_usec = 0;
+-				break;
+-			case DTK_MILLISEC:
+-				tm->tm_usec = (tm->tm_usec / 1000) * 1000;
+-				break;
+-			case DTK_MICROSEC:
+-				break;
+-
+-			default:
+-				ereport(ERROR,
+-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+-						 errmsg("unit \"%s\" not supported for type %s",
+-								lowunits, format_type_be(INTERVALOID)),
+-						 (val == DTK_WEEK) ? errdetail("Months usually have fractional weeks.") : 0));
+-		}
+-
+-		if (itm2interval(tm, result) != 0)
+-			ereport(ERROR,
+-					(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+-					 errmsg("interval out of range")));
+-	}
+-	else
+-	{
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("unit \"%s\" not recognized for type %s",
+-						lowunits, format_type_be(INTERVALOID))));
+-	}
+-
+-	PG_RETURN_INTERVAL_P(result);
++	elog(ERROR, "interval_trunc is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* isoweek2j()

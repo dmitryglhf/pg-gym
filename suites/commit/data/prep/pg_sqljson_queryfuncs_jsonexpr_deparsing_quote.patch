@@ -1,0 +1,13 @@
+diff --git a/src/backend/utils/adt/ruleutils.c b/src/backend/utils/adt/ruleutils.c
+index 7d6d9141..c725e80e 100644
+--- a/src/backend/utils/adt/ruleutils.c
++++ b/src/backend/utils/adt/ruleutils.c
+@@ -10250,7 +10250,7 @@ get_rule_expr(Node *node, deparse_context *context,
+ 
+ 						get_rule_expr((Node *) lfirst(lc2), context, showimplicit);
+ 						appendStringInfo(buf, " AS %s",
+-										 quote_identifier(lfirst_node(String, lc1)->sval));
++										 ((String *) lfirst_node(String, lc1))->sval);
+ 					}
+ 				}
+ 

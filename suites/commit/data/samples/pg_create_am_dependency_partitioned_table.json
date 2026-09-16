@@ -1,0 +1,36 @@
+{
+  "name": "pg_create_am_dependency_partitioned_table",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "bb584e831288042d9aee368a1c5daa3dafbb95c3",
+  "parent": "e631ed89c2e58464d3969badf2d5d065411b93f0",
+  "date": "2024-10-29",
+  "subject": "Fix dependency of partitioned table and table AM with CREATE TABLE .. USING",
+  "area": "table access methods, dependencies",
+  "licence": "PostgreSQL",
+  "goal": "A partitioned table created with an explicitly selected, unpinned table access method does not retain the catalog dependency that an ordinary table does. The access method can then be dropped while the partitioned table still names it.\n\nCreate a non-default table access method, create a partitioned table with `USING` that method, and inspect dependency behavior. Dropping the access method without CASCADE must be refused while the table exists; after the table is dropped it must succeed. Default access methods and ordinary tables must keep their existing dependency behavior.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/catalog/heap.c",
+      "added": 4,
+      "deleted": 2
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/create_am.sql",
+    "src/test/regress/expected/create_am.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "create_am"
+    ],
+    "command": "make -C src/test/regress check TESTS=create_am"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

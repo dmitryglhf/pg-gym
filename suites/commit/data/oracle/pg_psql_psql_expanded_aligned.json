@@ -1,0 +1,27 @@
+{
+  "func": "pg_psql_psql_expanded_aligned",
+  "sha": "efd885d05b8beded386fbb5a9d737dc9e65289a9",
+  "parent": "4801610f7c66661f2b8722a2c5561273e210960b",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_psql_psql_expanded_aligned.patch",
+  "test_files": [
+    "src/test/regress/sql/psql.sql",
+    "src/test/regress/expected/psql.out"
+  ],
+  "reference": "diff --git a/src/fe_utils/print.c b/src/fe_utils/print.c\nindex d6c4d78f..92b5df74 100644\n--- a/src/fe_utils/print.c\n+++ b/src/fe_utils/print.c\n@@ -1458,9 +1458,10 @@ print_aligned_vertical(const printTableContent *cont,\n \t}\n \n \t/*\n-\t * Calculate available width for data in wrapped mode\n+\t * Determine data column width: fit output width in wrapped mode, or\n+\t * ensure alignment with the record header line in aligned mode.\n \t */\n-\tif (cont->opt->format == PRINT_WRAPPED)\n+\tif (cont->opt->format == PRINT_WRAPPED || cont->opt->format == PRINT_ALIGNED)\n \t{\n \t\tunsigned int swidth,\n \t\t\t\t\trwidth = 0,\n@@ -1532,7 +1533,7 @@ print_aligned_vertical(const printTableContent *cont,\n \t\t\tif (width < rwidth)\n \t\t\t\twidth = rwidth;\n \n-\t\t\tif (output_columns > 0)\n+\t\t\tif (cont->opt->format == PRINT_WRAPPED && output_columns > 0)\n \t\t\t{\n \t\t\t\tunsigned int min_width;\n \n",
+  "test": "diff --git a/src/test/regress/expected/psql.out b/src/test/regress/expected/psql.out\nindex 7e39eef6..499394cb 100644\n--- a/src/test/regress/expected/psql.out\n+++ b/src/test/regress/expected/psql.out\n@@ -2723,6 +2723,32 @@ execute q;\n +------------------+-------------------+\n \n deallocate q;\n+-- expanded output with short-width columns\n+\\pset border 2\n+\\pset expanded on\n+create table psql_short_tab(a int, b int);\n+insert into psql_short_tab values(10,20),(30,40);\n+\\pset format aligned\n+select * from psql_short_tab;\n++-[ RECORD 1 ]-+\n+| a | 10       |\n+| b | 20       |\n++-[ RECORD 2 ]-+\n+| a | 30       |\n+| b | 40       |\n++---+----------+\n+\n+\\pset format wrapped\n+select * from psql_short_tab;\n++-[ RECORD 1 ]-+\n+| a | 10       |\n+| b | 20       |\n++-[ RECORD 2 ]-+\n+| a | 30       |\n+| b | 40       |\n++---+----------+\n+\n+drop table psql_short_tab;\n \\pset linestyle ascii\n \\pset border 1\n -- support table for output-format tests (useful to create a footer)\ndiff --git a/src/test/regress/sql/psql.sql b/src/test/regress/sql/psql.sql\nindex f8ad7af5..e4b09ac7 100644\n--- a/src/test/regress/sql/psql.sql\n+++ b/src/test/regress/sql/psql.sql\n@@ -446,6 +446,17 @@ execute q;\n \n deallocate q;\n \n+-- expanded output with short-width columns\n+\\pset border 2\n+\\pset expanded on\n+create table psql_short_tab(a int, b int);\n+insert into psql_short_tab values(10,20),(30,40);\n+\\pset format aligned\n+select * from psql_short_tab;\n+\\pset format wrapped\n+select * from psql_short_tab;\n+drop table psql_short_tab;\n+\n \\pset linestyle ascii\n \\pset border 1\n \n",
+  "oracle_command": "make -C src/test/regress check TESTS=psql",
+  "expected_tests": [
+    "psql"
+  ],
+  "failing_tests": [
+    "psql"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 10,
+  "oracle_diff_by_file": {
+    "psql": 10
+  }
+}

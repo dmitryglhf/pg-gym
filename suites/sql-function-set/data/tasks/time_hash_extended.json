@@ -1,0 +1,15 @@
+{
+  "func": "time_hash_extended",
+  "variants": [
+    {
+      "arguments": "time int8",
+      "returns": "int8",
+      "kind": "f",
+      "volatile": "i",
+      "description": "hash"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

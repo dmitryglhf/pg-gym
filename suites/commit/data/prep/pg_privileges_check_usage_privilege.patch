@@ -1,0 +1,23 @@
+diff --git a/src/backend/commands/tablecmds.c b/src/backend/commands/tablecmds.c
+index d042d90a..2d9047f5 100644
+--- a/src/backend/commands/tablecmds.c
++++ b/src/backend/commands/tablecmds.c
+@@ -16536,7 +16536,6 @@ ATExecAddOf(Relation rel, const TypeName *ofTypename, LOCKMODE lockmode)
+ 	ObjectAddress tableobj,
+ 				typeobj;
+ 	HeapTuple	classtuple;
+-	AclResult	aclresult;
+ 
+ 	/* Validate the type. */
+ 	typetuple = typenameType(NULL, ofTypename, NULL);
+@@ -16544,10 +16543,6 @@ ATExecAddOf(Relation rel, const TypeName *ofTypename, LOCKMODE lockmode)
+ 	typeform = (Form_pg_type) GETSTRUCT(typetuple);
+ 	typeid = typeform->oid;
+ 
+-	aclresult = object_aclcheck(TypeRelationId, typeid, GetUserId(), ACL_USAGE);
+-	if (aclresult != ACLCHECK_OK)
+-		aclcheck_error_type(aclresult, typeid);
+-
+ 	/* Fail if the table has any inheritance parents. */
+ 	inheritsRelation = table_open(InheritsRelationId, AccessShareLock);
+ 	ScanKeyInit(&key,

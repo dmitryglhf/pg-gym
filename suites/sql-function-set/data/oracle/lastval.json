@@ -1,0 +1,27 @@
+{
+  "func": "lastval",
+  "mode": "stub",
+  "patch": "prep/lastval.patch",
+  "symbols": [
+    "lastval"
+  ],
+  "units": {
+    "lastval": {
+      "file": "src/backend/commands/sequence.c",
+      "code": "Datum\nlastval(PG_FUNCTION_ARGS)\n{\n\tRelation\tseqrel;\n\tint64\t\tresult;\n\n\tif (last_used_seq == NULL)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),\n\t\t\t\t errmsg(\"lastval is not yet defined in this session\")));\n\n\t/* Someone may have dropped the sequence since the last nextval() */\n\tif (!SearchSysCacheExists1(RELOID, ObjectIdGetDatum(last_used_seq->relid)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),\n\t\t\t\t errmsg(\"lastval is not yet defined in this session\")));\n\n\tseqrel = lock_and_open_sequence(last_used_seq);\n\n\t/* nextval() must have already been called for this sequence */\n\tAssert(last_used_seq->last_valid);\n\n\tif (pg_class_aclcheck(last_used_seq->relid, GetUserId(),\n\t\t\t\t\t\t  ACL_SELECT | ACL_USAGE) != ACLCHECK_OK)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),\n\t\t\t\t errmsg(\"permission denied for sequence %s\",\n\t\t\t\t\t\tRelationGetRelationName(seqrel))));\n\n\tresult = last_used_seq->last;\n\tsequence_close(seqrel, NoLock);\n\n\tPG_RETURN_INT64(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "sequence"
+  ],
+  "category": "sequence",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 31,
+  "oracle_diff_by_file": {
+    "sequence": 31
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "func": "pg_aggregates_try_parallelize_array",
+  "sha": "43847dd5e93816ef6e37dfb6c8bb7f98f48ddc01",
+  "parent": "99c01aadf979eed412a5189c8370ec8fe4784e6f",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_aggregates_try_parallelize_array.patch",
+  "test_files": [
+    "src/test/regress/sql/aggregates.sql",
+    "src/test/regress/expected/aggregates.out"
+  ],
+  "reference": "diff --git a/src/backend/parser/parse_agg.c b/src/backend/parser/parse_agg.c\nindex b15d9b15..be88909d 100644\n--- a/src/backend/parser/parse_agg.c\n+++ b/src/backend/parser/parse_agg.c\n@@ -1961,7 +1961,7 @@ resolve_aggregate_transtype(Oid aggfuncid,\n \n /*\n  * agg_args_support_sendreceive\n- *\t\tReturns true if all non-byval of aggref's arg types have send and\n+ *\t\tReturns true if all non-byval types of aggref's args have send and\n  *\t\treceive functions.\n  */\n bool\n@@ -1976,6 +1976,15 @@ agg_args_support_sendreceive(Aggref *aggref)\n \t\tTargetEntry *tle = (TargetEntry *) lfirst(lc);\n \t\tOid\t\t\ttype = exprType((Node *) tle->expr);\n \n+\t\t/*\n+\t\t * RECORD is a special case: it has typsend/typreceive functions, but\n+\t\t * record_recv only works if passed the correct typmod to identify the\n+\t\t * specific anonymous record type.  array_agg_deserialize cannot do\n+\t\t * that, so we have to disclaim support for the case.\n+\t\t */\n+\t\tif (type == RECORDOID)\n+\t\t\treturn false;\n+\n \t\ttypeTuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(type));\n \t\tif (!HeapTupleIsValid(typeTuple))\n \t\t\telog(ERROR, \"cache lookup failed for type %u\", type);\n",
+  "test": "diff --git a/src/test/regress/expected/aggregates.out b/src/test/regress/expected/aggregates.out\nindex 1c1ca757..30af83f2 100644\n--- a/src/test/regress/expected/aggregates.out\n+++ b/src/test/regress/expected/aggregates.out\n@@ -2033,8 +2033,8 @@ explain (costs off) select * from v_pagg_test order by y;\n                                        ->  Parallel Seq Scan on pagg_test\n (13 rows)\n \n-set max_parallel_workers_per_gather = 0;\n -- Ensure results are the same without parallel aggregation.\n+set max_parallel_workers_per_gather = 0;\n select * from v_pagg_test order by y;\n  y | tmin | tmax | tndistinct | bmin | bmax | bndistinct | amin | amax | andistinct | aamin | aamax | aandistinct \n ---+------+------+------------+------+------+------------+------+------+------------+-------+-------+-------------\n@@ -2050,6 +2050,24 @@ select * from v_pagg_test order by y;\n  9 |   19 | 4999 |        250 | 1019 | 999  |        250 |   19 | 4999 |        250 |    19 |  4999 |         250\n (10 rows)\n \n+-- Check that we don't fail on anonymous record types.\n+set max_parallel_workers_per_gather = 2;\n+explain (costs off)\n+select array_dims(array_agg(s)) from (select * from pagg_test) s;\n+                 QUERY PLAN                 \n+--------------------------------------------\n+ Aggregate\n+   ->  Gather\n+         Workers Planned: 2\n+         ->  Parallel Seq Scan on pagg_test\n+(4 rows)\n+\n+select array_dims(array_agg(s)) from (select * from pagg_test) s;\n+ array_dims \n+------------\n+ [1:5000]\n+(1 row)\n+\n -- Clean up\n reset max_parallel_workers_per_gather;\n reset bytea_output;\ndiff --git a/src/test/regress/sql/aggregates.sql b/src/test/regress/sql/aggregates.sql\nindex 1a18ca3d..675b23ad 100644\n--- a/src/test/regress/sql/aggregates.sql\n+++ b/src/test/regress/sql/aggregates.sql\n@@ -805,11 +805,16 @@ select * from v_pagg_test order by y;\n -- Ensure parallel aggregation is actually being used.\n explain (costs off) select * from v_pagg_test order by y;\n \n-set max_parallel_workers_per_gather = 0;\n-\n -- Ensure results are the same without parallel aggregation.\n+set max_parallel_workers_per_gather = 0;\n select * from v_pagg_test order by y;\n \n+-- Check that we don't fail on anonymous record types.\n+set max_parallel_workers_per_gather = 2;\n+explain (costs off)\n+select array_dims(array_agg(s)) from (select * from pagg_test) s;\n+select array_dims(array_agg(s)) from (select * from pagg_test) s;\n+\n -- Clean up\n reset max_parallel_workers_per_gather;\n reset bytea_output;\n",
+  "oracle_command": "make -C src/test/regress check TESTS=aggregates",
+  "expected_tests": [
+    "aggregates"
+  ],
+  "failing_tests": [
+    "aggregates"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 15,
+  "oracle_diff_by_file": {
+    "aggregates": 15
+  }
+}

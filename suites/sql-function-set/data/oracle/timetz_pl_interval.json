@@ -1,0 +1,18 @@
+{
+  "func": "timetz_pl_interval",
+  "mode": "stub",
+  "patch": "prep/timetz_pl_interval.patch",
+  "symbols": [
+    "timetz_pl_interval"
+  ],
+  "units": {
+    "timetz_pl_interval": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/* timetz_pl_interval()\n * Add interval to timetz.\n */\nDatum\ntimetz_pl_interval(PG_FUNCTION_ARGS)\n{\n\tTimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\tTimeTzADT  *result;\n\n\tif (INTERVAL_NOT_FINITE(span))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"cannot add infinite interval to time\")));\n\n\tresult = (TimeTzADT *) palloc(sizeof(TimeTzADT));\n\n\tresult->time = time->time + span->time;\n\tresult->time -= result->time / USECS_PER_DAY * USECS_PER_DAY;\n\tif (result->time < INT64CONST(0))\n\t\tresult->time += USECS_PER_DAY;\n\n\tresult->zone = time->zone;\n\n\tPG_RETURN_TIMETZADT_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

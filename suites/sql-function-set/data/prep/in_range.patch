@@ -1,0 +1,816 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..1a83f98 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -1029,33 +1029,11 @@ timestamptz_cmp_date(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT32(-date_cmp_timestamptz_internal(dateVal, dt1));
+ }
+ 
+-/*
+- * in_range support function for date.
+- *
+- * We implement this by promoting the dates to timestamp (without time zone)
+- * and then using the timestamp-and-interval in_range function.
+- */
+ Datum
+ in_range_date_interval(PG_FUNCTION_ARGS)
+ {
+-	DateADT		val = PG_GETARG_DATEADT(0);
+-	DateADT		base = PG_GETARG_DATEADT(1);
+-	Interval   *offset = PG_GETARG_INTERVAL_P(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	Timestamp	valStamp;
+-	Timestamp	baseStamp;
+-
+-	/* XXX we could support out-of-range cases here, perhaps */
+-	valStamp = date2timestamp(val);
+-	baseStamp = date2timestamp(base);
+-
+-	return DirectFunctionCall5(in_range_timestamp_interval,
+-							   TimestampGetDatum(valStamp),
+-							   TimestampGetDatum(baseStamp),
+-							   IntervalPGetDatum(offset),
+-							   BoolGetDatum(sub),
+-							   BoolGetDatum(less));
++	elog(ERROR, "in_range_date_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -2091,45 +2069,11 @@ time_mi_interval(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMEADT(result);
+ }
+ 
+-/*
+- * in_range support function for time.
+- */
+ Datum
+ in_range_time_interval(PG_FUNCTION_ARGS)
+ {
+-	TimeADT		val = PG_GETARG_TIMEADT(0);
+-	TimeADT		base = PG_GETARG_TIMEADT(1);
+-	Interval   *offset = PG_GETARG_INTERVAL_P(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	TimeADT		sum;
+-
+-	/*
+-	 * Like time_pl_interval/time_mi_interval, we disregard the month and day
+-	 * fields of the offset.  So our test for negative should too.  This also
+-	 * catches -infinity, so we only need worry about +infinity below.
+-	 */
+-	if (offset->time < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * We can't use time_pl_interval/time_mi_interval here, because their
+-	 * wraparound behavior would give wrong (or at least undesirable) answers.
+-	 * Fortunately the equivalent non-wrapping behavior is trivial, except
+-	 * that adding an infinite (or very large) interval might cause integer
+-	 * overflow.  Subtraction cannot overflow here.
+-	 */
+-	if (sub)
+-		sum = base - offset->time;
+-	else if (pg_add_s64_overflow(base, offset->time, &sum))
+-		PG_RETURN_BOOL(less);
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_time_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+@@ -2643,46 +2587,11 @@ timetz_mi_interval(PG_FUNCTION_ARGS)
+ 	PG_RETURN_TIMETZADT_P(result);
+ }
+ 
+-/*
+- * in_range support function for timetz.
+- */
+ Datum
+ in_range_timetz_interval(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *val = PG_GETARG_TIMETZADT_P(0);
+-	TimeTzADT  *base = PG_GETARG_TIMETZADT_P(1);
+-	Interval   *offset = PG_GETARG_INTERVAL_P(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	TimeTzADT	sum;
+-
+-	/*
+-	 * Like timetz_pl_interval/timetz_mi_interval, we disregard the month and
+-	 * day fields of the offset.  So our test for negative should too. This
+-	 * also catches -infinity, so we only need worry about +infinity below.
+-	 */
+-	if (offset->time < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * We can't use timetz_pl_interval/timetz_mi_interval here, because their
+-	 * wraparound behavior would give wrong (or at least undesirable) answers.
+-	 * Fortunately the equivalent non-wrapping behavior is trivial, except
+-	 * that adding an infinite (or very large) interval might cause integer
+-	 * overflow.  Subtraction cannot overflow here.
+-	 */
+-	if (sub)
+-		sum.time = base->time - offset->time;
+-	else if (pg_add_s64_overflow(base->time, offset->time, &sum.time))
+-		PG_RETURN_BOOL(less);
+-	sum.zone = base->zone;
+-
+-	if (less)
+-		PG_RETURN_BOOL(timetz_cmp_internal(val, &sum) <= 0);
+-	else
+-		PG_RETURN_BOOL(timetz_cmp_internal(val, &sum) >= 0);
++	elog(ERROR, "in_range_timetz_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* overlaps_timetz() --- implements the SQL OVERLAPS operator.
+diff --git a/src/backend/utils/adt/float.c b/src/backend/utils/adt/float.c
+index 22421cb..d3a284f 100644
+--- a/src/backend/utils/adt/float.c
++++ b/src/backend/utils/adt/float.c
+@@ -1010,156 +1010,18 @@ btfloat84cmp(PG_FUNCTION_ARGS)
+ 	PG_RETURN_INT32(float8_cmp_internal(arg1, arg2));
+ }
+ 
+-/*
+- * in_range support function for float8.
+- *
+- * Note: we needn't supply a float8_float4 variant, as implicit coercion
+- * of the offset value takes care of that scenario just as well.
+- */
+ Datum
+ in_range_float8_float8(PG_FUNCTION_ARGS)
+ {
+-	float8		val = PG_GETARG_FLOAT8(0);
+-	float8		base = PG_GETARG_FLOAT8(1);
+-	float8		offset = PG_GETARG_FLOAT8(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	float8		sum;
+-
+-	/*
+-	 * Reject negative or NaN offset.  Negative is per spec, and NaN is
+-	 * because appropriate semantics for that seem non-obvious.
+-	 */
+-	if (isnan(offset) || offset < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * Deal with cases where val and/or base is NaN, following the rule that
+-	 * NaN sorts after non-NaN (cf float8_cmp_internal).  The offset cannot
+-	 * affect the conclusion.
+-	 */
+-	if (isnan(val))
+-	{
+-		if (isnan(base))
+-			PG_RETURN_BOOL(true);	/* NAN = NAN */
+-		else
+-			PG_RETURN_BOOL(!less);	/* NAN > non-NAN */
+-	}
+-	else if (isnan(base))
+-	{
+-		PG_RETURN_BOOL(less);	/* non-NAN < NAN */
+-	}
+-
+-	/*
+-	 * Deal with cases where both base and offset are infinite, and computing
+-	 * base +/- offset would produce NaN.  This corresponds to a window frame
+-	 * whose boundary infinitely precedes +inf or infinitely follows -inf,
+-	 * which is not well-defined.  For consistency with other cases involving
+-	 * infinities, such as the fact that +inf infinitely follows +inf, we
+-	 * choose to assume that +inf infinitely precedes +inf and -inf infinitely
+-	 * follows -inf, and therefore that all finite and infinite values are in
+-	 * such a window frame.
+-	 *
+-	 * offset is known positive, so we need only check the sign of base in
+-	 * this test.
+-	 */
+-	if (isinf(offset) && isinf(base) &&
+-		(sub ? base > 0 : base < 0))
+-		PG_RETURN_BOOL(true);
+-
+-	/*
+-	 * Otherwise it should be safe to compute base +/- offset.  We trust the
+-	 * FPU to cope if an input is +/-inf or the true sum would overflow, and
+-	 * produce a suitably signed infinity, which will compare properly against
+-	 * val whether or not that's infinity.
+-	 */
+-	if (sub)
+-		sum = base - offset;
+-	else
+-		sum = base + offset;
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_float8_float8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+-/*
+- * in_range support function for float4.
+- *
+- * We would need a float4_float8 variant in any case, so we supply that and
+- * let implicit coercion take care of the float4_float4 case.
+- */
+ Datum
+ in_range_float4_float8(PG_FUNCTION_ARGS)
+ {
+-	float4		val = PG_GETARG_FLOAT4(0);
+-	float4		base = PG_GETARG_FLOAT4(1);
+-	float8		offset = PG_GETARG_FLOAT8(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	float8		sum;
+-
+-	/*
+-	 * Reject negative or NaN offset.  Negative is per spec, and NaN is
+-	 * because appropriate semantics for that seem non-obvious.
+-	 */
+-	if (isnan(offset) || offset < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * Deal with cases where val and/or base is NaN, following the rule that
+-	 * NaN sorts after non-NaN (cf float8_cmp_internal).  The offset cannot
+-	 * affect the conclusion.
+-	 */
+-	if (isnan(val))
+-	{
+-		if (isnan(base))
+-			PG_RETURN_BOOL(true);	/* NAN = NAN */
+-		else
+-			PG_RETURN_BOOL(!less);	/* NAN > non-NAN */
+-	}
+-	else if (isnan(base))
+-	{
+-		PG_RETURN_BOOL(less);	/* non-NAN < NAN */
+-	}
+-
+-	/*
+-	 * Deal with cases where both base and offset are infinite, and computing
+-	 * base +/- offset would produce NaN.  This corresponds to a window frame
+-	 * whose boundary infinitely precedes +inf or infinitely follows -inf,
+-	 * which is not well-defined.  For consistency with other cases involving
+-	 * infinities, such as the fact that +inf infinitely follows +inf, we
+-	 * choose to assume that +inf infinitely precedes +inf and -inf infinitely
+-	 * follows -inf, and therefore that all finite and infinite values are in
+-	 * such a window frame.
+-	 *
+-	 * offset is known positive, so we need only check the sign of base in
+-	 * this test.
+-	 */
+-	if (isinf(offset) && isinf(base) &&
+-		(sub ? base > 0 : base < 0))
+-		PG_RETURN_BOOL(true);
+-
+-	/*
+-	 * Otherwise it should be safe to compute base +/- offset.  We trust the
+-	 * FPU to cope if an input is +/-inf or the true sum would overflow, and
+-	 * produce a suitably signed infinity, which will compare properly against
+-	 * val whether or not that's infinity.
+-	 */
+-	if (sub)
+-		sum = base - offset;
+-	else
+-		sum = base + offset;
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_float4_float8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+diff --git a/src/backend/utils/adt/int.c b/src/backend/utils/adt/int.c
+index df07ac0..046f047 100644
+--- a/src/backend/utils/adt/int.c
++++ b/src/backend/utils/adt/int.c
+@@ -638,154 +638,46 @@ int42ge(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*----------------------------------------------------------
+- *	in_range functions for int4 and int2,
+- *	including cross-data-type comparisons.
+- *
+- *	Note: we provide separate intN_int8 functions for performance
+- *	reasons.  This forces also providing intN_int2, else cases with a
+- *	smallint offset value would fail to resolve which function to use.
+- *	But that's an unlikely situation, so don't duplicate code for it.
+- *---------------------------------------------------------*/
+-
+ Datum
+ in_range_int4_int4(PG_FUNCTION_ARGS)
+ {
+-	int32		val = PG_GETARG_INT32(0);
+-	int32		base = PG_GETARG_INT32(1);
+-	int32		offset = PG_GETARG_INT32(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	int32		sum;
+-
+-	if (offset < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	if (sub)
+-		offset = -offset;		/* cannot overflow */
+-
+-	if (unlikely(pg_add_s32_overflow(base, offset, &sum)))
+-	{
+-		/*
+-		 * If sub is false, the true sum is surely more than val, so correct
+-		 * answer is the same as "less".  If sub is true, the true sum is
+-		 * surely less than val, so the answer is "!less".
+-		 */
+-		PG_RETURN_BOOL(sub ? !less : less);
+-	}
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_int4_int4 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_int4_int2(PG_FUNCTION_ARGS)
+ {
+-	/* Doesn't seem worth duplicating code for, so just invoke int4_int4 */
+-	return DirectFunctionCall5(in_range_int4_int4,
+-							   PG_GETARG_DATUM(0),
+-							   PG_GETARG_DATUM(1),
+-							   Int32GetDatum((int32) PG_GETARG_INT16(2)),
+-							   PG_GETARG_DATUM(3),
+-							   PG_GETARG_DATUM(4));
++	elog(ERROR, "in_range_int4_int2 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_int4_int8(PG_FUNCTION_ARGS)
+ {
+-	/* We must do all the math in int64 */
+-	int64		val = (int64) PG_GETARG_INT32(0);
+-	int64		base = (int64) PG_GETARG_INT32(1);
+-	int64		offset = PG_GETARG_INT64(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	int64		sum;
+-
+-	if (offset < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	if (sub)
+-		offset = -offset;		/* cannot overflow */
+-
+-	if (unlikely(pg_add_s64_overflow(base, offset, &sum)))
+-	{
+-		/*
+-		 * If sub is false, the true sum is surely more than val, so correct
+-		 * answer is the same as "less".  If sub is true, the true sum is
+-		 * surely less than val, so the answer is "!less".
+-		 */
+-		PG_RETURN_BOOL(sub ? !less : less);
+-	}
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_int4_int8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_int2_int4(PG_FUNCTION_ARGS)
+ {
+-	/* We must do all the math in int32 */
+-	int32		val = (int32) PG_GETARG_INT16(0);
+-	int32		base = (int32) PG_GETARG_INT16(1);
+-	int32		offset = PG_GETARG_INT32(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	int32		sum;
+-
+-	if (offset < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	if (sub)
+-		offset = -offset;		/* cannot overflow */
+-
+-	if (unlikely(pg_add_s32_overflow(base, offset, &sum)))
+-	{
+-		/*
+-		 * If sub is false, the true sum is surely more than val, so correct
+-		 * answer is the same as "less".  If sub is true, the true sum is
+-		 * surely less than val, so the answer is "!less".
+-		 */
+-		PG_RETURN_BOOL(sub ? !less : less);
+-	}
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_int2_int4 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_int2_int2(PG_FUNCTION_ARGS)
+ {
+-	/* Doesn't seem worth duplicating code for, so just invoke int2_int4 */
+-	return DirectFunctionCall5(in_range_int2_int4,
+-							   PG_GETARG_DATUM(0),
+-							   PG_GETARG_DATUM(1),
+-							   Int32GetDatum((int32) PG_GETARG_INT16(2)),
+-							   PG_GETARG_DATUM(3),
+-							   PG_GETARG_DATUM(4));
++	elog(ERROR, "in_range_int2_int2 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_int2_int8(PG_FUNCTION_ARGS)
+ {
+-	/* Doesn't seem worth duplicating code for, so just invoke int4_int8 */
+-	return DirectFunctionCall5(in_range_int4_int8,
+-							   Int32GetDatum((int32) PG_GETARG_INT16(0)),
+-							   Int32GetDatum((int32) PG_GETARG_INT16(1)),
+-							   PG_GETARG_DATUM(2),
+-							   PG_GETARG_DATUM(3),
+-							   PG_GETARG_DATUM(4));
++	elog(ERROR, "in_range_int2_int8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+diff --git a/src/backend/utils/adt/int8.c b/src/backend/utils/adt/int8.c
+index 2c0ae71..8fb9c4d 100644
+--- a/src/backend/utils/adt/int8.c
++++ b/src/backend/utils/adt/int8.c
+@@ -391,44 +391,11 @@ int28ge(PG_FUNCTION_ARGS)
+ 	PG_RETURN_BOOL(val1 >= val2);
+ }
+ 
+-/*
+- * in_range support function for int8.
+- *
+- * Note: we needn't supply int8_int4 or int8_int2 variants, as implicit
+- * coercion of the offset value takes care of those scenarios just as well.
+- */
+ Datum
+ in_range_int8_int8(PG_FUNCTION_ARGS)
+ {
+-	int64		val = PG_GETARG_INT64(0);
+-	int64		base = PG_GETARG_INT64(1);
+-	int64		offset = PG_GETARG_INT64(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	int64		sum;
+-
+-	if (offset < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	if (sub)
+-		offset = -offset;		/* cannot overflow */
+-
+-	if (unlikely(pg_add_s64_overflow(base, offset, &sum)))
+-	{
+-		/*
+-		 * If sub is false, the true sum is surely more than val, so correct
+-		 * answer is the same as "less".  If sub is true, the true sum is
+-		 * surely less than val, so the answer is "!less".
+-		 */
+-		PG_RETURN_BOOL(sub ? !less : less);
+-	}
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_int8_int8 is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 
+diff --git a/src/backend/utils/adt/numeric.c b/src/backend/utils/adt/numeric.c
+index 14e8895..b9c2977 100644
+--- a/src/backend/utils/adt/numeric.c
++++ b/src/backend/utils/adt/numeric.c
+@@ -2577,142 +2577,11 @@ cmp_numerics(Numeric num1, Numeric num2)
+ 	return result;
+ }
+ 
+-/*
+- * in_range support function for numeric.
+- */
+ Datum
+ in_range_numeric_numeric(PG_FUNCTION_ARGS)
+ {
+-	Numeric		val = PG_GETARG_NUMERIC(0);
+-	Numeric		base = PG_GETARG_NUMERIC(1);
+-	Numeric		offset = PG_GETARG_NUMERIC(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	bool		result;
+-
+-	/*
+-	 * Reject negative (including -Inf) or NaN offset.  Negative is per spec,
+-	 * and NaN is because appropriate semantics for that seem non-obvious.
+-	 */
+-	if (NUMERIC_IS_NAN(offset) ||
+-		NUMERIC_IS_NINF(offset) ||
+-		NUMERIC_SIGN(offset) == NUMERIC_NEG)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * Deal with cases where val and/or base is NaN, following the rule that
+-	 * NaN sorts after non-NaN (cf cmp_numerics).  The offset cannot affect
+-	 * the conclusion.
+-	 */
+-	if (NUMERIC_IS_NAN(val))
+-	{
+-		if (NUMERIC_IS_NAN(base))
+-			result = true;		/* NAN = NAN */
+-		else
+-			result = !less;		/* NAN > non-NAN */
+-	}
+-	else if (NUMERIC_IS_NAN(base))
+-	{
+-		result = less;			/* non-NAN < NAN */
+-	}
+-
+-	/*
+-	 * Deal with infinite offset (necessarily +Inf, at this point).
+-	 */
+-	else if (NUMERIC_IS_SPECIAL(offset))
+-	{
+-		Assert(NUMERIC_IS_PINF(offset));
+-		if (sub ? NUMERIC_IS_PINF(base) : NUMERIC_IS_NINF(base))
+-		{
+-			/*
+-			 * base +/- offset would produce NaN, so return true for any val
+-			 * (see in_range_float8_float8() for reasoning).
+-			 */
+-			result = true;
+-		}
+-		else if (sub)
+-		{
+-			/* base - offset must be -inf */
+-			if (less)
+-				result = NUMERIC_IS_NINF(val);	/* only -inf is <= sum */
+-			else
+-				result = true;	/* any val is >= sum */
+-		}
+-		else
+-		{
+-			/* base + offset must be +inf */
+-			if (less)
+-				result = true;	/* any val is <= sum */
+-			else
+-				result = NUMERIC_IS_PINF(val);	/* only +inf is >= sum */
+-		}
+-	}
+-
+-	/*
+-	 * Deal with cases where val and/or base is infinite.  The offset, being
+-	 * now known finite, cannot affect the conclusion.
+-	 */
+-	else if (NUMERIC_IS_SPECIAL(val))
+-	{
+-		if (NUMERIC_IS_PINF(val))
+-		{
+-			if (NUMERIC_IS_PINF(base))
+-				result = true;	/* PINF = PINF */
+-			else
+-				result = !less; /* PINF > any other non-NAN */
+-		}
+-		else					/* val must be NINF */
+-		{
+-			if (NUMERIC_IS_NINF(base))
+-				result = true;	/* NINF = NINF */
+-			else
+-				result = less;	/* NINF < anything else */
+-		}
+-	}
+-	else if (NUMERIC_IS_SPECIAL(base))
+-	{
+-		if (NUMERIC_IS_NINF(base))
+-			result = !less;		/* normal > NINF */
+-		else
+-			result = less;		/* normal < PINF */
+-	}
+-	else
+-	{
+-		/*
+-		 * Otherwise go ahead and compute base +/- offset.  While it's
+-		 * possible for this to overflow the numeric format, it's unlikely
+-		 * enough that we don't take measures to prevent it.
+-		 */
+-		NumericVar	valv;
+-		NumericVar	basev;
+-		NumericVar	offsetv;
+-		NumericVar	sum;
+-
+-		init_var_from_num(val, &valv);
+-		init_var_from_num(base, &basev);
+-		init_var_from_num(offset, &offsetv);
+-		init_var(&sum);
+-
+-		if (sub)
+-			sub_var(&basev, &offsetv, &sum);
+-		else
+-			add_var(&basev, &offsetv, &sum);
+-
+-		if (less)
+-			result = (cmp_var(&valv, &sum) <= 0);
+-		else
+-			result = (cmp_var(&valv, &sum) >= 0);
+-
+-		free_var(&sum);
+-	}
+-
+-	PG_FREE_IF_COPY(val, 0);
+-	PG_FREE_IF_COPY(base, 1);
+-	PG_FREE_IF_COPY(offset, 2);
+-
+-	PG_RETURN_BOOL(result);
++	elog(ERROR, "in_range_numeric_numeric is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..979f10b 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -3789,132 +3789,25 @@ out_of_range:
+ }
+ 
+ 
+-/*
+- * in_range support functions for timestamps and intervals.
+- *
+- * Per SQL spec, we support these with interval as the offset type.
+- * The spec's restriction that the offset not be negative is a bit hard to
+- * decipher for intervals, but we choose to interpret it the same as our
+- * interval comparison operators would.
+- */
+-
+ Datum
+ in_range_timestamptz_interval(PG_FUNCTION_ARGS)
+ {
+-	TimestampTz val = PG_GETARG_TIMESTAMPTZ(0);
+-	TimestampTz base = PG_GETARG_TIMESTAMPTZ(1);
+-	Interval   *offset = PG_GETARG_INTERVAL_P(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	TimestampTz sum;
+-
+-	if (interval_sign(offset) < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * Deal with cases where both base and offset are infinite, and computing
+-	 * base +/- offset would cause an error.  As for float and numeric types,
+-	 * we assume that all values infinitely precede +infinity and infinitely
+-	 * follow -infinity.  See in_range_float8_float8() for reasoning.
+-	 */
+-	if (INTERVAL_IS_NOEND(offset) &&
+-		(sub ? TIMESTAMP_IS_NOEND(base) : TIMESTAMP_IS_NOBEGIN(base)))
+-		PG_RETURN_BOOL(true);
+-
+-	/* We don't currently bother to avoid overflow hazards here */
+-	if (sub)
+-		sum = timestamptz_mi_interval_internal(base, offset, NULL);
+-	else
+-		sum = timestamptz_pl_interval_internal(base, offset, NULL);
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_timestamptz_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_timestamp_interval(PG_FUNCTION_ARGS)
+ {
+-	Timestamp	val = PG_GETARG_TIMESTAMP(0);
+-	Timestamp	base = PG_GETARG_TIMESTAMP(1);
+-	Interval   *offset = PG_GETARG_INTERVAL_P(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	Timestamp	sum;
+-
+-	if (interval_sign(offset) < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * Deal with cases where both base and offset are infinite, and computing
+-	 * base +/- offset would cause an error.  As for float and numeric types,
+-	 * we assume that all values infinitely precede +infinity and infinitely
+-	 * follow -infinity.  See in_range_float8_float8() for reasoning.
+-	 */
+-	if (INTERVAL_IS_NOEND(offset) &&
+-		(sub ? TIMESTAMP_IS_NOEND(base) : TIMESTAMP_IS_NOBEGIN(base)))
+-		PG_RETURN_BOOL(true);
+-
+-	/* We don't currently bother to avoid overflow hazards here */
+-	if (sub)
+-		sum = DatumGetTimestamp(DirectFunctionCall2(timestamp_mi_interval,
+-													TimestampGetDatum(base),
+-													IntervalPGetDatum(offset)));
+-	else
+-		sum = DatumGetTimestamp(DirectFunctionCall2(timestamp_pl_interval,
+-													TimestampGetDatum(base),
+-													IntervalPGetDatum(offset)));
+-
+-	if (less)
+-		PG_RETURN_BOOL(val <= sum);
+-	else
+-		PG_RETURN_BOOL(val >= sum);
++	elog(ERROR, "in_range_timestamp_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ in_range_interval_interval(PG_FUNCTION_ARGS)
+ {
+-	Interval   *val = PG_GETARG_INTERVAL_P(0);
+-	Interval   *base = PG_GETARG_INTERVAL_P(1);
+-	Interval   *offset = PG_GETARG_INTERVAL_P(2);
+-	bool		sub = PG_GETARG_BOOL(3);
+-	bool		less = PG_GETARG_BOOL(4);
+-	Interval   *sum;
+-
+-	if (interval_sign(offset) < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE),
+-				 errmsg("invalid preceding or following size in window function")));
+-
+-	/*
+-	 * Deal with cases where both base and offset are infinite, and computing
+-	 * base +/- offset would cause an error.  As for float and numeric types,
+-	 * we assume that all values infinitely precede +infinity and infinitely
+-	 * follow -infinity.  See in_range_float8_float8() for reasoning.
+-	 */
+-	if (INTERVAL_IS_NOEND(offset) &&
+-		(sub ? INTERVAL_IS_NOEND(base) : INTERVAL_IS_NOBEGIN(base)))
+-		PG_RETURN_BOOL(true);
+-
+-	/* We don't currently bother to avoid overflow hazards here */
+-	if (sub)
+-		sum = DatumGetIntervalP(DirectFunctionCall2(interval_mi,
+-													IntervalPGetDatum(base),
+-													IntervalPGetDatum(offset)));
+-	else
+-		sum = DatumGetIntervalP(DirectFunctionCall2(interval_pl,
+-													IntervalPGetDatum(base),
+-													IntervalPGetDatum(offset)));
+-
+-	if (less)
+-		PG_RETURN_BOOL(interval_cmp_internal(val, sum) <= 0);
+-	else
+-		PG_RETURN_BOOL(interval_cmp_internal(val, sum) >= 0);
++	elog(ERROR, "in_range_interval_interval is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

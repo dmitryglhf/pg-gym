@@ -1,0 +1,36 @@
+{
+  "name": "pg_horology_is_digit_labeling",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "765f76d8cd9911eaae12aa958811e28fe2040dd9",
+  "parent": "c140c0ffb75b0130830b8ef307b0d3b21e18c5cf",
+  "date": "2024-12-07",
+  "subject": "Fix is_digit labeling of to_timestamp's FFn format codes.",
+  "area": "to_timestamp, fractional seconds",
+  "licence": "PostgreSQL",
+  "goal": "Every format code in a to_timestamp or to_date template is labelled with whether it deals in digits. That label decides whether the code before it should swallow all the digits available or stop at its own width. The FFn codes, which consume fractional-second digits, are not labelled as digit codes.\n\n    SELECT to_timestamp('12345', 'SSFF3');\n\nSS swallows all five digits and then complains that seconds are out of range. It has to take two and leave three for FF3. Templates with no FFn code in them must be unaffected.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/adt/formatting.c",
+      "added": 13,
+      "deleted": 13
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/horology.sql",
+    "src/test/regress/expected/horology.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "horology"
+    ],
+    "command": "make -C src/test/regress check TESTS=horology"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

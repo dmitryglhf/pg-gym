@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_support",
+  "variants": [
+    {
+      "arguments": "internal",
+      "returns": "internal",
+      "kind": "f",
+      "volatile": "i",
+      "description": "planner support for timestamp length coercion"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

@@ -1,0 +1,18 @@
+{
+  "func": "timetz_send",
+  "mode": "stub",
+  "patch": "prep/timetz_send.patch",
+  "symbols": [
+    "timetz_send"
+  ],
+  "units": {
+    "timetz_send": {
+      "file": "src/backend/utils/adt/date.c",
+      "code": "/*\n *\t\ttimetz_send\t\t\t- converts timetz to binary format\n */\nDatum\ntimetz_send(PG_FUNCTION_ARGS)\n{\n\tTimeTzADT  *time = PG_GETARG_TIMETZADT_P(0);\n\tStringInfoData buf;\n\n\tpq_begintypsend(&buf);\n\tpq_sendint64(&buf, time->time);\n\tpq_sendint32(&buf, time->zone);\n\tPG_RETURN_BYTEA_P(pq_endtypsend(&buf));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

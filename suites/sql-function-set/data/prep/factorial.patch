@@ -1,0 +1,62 @@
+diff --git a/src/backend/utils/adt/numeric.c b/src/backend/utils/adt/numeric.c
+index 14e8895..0279578 100644
+--- a/src/backend/utils/adt/numeric.c
++++ b/src/backend/utils/adt/numeric.c
+@@ -3637,55 +3637,11 @@ numeric_lcm(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*
+- * numeric_fac()
+- *
+- * Compute factorial
+- */
+ Datum
+ numeric_fac(PG_FUNCTION_ARGS)
+ {
+-	int64		num = PG_GETARG_INT64(0);
+-	Numeric		res;
+-	NumericVar	fact;
+-	NumericVar	result;
+-
+-	if (num < 0)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+-				 errmsg("factorial of a negative number is undefined")));
+-	if (num <= 1)
+-	{
+-		res = make_result(&const_one);
+-		PG_RETURN_NUMERIC(res);
+-	}
+-	/* Fail immediately if the result would overflow */
+-	if (num > 32177)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+-				 errmsg("value overflows numeric format")));
+-
+-	init_var(&fact);
+-	init_var(&result);
+-
+-	int64_to_numericvar(num, &result);
+-
+-	for (num = num - 1; num > 1; num--)
+-	{
+-		/* this loop can take awhile, so allow it to be interrupted */
+-		CHECK_FOR_INTERRUPTS();
+-
+-		int64_to_numericvar(num, &fact);
+-
+-		mul_var(&result, &fact, &result, 0);
+-	}
+-
+-	res = make_result(&result);
+-
+-	free_var(&fact);
+-	free_var(&result);
+-
+-	PG_RETURN_NUMERIC(res);
++	elog(ERROR, "numeric_fac is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ 

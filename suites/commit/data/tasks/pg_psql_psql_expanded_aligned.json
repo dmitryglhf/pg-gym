@@ -1,0 +1,10 @@
+{
+  "name": "pg_psql_psql_expanded_aligned",
+  "area": "psql, expanded output",
+  "goal": "psql's expanded output draws a malformed or inconsistently sized right border in aligned and wrapped formats when all column names and values are short.\n\nWith border 2 and expanded mode enabled, select two integer columns from a two-row table under both `\\pset format aligned` and `wrapped`. Every record must use the same field width, the values must line up, and the closing border must span that width exactly. Non-expanded output, other border settings and rows that already require a wider field must retain their formatting.",
+  "func": "pg_psql_psql_expanded_aligned",
+  "graded_by": [
+    "src/test/regress/sql/psql.sql",
+    "src/test/regress/expected/psql.out"
+  ]
+}

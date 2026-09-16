@@ -1,0 +1,18 @@
+{
+  "func": "statement_timestamp",
+  "mode": "stub",
+  "patch": "prep/statement_timestamp.patch",
+  "symbols": [
+    "statement_timestamp"
+  ],
+  "units": {
+    "statement_timestamp": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\nstatement_timestamp(PG_FUNCTION_ARGS)\n{\n\tPG_RETURN_TIMESTAMPTZ(GetCurrentStatementStartTimestamp());\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

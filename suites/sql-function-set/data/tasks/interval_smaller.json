@@ -1,0 +1,15 @@
+{
+  "func": "interval_smaller",
+  "variants": [
+    {
+      "arguments": "interval interval",
+      "returns": "interval",
+      "kind": "f",
+      "volatile": "i",
+      "description": "smaller of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

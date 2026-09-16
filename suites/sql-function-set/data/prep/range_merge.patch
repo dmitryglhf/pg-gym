@@ -1,0 +1,76 @@
+diff --git a/src/backend/utils/adt/multirangetypes.c b/src/backend/utils/adt/multirangetypes.c
+index 7f14f7e..d550bb6 100644
+--- a/src/backend/utils/adt/multirangetypes.c
++++ b/src/backend/utils/adt/multirangetypes.c
+@@ -2672,42 +2672,11 @@ multirange_gt(PG_FUNCTION_ARGS)
+ 
+ /* multirange -> range functions */
+ 
+-/* Find the smallest range that includes everything in the multirange */
+ Datum
+ range_merge_from_multirange(PG_FUNCTION_ARGS)
+ {
+-	MultirangeType *mr = PG_GETARG_MULTIRANGE_P(0);
+-	Oid			mltrngtypoid = MultirangeTypeGetOid(mr);
+-	TypeCacheEntry *typcache;
+-	RangeType  *result;
+-
+-	typcache = multirange_get_typcache(fcinfo, mltrngtypoid);
+-
+-	if (MultirangeIsEmpty(mr))
+-	{
+-		result = make_empty_range(typcache->rngtype);
+-	}
+-	else if (mr->rangeCount == 1)
+-	{
+-		result = multirange_get_range(typcache->rngtype, mr, 0);
+-	}
+-	else
+-	{
+-		RangeBound	firstLower,
+-					firstUpper,
+-					lastLower,
+-					lastUpper;
+-
+-		multirange_get_bounds(typcache->rngtype, mr, 0,
+-							  &firstLower, &firstUpper);
+-		multirange_get_bounds(typcache->rngtype, mr, mr->rangeCount - 1,
+-							  &lastLower, &lastUpper);
+-
+-		result = make_range(typcache->rngtype, &firstLower, &lastUpper,
+-							false, NULL);
+-	}
+-
+-	PG_RETURN_RANGE_P(result);
++	elog(ERROR, "range_merge_from_multirange is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* Turn multirange into a set of ranges */
+diff --git a/src/backend/utils/adt/rangetypes.c b/src/backend/utils/adt/rangetypes.c
+index 2d94a6b..d6cda54 100644
+--- a/src/backend/utils/adt/rangetypes.c
++++ b/src/backend/utils/adt/rangetypes.c
+@@ -1106,20 +1106,11 @@ range_union(PG_FUNCTION_ARGS)
+ 	PG_RETURN_RANGE_P(range_union_internal(typcache, r1, r2, true));
+ }
+ 
+-/*
+- * range merge: like set union, except also allow and account for non-adjacent
+- * input ranges.
+- */
+ Datum
+ range_merge(PG_FUNCTION_ARGS)
+ {
+-	RangeType  *r1 = PG_GETARG_RANGE_P(0);
+-	RangeType  *r2 = PG_GETARG_RANGE_P(1);
+-	TypeCacheEntry *typcache;
+-
+-	typcache = range_get_typcache(fcinfo, RangeTypeGetOid(r1));
+-
+-	PG_RETURN_RANGE_P(range_union_internal(typcache, r1, r2, false));
++	elog(ERROR, "range_merge is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* set intersection */

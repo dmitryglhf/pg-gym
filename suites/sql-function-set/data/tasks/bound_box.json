@@ -1,0 +1,18 @@
+{
+  "func": "bound_box",
+  "variants": [
+    {
+      "arguments": "box box",
+      "returns": "box",
+      "kind": "f",
+      "volatile": "i",
+      "description": "bounding box of two boxes"
+    }
+  ],
+  "description": "Computes bounding box of two boxes.",
+  "examples": [
+    "bound_box(box '(1,1),(0,0)', box '(4,4),(3,3)') -> (4,4),(0,0)"
+  ],
+  "mode": "stub",
+  "category": "geometric"
+}

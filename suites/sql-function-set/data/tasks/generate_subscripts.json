@@ -1,0 +1,23 @@
+{
+  "func": "generate_subscripts",
+  "variants": [
+    {
+      "arguments": "anyarray int4 bool",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "array subscripts generator"
+    },
+    {
+      "arguments": "anyarray int4",
+      "returns": "int4",
+      "kind": "f",
+      "volatile": "i",
+      "description": "array subscripts generator"
+    }
+  ],
+  "description": "Generates a series comprising the valid subscripts of the dim'th dimension of the given array.\nGenerates a series comprising the valid subscripts of the dim'th dimension of the given array. When reverse is true, returns the series in reverse order.",
+  "examples": [],
+  "mode": "stub",
+  "category": "srf"
+}

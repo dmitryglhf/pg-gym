@@ -1,0 +1,34 @@
+{
+  "func": "enum_range",
+  "mode": "stub",
+  "patch": "prep/enum_range.patch",
+  "symbols": [
+    "enum_range_all",
+    "enum_range_bounds"
+  ],
+  "units": {
+    "enum_range_all": {
+      "file": "src/backend/utils/adt/enum.c",
+      "code": "/* 1-argument variant of enum_range */\nDatum\nenum_range_all(PG_FUNCTION_ARGS)\n{\n\tOid\t\t\tenumtypoid;\n\n\t/*\n\t * We rely on being able to get the specific enum type from the calling\n\t * expression tree.  Notice that the actual value of the argument isn't\n\t * examined at all; in particular it might be NULL.\n\t */\n\tenumtypoid = get_fn_expr_argtype(fcinfo->flinfo, 0);\n\tif (enumtypoid == InvalidOid)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t errmsg(\"could not determine actual enum type\")));\n\n\tPG_RETURN_ARRAYTYPE_P(enum_range_internal(enumtypoid,\n\t\t\t\t\t\t\t\t\t\t\t  InvalidOid, InvalidOid));\n}\n\n"
+    },
+    "enum_range_bounds": {
+      "file": "src/backend/utils/adt/enum.c",
+      "code": "/* 2-argument variant of enum_range */\nDatum\nenum_range_bounds(PG_FUNCTION_ARGS)\n{\n\tOid\t\t\tlower;\n\tOid\t\t\tupper;\n\tOid\t\t\tenumtypoid;\n\n\tif (PG_ARGISNULL(0))\n\t\tlower = InvalidOid;\n\telse\n\t\tlower = PG_GETARG_OID(0);\n\tif (PG_ARGISNULL(1))\n\t\tupper = InvalidOid;\n\telse\n\t\tupper = PG_GETARG_OID(1);\n\n\t/*\n\t * We rely on being able to get the specific enum type from the calling\n\t * expression tree.  The generic type mechanism should have ensured that\n\t * both are of the same type.\n\t */\n\tenumtypoid = get_fn_expr_argtype(fcinfo->flinfo, 0);\n\tif (enumtypoid == InvalidOid)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t errmsg(\"could not determine actual enum type\")));\n\n\tPG_RETURN_ARRAYTYPE_P(enum_range_internal(enumtypoid, lower, upper));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "case",
+    "enum"
+  ],
+  "category": "enum",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 43,
+  "oracle_diff_by_file": {
+    "enum": 38,
+    "case": 5
+  }
+}

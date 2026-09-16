@@ -1,0 +1,43 @@
+diff --git a/src/backend/utils/adt/varlena.c b/src/backend/utils/adt/varlena.c
+index 15d2cab..2e397da 100644
+--- a/src/backend/utils/adt/varlena.c
++++ b/src/backend/utils/adt/varlena.c
+@@ -3309,36 +3309,11 @@ byteaGetBit(PG_FUNCTION_ARGS)
+ 		PG_RETURN_INT32(0);
+ }
+ 
+-/*-------------------------------------------------------------
+- * byteaSetByte
+- *
+- * Given an instance of type 'bytea' creates a new one with
+- * the Nth byte set to the given value.
+- *
+- *-------------------------------------------------------------
+- */
+ Datum
+ byteaSetByte(PG_FUNCTION_ARGS)
+ {
+-	bytea	   *res = PG_GETARG_BYTEA_P_COPY(0);
+-	int32		n = PG_GETARG_INT32(1);
+-	int32		newByte = PG_GETARG_INT32(2);
+-	int			len;
+-
+-	len = VARSIZE(res) - VARHDRSZ;
+-
+-	if (n < 0 || n >= len)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+-				 errmsg("index %d out of valid range, 0..%d",
+-						n, len - 1)));
+-
+-	/*
+-	 * Now set the byte.
+-	 */
+-	((unsigned char *) VARDATA(res))[n] = newByte;
+-
+-	PG_RETURN_BYTEA_P(res);
++	elog(ERROR, "byteaSetByte is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*-------------------------------------------------------------

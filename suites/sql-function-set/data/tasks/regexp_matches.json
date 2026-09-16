@@ -1,0 +1,25 @@
+{
+  "func": "regexp_matches",
+  "variants": [
+    {
+      "arguments": "text text",
+      "returns": "_text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "find match(es) for regexp"
+    },
+    {
+      "arguments": "text text text",
+      "returns": "_text",
+      "kind": "f",
+      "volatile": "i",
+      "description": "find match(es) for regexp"
+    }
+  ],
+  "description": "Returns substrings within the first match of the POSIX regular expression pattern to the string, or substrings within all such matches if the g flag is used.",
+  "examples": [
+    "regexp_matches('foobarbequebaz', 'ba.', 'g') -> "
+  ],
+  "mode": "stub",
+  "category": "pattern"
+}

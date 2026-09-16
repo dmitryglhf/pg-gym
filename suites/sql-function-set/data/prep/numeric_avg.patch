@@ -1,0 +1,43 @@
+diff --git a/src/backend/utils/adt/numeric.c b/src/backend/utils/adt/numeric.c
+index 14e8895..8a73898 100644
+--- a/src/backend/utils/adt/numeric.c
++++ b/src/backend/utils/adt/numeric.c
+@@ -6181,36 +6181,8 @@ numeric_poly_avg(PG_FUNCTION_ARGS)
+ Datum
+ numeric_avg(PG_FUNCTION_ARGS)
+ {
+-	NumericAggState *state;
+-	Datum		N_datum;
+-	Datum		sumX_datum;
+-	NumericVar	sumX_var;
+-
+-	state = PG_ARGISNULL(0) ? NULL : (NumericAggState *) PG_GETARG_POINTER(0);
+-
+-	/* If there were no non-null inputs, return NULL */
+-	if (state == NULL || NA_TOTAL_COUNT(state) == 0)
+-		PG_RETURN_NULL();
+-
+-	if (state->NaNcount > 0)	/* there was at least one NaN input */
+-		PG_RETURN_NUMERIC(make_result(&const_nan));
+-
+-	/* adding plus and minus infinities gives NaN */
+-	if (state->pInfcount > 0 && state->nInfcount > 0)
+-		PG_RETURN_NUMERIC(make_result(&const_nan));
+-	if (state->pInfcount > 0)
+-		PG_RETURN_NUMERIC(make_result(&const_pinf));
+-	if (state->nInfcount > 0)
+-		PG_RETURN_NUMERIC(make_result(&const_ninf));
+-
+-	N_datum = NumericGetDatum(int64_to_numeric(state->N));
+-
+-	init_var(&sumX_var);
+-	accum_sum_final(&state->sumX, &sumX_var);
+-	sumX_datum = NumericGetDatum(make_result(&sumX_var));
+-	free_var(&sumX_var);
+-
+-	PG_RETURN_DATUM(DirectFunctionCall2(numeric_div, sumX_datum, N_datum));
++	elog(ERROR, "numeric_avg is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

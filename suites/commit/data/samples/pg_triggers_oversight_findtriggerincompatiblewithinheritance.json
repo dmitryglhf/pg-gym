@@ -1,0 +1,36 @@
+{
+  "name": "pg_triggers_oversight_findtriggerincompatiblewithinheritance",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "e028ce911ad21e23ca39555e01a2d6c41c76aa79",
+  "parent": "7dafc4a413f42a6c0e13c91e50e05329f91e954f",
+  "date": "2025-08-08",
+  "subject": "Fix oversight in FindTriggerIncompatibleWithInheritance.",
+  "area": "triggers, partition attach and inheritance",
+  "licence": "PostgreSQL",
+  "goal": "A statement-level trigger with transition tables can wrongly prevent a former partition or inheritance child from being attached or inherited again. Such a trigger does not have the row-level incompatibility that the check is intended to catch.\n\nOn a table hierarchy with statement triggers referencing transition tables, detach and reattach a partition, then repeat the analogous NO INHERIT and INHERIT sequence. Both round trips must succeed. Trigger kinds that are genuinely incompatible with inheritance must still be rejected, and row-level trigger behavior must remain unchanged.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/commands/trigger.c",
+      "added": 2,
+      "deleted": 0
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/triggers.sql",
+    "src/test/regress/expected/triggers.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "triggers"
+    ],
+    "command": "make -C src/test/regress check TESTS=triggers"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

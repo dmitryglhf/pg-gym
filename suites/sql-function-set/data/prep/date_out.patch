@@ -1,0 +1,36 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..d025e85 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -177,29 +177,11 @@ date_in(PG_FUNCTION_ARGS)
+ 	PG_RETURN_DATEADT(date);
+ }
+ 
+-/* date_out()
+- * Given internal format date, convert to text string.
+- */
+ Datum
+ date_out(PG_FUNCTION_ARGS)
+ {
+-	DateADT		date = PG_GETARG_DATEADT(0);
+-	char	   *result;
+-	struct pg_tm tt,
+-			   *tm = &tt;
+-	char		buf[MAXDATELEN + 1];
+-
+-	if (DATE_NOT_FINITE(date))
+-		EncodeSpecialDate(date, buf);
+-	else
+-	{
+-		j2date(date + POSTGRES_EPOCH_JDATE,
+-			   &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+-		EncodeDateOnly(tm, DateStyle, buf);
+-	}
+-
+-	result = pstrdup(buf);
+-	PG_RETURN_CSTRING(result);
++	elog(ERROR, "date_out is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /*

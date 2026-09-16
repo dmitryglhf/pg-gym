@@ -1,0 +1,15 @@
+{
+  "func": "pg_postmaster_start_time",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "postmaster start time"
+    }
+  ],
+  "description": "Returns the time when the server started.",
+  "examples": [],
+  "mode": "stub"
+}

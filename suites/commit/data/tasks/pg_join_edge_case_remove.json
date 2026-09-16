@@ -1,0 +1,10 @@
+{
+  "name": "pg_join_edge_case_remove",
+  "area": "planner, removal of one-row relations",
+  "goal": "Removing a trivial one-row relation from a join tree can also remove the only place where a computed value receives outer-join null extension, producing a constant instead of NULL.\n\nReproduce it with a VALUES relation left joined to a nested subquery whose innermost `SELECT WHERE false` feeds a computed constant and another left join. The two outer VALUES rows must each return NULL for that computed column, not the constant 7. Join simplification may still remove relations when no output expression depends on their null-extension behavior, and unaffected result plans must stay stable.",
+  "func": "pg_join_edge_case_remove",
+  "graded_by": [
+    "src/test/regress/sql/join.sql",
+    "src/test/regress/expected/join.out"
+  ]
+}

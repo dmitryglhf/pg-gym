@@ -1,0 +1,10 @@
+{
+  "name": "pg_collate_icu_utf8_disallow_partitionwise_grouping",
+  "area": "partitionwise aggregation, collations",
+  "goal": "Full partitionwise aggregation can produce wrong groups when a GROUP BY expression uses a collation different from the corresponding partition key. Values that the partition-key collation separates may compare equal under the grouping collation, so finalizing each partition independently is not equivalent to grouping the table as a whole.\n\nOn a text table partitioned with `COLLATE \"C\"`, group by the key under a case-insensitive ICU collation and compare the rows with partitionwise aggregation disabled and enabled. The results must agree, and the unsafe full-partitionwise plan must not be selected. Grouping under the partition key's own collation, and safe partial partitionwise aggregation followed by a global finalization, must remain eligible.",
+  "func": "pg_collate_icu_utf8_disallow_partitionwise_grouping",
+  "graded_by": [
+    "src/test/regress/sql/collate.icu.utf8.sql",
+    "src/test/regress/expected/collate.icu.utf8.out"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "func": "pg_stats_ext_create_statistics_improve",
+  "sha": "e9fb314c7ad89a25eade3c3ed918abab4c532fe2",
+  "parent": "00064302cbf2736d8eaf27ac068328981c6b0212",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "patch": "prep/pg_stats_ext_create_statistics_improve.patch",
+  "test_files": [
+    "src/test/regress/sql/stats_ext.sql",
+    "src/test/regress/expected/stats_ext.out"
+  ],
+  "reference": "diff --git a/src/backend/tcop/utility.c b/src/backend/tcop/utility.c\nindex fa66b801..c6b1bc25 100644\n--- a/src/backend/tcop/utility.c\n+++ b/src/backend/tcop/utility.c\n@@ -1880,7 +1880,8 @@ ProcessUtilitySlow(ParseState *pstate,\n \t\t\t\t\tif (!IsA(rel, RangeVar))\n \t\t\t\t\t\tereport(ERROR,\n \t\t\t\t\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n-\t\t\t\t\t\t\t\t errmsg(\"only a single relation is allowed in CREATE STATISTICS\")));\n+\t\t\t\t\t\t\t\t errmsg(\"cannot create statistics on the specified relation\"),\n+\t\t\t\t\t\t\t\t errdetail(\"CREATE STATISTICS only supports tables, foreign tables and materialized views.\")));\n \n \t\t\t\t\t/*\n \t\t\t\t\t * CREATE STATISTICS will influence future execution plans\n",
+  "test": "diff --git a/src/test/regress/expected/stats_ext.out b/src/test/regress/expected/stats_ext.out\nindex 43539dfe..d41477eb 100644\n--- a/src/test/regress/expected/stats_ext.out\n+++ b/src/test/regress/expected/stats_ext.out\n@@ -54,6 +54,32 @@ CREATE STATISTICS tst ON (x || 'x'), (x || 'x'), y FROM ext_stats_test;\n ERROR:  duplicate expression in statistics definition\n CREATE STATISTICS tst (unrecognized) ON x, y FROM ext_stats_test;\n ERROR:  unrecognized statistics kind \"unrecognized\"\n+-- unsupported targets\n+CREATE STATISTICS tst ON a FROM (VALUES (x)) AS foo;\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+CREATE STATISTICS tst ON a FROM foo NATURAL JOIN bar;\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+CREATE STATISTICS tst ON a FROM (SELECT * FROM ext_stats_test) AS foo;\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+CREATE STATISTICS tst ON a FROM ext_stats_test s TABLESAMPLE system (x);\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+CREATE STATISTICS tst ON a FROM XMLTABLE('foo' PASSING 'bar' COLUMNS a text);\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+CREATE STATISTICS tst ON a FROM JSON_TABLE(jsonb '123', '$' COLUMNS (item int));\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+CREATE FUNCTION tftest(int) returns table(a int, b int) as $$\n+SELECT $1, $1+i FROM generate_series(1,5) g(i);\n+$$ LANGUAGE sql IMMUTABLE STRICT;\n+CREATE STATISTICS alt_stat2 ON a FROM tftest(1);\n+ERROR:  cannot create statistics on the specified relation\n+DETAIL:  CREATE STATISTICS only supports tables, foreign tables and materialized views.\n+DROP FUNCTION tftest;\n -- incorrect expressions\n CREATE STATISTICS tst ON (y) FROM ext_stats_test; -- single column reference\n ERROR:  extended statistics require at least 2 columns\ndiff --git a/src/test/regress/sql/stats_ext.sql b/src/test/regress/sql/stats_ext.sql\nindex 8f54c363..958f09b4 100644\n--- a/src/test/regress/sql/stats_ext.sql\n+++ b/src/test/regress/sql/stats_ext.sql\n@@ -40,6 +40,18 @@ CREATE STATISTICS tst ON x, x, y, x, x, (x || 'x'), (y + 1), (x || 'x'), (x || '\n CREATE STATISTICS tst ON (x || 'x'), (x || 'x'), (y + 1), (x || 'x'), (x || 'x'), (y + 1), (x || 'x'), (x || 'x'), (y + 1) FROM ext_stats_test;\n CREATE STATISTICS tst ON (x || 'x'), (x || 'x'), y FROM ext_stats_test;\n CREATE STATISTICS tst (unrecognized) ON x, y FROM ext_stats_test;\n+-- unsupported targets\n+CREATE STATISTICS tst ON a FROM (VALUES (x)) AS foo;\n+CREATE STATISTICS tst ON a FROM foo NATURAL JOIN bar;\n+CREATE STATISTICS tst ON a FROM (SELECT * FROM ext_stats_test) AS foo;\n+CREATE STATISTICS tst ON a FROM ext_stats_test s TABLESAMPLE system (x);\n+CREATE STATISTICS tst ON a FROM XMLTABLE('foo' PASSING 'bar' COLUMNS a text);\n+CREATE STATISTICS tst ON a FROM JSON_TABLE(jsonb '123', '$' COLUMNS (item int));\n+CREATE FUNCTION tftest(int) returns table(a int, b int) as $$\n+SELECT $1, $1+i FROM generate_series(1,5) g(i);\n+$$ LANGUAGE sql IMMUTABLE STRICT;\n+CREATE STATISTICS alt_stat2 ON a FROM tftest(1);\n+DROP FUNCTION tftest;\n -- incorrect expressions\n CREATE STATISTICS tst ON (y) FROM ext_stats_test; -- single column reference\n CREATE STATISTICS tst ON y + z FROM ext_stats_test; -- missing parentheses\n",
+  "oracle_command": "make -C src/test/regress check TESTS=stats_ext",
+  "expected_tests": [
+    "stats_ext"
+  ],
+  "failing_tests": [
+    "stats_ext"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 21,
+  "oracle_diff_by_file": {
+    "stats_ext": 21
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "func": "generate_subscripts",
+  "mode": "stub",
+  "patch": "prep/generate_subscripts.patch",
+  "symbols": [
+    "generate_subscripts",
+    "generate_subscripts_nodir"
+  ],
+  "units": {
+    "generate_subscripts": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * generate_subscripts(array anyarray, dim int [, reverse bool])\n *\t\tReturns all subscripts of the array for any dimension\n */\nDatum\ngenerate_subscripts(PG_FUNCTION_ARGS)\n{\n\tFuncCallContext *funcctx;\n\tMemoryContext oldcontext;\n\tgenerate_subscripts_fctx *fctx;\n\n\t/* stuff done only on the first call of the function */\n\tif (SRF_IS_FIRSTCALL())\n\t{\n\t\tAnyArrayType *v = PG_GETARG_ANY_ARRAY_P(0);\n\t\tint\t\t\treqdim = PG_GETARG_INT32(1);\n\t\tint\t\t   *lb,\n\t\t\t\t   *dimv;\n\n\t\t/* create a function context for cross-call persistence */\n\t\tfuncctx = SRF_FIRSTCALL_INIT();\n\n\t\t/* Sanity check: does it look like an array at all? */\n\t\tif (AARR_NDIM(v) <= 0 || AARR_NDIM(v) > MAXDIM)\n\t\t\tSRF_RETURN_DONE(funcctx);\n\n\t\t/* Sanity check: was the requested dim valid */\n\t\tif (reqdim <= 0 || reqdim > AARR_NDIM(v))\n\t\t\tSRF_RETURN_DONE(funcctx);\n\n\t\t/*\n\t\t * switch to memory context appropriate for multiple function calls\n\t\t */\n\t\toldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);\n\t\tfctx = (generate_subscripts_fctx *) palloc(sizeof(generate_subscripts_fctx));\n\n\t\tlb = AARR_LBOUND(v);\n\t\tdimv = AARR_DIMS(v);\n\n\t\tfctx->lower = lb[reqdim - 1];\n\t\tfctx->upper = dimv[reqdim - 1] + lb[reqdim - 1] - 1;\n\t\tfctx->reverse = (PG_NARGS() < 3) ? false : PG_GETARG_BOOL(2);\n\n\t\tfuncctx->user_fctx = fctx;\n\n\t\tMemoryContextSwitchTo(oldcontext);\n\t}\n\n\tfuncctx = SRF_PERCALL_SETUP();\n\n\tfctx = funcctx->user_fctx;\n\n\tif (fctx->lower <= fctx->upper)\n\t{\n\t\tif (!fctx->reverse)\n\t\t\tSRF_RETURN_NEXT(funcctx, Int32GetDatum(fctx->lower++));\n\t\telse\n\t\t\tSRF_RETURN_NEXT(funcctx, Int32GetDatum(fctx->upper--));\n\t}\n\telse\n\t\t/* done when there are no more elements left */\n\t\tSRF_RETURN_DONE(funcctx);\n}\n\n"
+    },
+    "generate_subscripts_nodir": {
+      "file": "src/backend/utils/adt/arrayfuncs.c",
+      "code": "/*\n * generate_subscripts_nodir\n *\t\tImplements the 2-argument version of generate_subscripts\n */\nDatum\ngenerate_subscripts_nodir(PG_FUNCTION_ARGS)\n{\n\t/* just call the other one -- it can handle both cases */\n\treturn generate_subscripts(fcinfo);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "aggregates",
+    "arrays",
+    "polymorphism",
+    "rangefuncs"
+  ],
+  "category": "srf",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 135,
+  "oracle_diff_by_file": {
+    "aggregates": 36,
+    "arrays": 17,
+    "rangefuncs": 40,
+    "polymorphism": 42
+  }
+}

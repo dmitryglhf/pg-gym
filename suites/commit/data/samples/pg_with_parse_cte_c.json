@@ -1,0 +1,36 @@
+{
+  "name": "pg_with_parse_cte_c",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "5e7be43f4b8bfe77570e566b89f23fc73ea625dc",
+  "parent": "717e8a1e5256fd01ed5b4cd60f2aac97dceb00bd",
+  "date": "2025-04-05",
+  "subject": "Fix parse_cte.c's failure to examine sub-WITHs in DML statements.",
+  "area": "parser, CTE dependency analysis",
+  "licence": "PostgreSQL",
+  "goal": "References to an outer CTE from a nested WITH attached to INSERT, UPDATE, DELETE or MERGE are missed during dependency analysis. Illegal recursion can then survive parsing and reach an assertion failure or worse, and legal CTEs can be placed in an unusable order.\n\n    WITH RECURSIVE x(n) AS (\n      WITH sub_cte AS (SELECT * FROM x)\n      DELETE FROM graph RETURNING f)\n        SELECT * FROM x;\n\nThat has to be refused at parse time, with the complaint a recursive query containing a data-modifying statement already draws. References from inside a nested WITH also have to count towards the order the CTEs are evaluated in. Every WITH that is legal today must stay legal, must keep the same evaluation order, and the errors already raised for bad recursion must keep their present wording and position.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/parser/parse_cte.c",
+      "added": 109,
+      "deleted": 43
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/with.sql",
+    "src/test/regress/expected/with.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "with"
+    ],
+    "command": "make -C src/test/regress check TESTS=with"
+  },
+  "difficulty": "TODO",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

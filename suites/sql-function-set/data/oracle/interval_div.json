@@ -1,0 +1,18 @@
+{
+  "func": "interval_div",
+  "mode": "stub",
+  "patch": "prep/interval_div.patch",
+  "symbols": [
+    "interval_div"
+  ],
+  "units": {
+    "interval_div": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "Datum\ninterval_div(PG_FUNCTION_ARGS)\n{\n\tInterval   *span = PG_GETARG_INTERVAL_P(0);\n\tfloat8\t\tfactor = PG_GETARG_FLOAT8(1);\n\tdouble\t\tmonth_remainder_days,\n\t\t\t\tsec_remainder,\n\t\t\t\tresult_double;\n\tint32\t\torig_month = span->month,\n\t\t\t\torig_day = span->day;\n\tInterval   *result;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\n\tif (factor == 0.0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DIVISION_BY_ZERO),\n\t\t\t\t errmsg(\"division by zero\")));\n\n\t/*\n\t * Handle NaN and infinities.\n\t *\n\t * We treat \"infinity / infinity\" as an error, since the interval type has\n\t * nothing equivalent to NaN.  Otherwise, dividing by infinity is handled\n\t * by the regular division code, causing all fields to be set to zero.\n\t */\n\tif (isnan(factor))\n\t\tgoto out_of_range;\n\n\tif (INTERVAL_NOT_FINITE(span))\n\t{\n\t\tif (isinf(factor))\n\t\t\tgoto out_of_range;\n\n\t\tif (factor < 0.0)\n\t\t\tinterval_um_internal(span, result);\n\t\telse\n\t\t\tmemcpy(result, span, sizeof(Interval));\n\n\t\tPG_RETURN_INTERVAL_P(result);\n\t}\n\n\tresult_double = span->month / factor;\n\tif (isnan(result_double) || !FLOAT8_FITS_IN_INT32(result_double))\n\t\tgoto out_of_range;\n\tresult->month = (int32) result_double;\n\n\tresult_double = span->day / factor;\n\tif (isnan(result_double) || !FLOAT8_FITS_IN_INT32(result_double))\n\t\tgoto out_of_range;\n\tresult->day = (int32) result_double;\n\n\t/*\n\t * Fractional months full days into days.  See comment in interval_mul().\n\t */\n\tmonth_remainder_days = (orig_month / factor - result->month) * DAYS_PER_MONTH;\n\tmonth_remainder_days = TSROUND(month_remainder_days);\n\tsec_remainder = (orig_day / factor - result->day +\n\t\t\t\t\t month_remainder_days - (int) month_remainder_days) * SECS_PER_DAY;\n\tsec_remainder = TSROUND(sec_remainder);\n\tif (fabs(sec_remainder) >= SECS_PER_DAY)\n\t{\n\t\tif (pg_add_s32_overflow(result->day,\n\t\t\t\t\t\t\t\t(int) (sec_remainder / SECS_PER_DAY),\n\t\t\t\t\t\t\t\t&result->day))\n\t\t\tgoto out_of_range;\n\t\tsec_remainder -= (int) (sec_remainder / SECS_PER_DAY) * SECS_PER_DAY;\n\t}\n\n\t/* cascade units down */\n\tif (pg_add_s32_overflow(result->day, (int32) month_remainder_days,\n\t\t\t\t\t\t\t&result->day))\n\t\tgoto out_of_range;\n\tresult_double = rint(span->time / factor + sec_remainder * USECS_PER_SEC);\n\tif (isnan(result_double) || !FLOAT8_FITS_IN_INT64(result_double))\n\t\tgoto out_of_range;\n\tresult->time = (int64) result_double;\n\n\tif (INTERVAL_NOT_FINITE(result))\n\t\tgoto out_of_range;\n\n\tPG_RETURN_INTERVAL_P(result);\n\nout_of_range:\n\tereport(ERROR,\n\t\t\terrcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\terrmsg(\"interval out of range\"));\n\n\tPG_RETURN_NULL();\t\t\t/* keep compiler quiet */\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

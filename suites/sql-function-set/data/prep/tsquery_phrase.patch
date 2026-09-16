@@ -1,0 +1,55 @@
+diff --git a/src/backend/utils/adt/tsquery_op.c b/src/backend/utils/adt/tsquery_op.c
+index 6f6dc12..74f4011 100644
+--- a/src/backend/utils/adt/tsquery_op.c
++++ b/src/backend/utils/adt/tsquery_op.c
+@@ -113,46 +113,15 @@ tsquery_or(PG_FUNCTION_ARGS)
+ Datum
+ tsquery_phrase_distance(PG_FUNCTION_ARGS)
+ {
+-	TSQuery		a = PG_GETARG_TSQUERY_COPY(0);
+-	TSQuery		b = PG_GETARG_TSQUERY_COPY(1);
+-	QTNode	   *res;
+-	TSQuery		query;
+-	int32		distance = PG_GETARG_INT32(2);
+-
+-	if (distance < 0 || distance > MAXENTRYPOS)
+-		ereport(ERROR,
+-				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+-				 errmsg("distance in phrase operator must be an integer value between zero and %d inclusive",
+-						MAXENTRYPOS)));
+-	if (a->size == 0)
+-	{
+-		PG_FREE_IF_COPY(a, 1);
+-		PG_RETURN_POINTER(b);
+-	}
+-	else if (b->size == 0)
+-	{
+-		PG_FREE_IF_COPY(b, 1);
+-		PG_RETURN_POINTER(a);
+-	}
+-
+-	res = join_tsqueries(a, b, OP_PHRASE, (uint16) distance);
+-
+-	query = QTN2QT(res);
+-
+-	QTNFree(res);
+-	PG_FREE_IF_COPY(a, 0);
+-	PG_FREE_IF_COPY(b, 1);
+-
+-	PG_RETURN_TSQUERY(query);
++	elog(ERROR, "tsquery_phrase_distance is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum
+ tsquery_phrase(PG_FUNCTION_ARGS)
+ {
+-	PG_RETURN_DATUM(DirectFunctionCall3(tsquery_phrase_distance,
+-										PG_GETARG_DATUM(0),
+-										PG_GETARG_DATUM(1),
+-										Int32GetDatum(1)));
++	elog(ERROR, "tsquery_phrase is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

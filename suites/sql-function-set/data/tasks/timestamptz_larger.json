@@ -1,0 +1,15 @@
+{
+  "func": "timestamptz_larger",
+  "variants": [
+    {
+      "arguments": "timestamptz timestamptz",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "i",
+      "description": "larger of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

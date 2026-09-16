@@ -1,0 +1,33 @@
+diff --git a/src/backend/utils/adt/timestamp.c b/src/backend/utils/adt/timestamp.c
+index b57739b..cc8f5b8 100644
+--- a/src/backend/utils/adt/timestamp.c
++++ b/src/backend/utils/adt/timestamp.c
+@@ -315,26 +315,11 @@ timestamptypmodout(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*
+- * timestamp_support()
+- *
+- * Planner support function for the timestamp_scale() and timestamptz_scale()
+- * length coercion functions (we need not distinguish them here).
+- */
+ Datum
+ timestamp_support(PG_FUNCTION_ARGS)
+ {
+-	Node	   *rawreq = (Node *) PG_GETARG_POINTER(0);
+-	Node	   *ret = NULL;
+-
+-	if (IsA(rawreq, SupportRequestSimplify))
+-	{
+-		SupportRequestSimplify *req = (SupportRequestSimplify *) rawreq;
+-
+-		ret = TemporalSimplify(MAX_TIMESTAMP_PRECISION, (Node *) req->fcall);
+-	}
+-
+-	PG_RETURN_POINTER(ret);
++	elog(ERROR, "timestamp_support is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ /* timestamp_scale()

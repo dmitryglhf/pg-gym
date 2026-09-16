@@ -1,0 +1,91 @@
+{
+  "func": "to_char",
+  "mode": "stub",
+  "patch": "prep/to_char.patch",
+  "symbols": [
+    "float4_to_char",
+    "float8_to_char",
+    "int4_to_char",
+    "int8_to_char",
+    "interval_to_char",
+    "numeric_to_char",
+    "timestamp_to_char",
+    "timestamptz_to_char"
+  ],
+  "units": {
+    "float4_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* -----------------\n * FLOAT4 to_char()\n * -----------------\n */\nDatum\nfloat4_to_char(PG_FUNCTION_ARGS)\n{\n\tfloat4\t\tvalue = PG_GETARG_FLOAT4(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tNUMDesc\t\tNum;\n\tFormatNode *format;\n\ttext\t   *result;\n\tbool\t\tshouldFree;\n\tint\t\t\tout_pre_spaces = 0,\n\t\t\t\tsign = 0;\n\tchar\t   *numstr,\n\t\t\t   *p;\n\n\tNUM_TOCHAR_prepare;\n\n\tif (IS_ROMAN(&Num))\n\t\tnumstr = int_to_roman((int) rint(value));\n\telse if (IS_EEEE(&Num))\n\t{\n\t\tif (isnan(value) || isinf(value))\n\t\t{\n\t\t\t/*\n\t\t\t * Allow 6 characters for the leading sign, the decimal point,\n\t\t\t * \"e\", the exponent's sign and two exponent digits.\n\t\t\t */\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 7);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 6);\n\t\t\t*numstr = ' ';\n\t\t\t*(numstr + Num.pre + 1) = '.';\n\t\t}\n\t\telse\n\t\t{\n\t\t\tnumstr = psprintf(\"%+.*e\", Num.post, value);\n\n\t\t\t/*\n\t\t\t * Swap a leading positive sign for a space.\n\t\t\t */\n\t\t\tif (*numstr == '+')\n\t\t\t\t*numstr = ' ';\n\t\t}\n\t}\n\telse\n\t{\n\t\tfloat4\t\tval = value;\n\t\tchar\t   *orgnum;\n\t\tint\t\t\tnumstr_pre_len;\n\n\t\tif (IS_MULTI(&Num))\n\t\t{\n\t\t\tfloat\t\tmulti = pow((double) 10, (double) Num.multi);\n\n\t\t\tval = value * multi;\n\t\t\tNum.pre += Num.multi;\n\t\t}\n\n\t\torgnum = psprintf(\"%.0f\", fabs(val));\n\t\tnumstr_pre_len = strlen(orgnum);\n\n\t\t/* adjust post digits to fit max float digits */\n\t\tif (numstr_pre_len >= FLT_DIG)\n\t\t\tNum.post = 0;\n\t\telse if (numstr_pre_len + Num.post > FLT_DIG)\n\t\t\tNum.post = FLT_DIG - numstr_pre_len;\n\t\torgnum = psprintf(\"%.*f\", Num.post, val);\n\n\t\tif (*orgnum == '-')\n\t\t{\t\t\t\t\t\t/* < 0 */\n\t\t\tsign = '-';\n\t\t\tnumstr = orgnum + 1;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tsign = '+';\n\t\t\tnumstr = orgnum;\n\t\t}\n\n\t\tif ((p = strchr(numstr, '.')))\n\t\t\tnumstr_pre_len = p - numstr;\n\t\telse\n\t\t\tnumstr_pre_len = strlen(numstr);\n\n\t\t/* needs padding? */\n\t\tif (numstr_pre_len < Num.pre)\n\t\t\tout_pre_spaces = Num.pre - numstr_pre_len;\n\t\t/* overflowed prefix digit format? */\n\t\telse if (numstr_pre_len > Num.pre)\n\t\t{\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 2);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 1);\n\t\t\t*(numstr + Num.pre) = '.';\n\t\t}\n\t}\n\n\tNUM_TOCHAR_finish;\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    },
+    "float8_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* -----------------\n * FLOAT8 to_char()\n * -----------------\n */\nDatum\nfloat8_to_char(PG_FUNCTION_ARGS)\n{\n\tfloat8\t\tvalue = PG_GETARG_FLOAT8(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tNUMDesc\t\tNum;\n\tFormatNode *format;\n\ttext\t   *result;\n\tbool\t\tshouldFree;\n\tint\t\t\tout_pre_spaces = 0,\n\t\t\t\tsign = 0;\n\tchar\t   *numstr,\n\t\t\t   *p;\n\n\tNUM_TOCHAR_prepare;\n\n\tif (IS_ROMAN(&Num))\n\t\tnumstr = int_to_roman((int) rint(value));\n\telse if (IS_EEEE(&Num))\n\t{\n\t\tif (isnan(value) || isinf(value))\n\t\t{\n\t\t\t/*\n\t\t\t * Allow 6 characters for the leading sign, the decimal point,\n\t\t\t * \"e\", the exponent's sign and two exponent digits.\n\t\t\t */\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 7);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 6);\n\t\t\t*numstr = ' ';\n\t\t\t*(numstr + Num.pre + 1) = '.';\n\t\t}\n\t\telse\n\t\t{\n\t\t\tnumstr = psprintf(\"%+.*e\", Num.post, value);\n\n\t\t\t/*\n\t\t\t * Swap a leading positive sign for a space.\n\t\t\t */\n\t\t\tif (*numstr == '+')\n\t\t\t\t*numstr = ' ';\n\t\t}\n\t}\n\telse\n\t{\n\t\tfloat8\t\tval = value;\n\t\tchar\t   *orgnum;\n\t\tint\t\t\tnumstr_pre_len;\n\n\t\tif (IS_MULTI(&Num))\n\t\t{\n\t\t\tdouble\t\tmulti = pow((double) 10, (double) Num.multi);\n\n\t\t\tval = value * multi;\n\t\t\tNum.pre += Num.multi;\n\t\t}\n\n\t\torgnum = psprintf(\"%.0f\", fabs(val));\n\t\tnumstr_pre_len = strlen(orgnum);\n\n\t\t/* adjust post digits to fit max double digits */\n\t\tif (numstr_pre_len >= DBL_DIG)\n\t\t\tNum.post = 0;\n\t\telse if (numstr_pre_len + Num.post > DBL_DIG)\n\t\t\tNum.post = DBL_DIG - numstr_pre_len;\n\t\torgnum = psprintf(\"%.*f\", Num.post, val);\n\n\t\tif (*orgnum == '-')\n\t\t{\t\t\t\t\t\t/* < 0 */\n\t\t\tsign = '-';\n\t\t\tnumstr = orgnum + 1;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tsign = '+';\n\t\t\tnumstr = orgnum;\n\t\t}\n\n\t\tif ((p = strchr(numstr, '.')))\n\t\t\tnumstr_pre_len = p - numstr;\n\t\telse\n\t\t\tnumstr_pre_len = strlen(numstr);\n\n\t\t/* needs padding? */\n\t\tif (numstr_pre_len < Num.pre)\n\t\t\tout_pre_spaces = Num.pre - numstr_pre_len;\n\t\t/* overflowed prefix digit format? */\n\t\telse if (numstr_pre_len > Num.pre)\n\t\t{\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 2);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 1);\n\t\t\t*(numstr + Num.pre) = '.';\n\t\t}\n\t}\n\n\tNUM_TOCHAR_finish;\n\tPG_RETURN_TEXT_P(result);\n}\n"
+    },
+    "int4_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* ---------------\n * INT4 to_char()\n * ---------------\n */\nDatum\nint4_to_char(PG_FUNCTION_ARGS)\n{\n\tint32\t\tvalue = PG_GETARG_INT32(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tNUMDesc\t\tNum;\n\tFormatNode *format;\n\ttext\t   *result;\n\tbool\t\tshouldFree;\n\tint\t\t\tout_pre_spaces = 0,\n\t\t\t\tsign = 0;\n\tchar\t   *numstr,\n\t\t\t   *orgnum;\n\n\tNUM_TOCHAR_prepare;\n\n\t/*\n\t * On DateType depend part (int32)\n\t */\n\tif (IS_ROMAN(&Num))\n\t\tnumstr = int_to_roman(value);\n\telse if (IS_EEEE(&Num))\n\t{\n\t\t/* we can do it easily because float8 won't lose any precision */\n\t\tfloat8\t\tval = (float8) value;\n\n\t\torgnum = (char *) psprintf(\"%+.*e\", Num.post, val);\n\n\t\t/*\n\t\t * Swap a leading positive sign for a space.\n\t\t */\n\t\tif (*orgnum == '+')\n\t\t\t*orgnum = ' ';\n\n\t\tnumstr = orgnum;\n\t}\n\telse\n\t{\n\t\tint\t\t\tnumstr_pre_len;\n\n\t\tif (IS_MULTI(&Num))\n\t\t{\n\t\t\torgnum = DatumGetCString(DirectFunctionCall1(int4out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t Int32GetDatum(value * ((int32) pow((double) 10, (double) Num.multi)))));\n\t\t\tNum.pre += Num.multi;\n\t\t}\n\t\telse\n\t\t{\n\t\t\torgnum = DatumGetCString(DirectFunctionCall1(int4out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t Int32GetDatum(value)));\n\t\t}\n\n\t\tif (*orgnum == '-')\n\t\t{\n\t\t\tsign = '-';\n\t\t\torgnum++;\n\t\t}\n\t\telse\n\t\t\tsign = '+';\n\n\t\tnumstr_pre_len = strlen(orgnum);\n\n\t\t/* post-decimal digits?  Pad out with zeros. */\n\t\tif (Num.post)\n\t\t{\n\t\t\tnumstr = (char *) palloc(numstr_pre_len + Num.post + 2);\n\t\t\tstrcpy(numstr, orgnum);\n\t\t\t*(numstr + numstr_pre_len) = '.';\n\t\t\tmemset(numstr + numstr_pre_len + 1, '0', Num.post);\n\t\t\t*(numstr + numstr_pre_len + Num.post + 1) = '\\0';\n\t\t}\n\t\telse\n\t\t\tnumstr = orgnum;\n\n\t\t/* needs padding? */\n\t\tif (numstr_pre_len < Num.pre)\n\t\t\tout_pre_spaces = Num.pre - numstr_pre_len;\n\t\t/* overflowed prefix digit format? */\n\t\telse if (numstr_pre_len > Num.pre)\n\t\t{\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 2);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 1);\n\t\t\t*(numstr + Num.pre) = '.';\n\t\t}\n\t}\n\n\tNUM_TOCHAR_finish;\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    },
+    "int8_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* ---------------\n * INT8 to_char()\n * ---------------\n */\nDatum\nint8_to_char(PG_FUNCTION_ARGS)\n{\n\tint64\t\tvalue = PG_GETARG_INT64(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tNUMDesc\t\tNum;\n\tFormatNode *format;\n\ttext\t   *result;\n\tbool\t\tshouldFree;\n\tint\t\t\tout_pre_spaces = 0,\n\t\t\t\tsign = 0;\n\tchar\t   *numstr,\n\t\t\t   *orgnum;\n\n\tNUM_TOCHAR_prepare;\n\n\t/*\n\t * On DateType depend part (int32)\n\t */\n\tif (IS_ROMAN(&Num))\n\t{\n\t\t/* Currently don't support int8 conversion to roman... */\n\t\tnumstr = int_to_roman(DatumGetInt32(DirectFunctionCall1(int84, Int64GetDatum(value))));\n\t}\n\telse if (IS_EEEE(&Num))\n\t{\n\t\t/* to avoid loss of precision, must go via numeric not float8 */\n\t\torgnum = numeric_out_sci(int64_to_numeric(value),\n\t\t\t\t\t\t\t\t Num.post);\n\n\t\t/*\n\t\t * numeric_out_sci() does not emit a sign for positive numbers.  We\n\t\t * need to add a space in this case so that positive and negative\n\t\t * numbers are aligned.  We don't have to worry about NaN/inf here.\n\t\t */\n\t\tif (*orgnum != '-')\n\t\t{\n\t\t\tnumstr = (char *) palloc(strlen(orgnum) + 2);\n\t\t\t*numstr = ' ';\n\t\t\tstrcpy(numstr + 1, orgnum);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tnumstr = orgnum;\n\t\t}\n\t}\n\telse\n\t{\n\t\tint\t\t\tnumstr_pre_len;\n\n\t\tif (IS_MULTI(&Num))\n\t\t{\n\t\t\tdouble\t\tmulti = pow((double) 10, (double) Num.multi);\n\n\t\t\tvalue = DatumGetInt64(DirectFunctionCall2(int8mul,\n\t\t\t\t\t\t\t\t\t\t\t\t\t  Int64GetDatum(value),\n\t\t\t\t\t\t\t\t\t\t\t\t\t  DirectFunctionCall1(dtoi8,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t  Float8GetDatum(multi))));\n\t\t\tNum.pre += Num.multi;\n\t\t}\n\n\t\torgnum = DatumGetCString(DirectFunctionCall1(int8out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t Int64GetDatum(value)));\n\n\t\tif (*orgnum == '-')\n\t\t{\n\t\t\tsign = '-';\n\t\t\torgnum++;\n\t\t}\n\t\telse\n\t\t\tsign = '+';\n\n\t\tnumstr_pre_len = strlen(orgnum);\n\n\t\t/* post-decimal digits?  Pad out with zeros. */\n\t\tif (Num.post)\n\t\t{\n\t\t\tnumstr = (char *) palloc(numstr_pre_len + Num.post + 2);\n\t\t\tstrcpy(numstr, orgnum);\n\t\t\t*(numstr + numstr_pre_len) = '.';\n\t\t\tmemset(numstr + numstr_pre_len + 1, '0', Num.post);\n\t\t\t*(numstr + numstr_pre_len + Num.post + 1) = '\\0';\n\t\t}\n\t\telse\n\t\t\tnumstr = orgnum;\n\n\t\t/* needs padding? */\n\t\tif (numstr_pre_len < Num.pre)\n\t\t\tout_pre_spaces = Num.pre - numstr_pre_len;\n\t\t/* overflowed prefix digit format? */\n\t\telse if (numstr_pre_len > Num.pre)\n\t\t{\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 2);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 1);\n\t\t\t*(numstr + Num.pre) = '.';\n\t\t}\n\t}\n\n\tNUM_TOCHAR_finish;\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    },
+    "interval_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* -------------------\n * INTERVAL to_char()\n * -------------------\n */\nDatum\ninterval_to_char(PG_FUNCTION_ARGS)\n{\n\tInterval   *it = PG_GETARG_INTERVAL_P(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1),\n\t\t\t   *res;\n\tTmToChar\ttmtc;\n\tstruct fmt_tm *tm;\n\tstruct pg_itm tt,\n\t\t\t   *itm = &tt;\n\n\tif (VARSIZE_ANY_EXHDR(fmt) <= 0 || INTERVAL_NOT_FINITE(it))\n\t\tPG_RETURN_NULL();\n\n\tZERO_tmtc(&tmtc);\n\ttm = tmtcTm(&tmtc);\n\n\tinterval2itm(*it, itm);\n\ttmtc.fsec = itm->tm_usec;\n\ttm->tm_sec = itm->tm_sec;\n\ttm->tm_min = itm->tm_min;\n\ttm->tm_hour = itm->tm_hour;\n\ttm->tm_mday = itm->tm_mday;\n\ttm->tm_mon = itm->tm_mon;\n\ttm->tm_year = itm->tm_year;\n\n\t/* wday is meaningless, yday approximates the total span in days */\n\ttm->tm_yday = (tm->tm_year * MONTHS_PER_YEAR + tm->tm_mon) * DAYS_PER_MONTH + tm->tm_mday;\n\n\tif (!(res = datetime_to_char_body(&tmtc, fmt, true, PG_GET_COLLATION())))\n\t\tPG_RETURN_NULL();\n\n\tPG_RETURN_TEXT_P(res);\n}\n\n"
+    },
+    "numeric_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* ------------------\n * NUMERIC to_char()\n * ------------------\n */\nDatum\nnumeric_to_char(PG_FUNCTION_ARGS)\n{\n\tNumeric\t\tvalue = PG_GETARG_NUMERIC(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1);\n\tNUMDesc\t\tNum;\n\tFormatNode *format;\n\ttext\t   *result;\n\tbool\t\tshouldFree;\n\tint\t\t\tout_pre_spaces = 0,\n\t\t\t\tsign = 0;\n\tchar\t   *numstr,\n\t\t\t   *orgnum,\n\t\t\t   *p;\n\tNumeric\t\tx;\n\n\tNUM_TOCHAR_prepare;\n\n\t/*\n\t * On DateType depend part (numeric)\n\t */\n\tif (IS_ROMAN(&Num))\n\t{\n\t\tx = DatumGetNumeric(DirectFunctionCall2(numeric_round,\n\t\t\t\t\t\t\t\t\t\t\t\tNumericGetDatum(value),\n\t\t\t\t\t\t\t\t\t\t\t\tInt32GetDatum(0)));\n\t\tnumstr =\n\t\t\tint_to_roman(DatumGetInt32(DirectFunctionCall1(numeric_int4,\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t   NumericGetDatum(x))));\n\t}\n\telse if (IS_EEEE(&Num))\n\t{\n\t\torgnum = numeric_out_sci(value, Num.post);\n\n\t\t/*\n\t\t * numeric_out_sci() does not emit a sign for positive numbers.  We\n\t\t * need to add a space in this case so that positive and negative\n\t\t * numbers are aligned.  Also must check for NaN/infinity cases, which\n\t\t * we handle the same way as in float8_to_char.\n\t\t */\n\t\tif (strcmp(orgnum, \"NaN\") == 0 ||\n\t\t\tstrcmp(orgnum, \"Infinity\") == 0 ||\n\t\t\tstrcmp(orgnum, \"-Infinity\") == 0)\n\t\t{\n\t\t\t/*\n\t\t\t * Allow 6 characters for the leading sign, the decimal point,\n\t\t\t * \"e\", the exponent's sign and two exponent digits.\n\t\t\t */\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 7);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 6);\n\t\t\t*numstr = ' ';\n\t\t\t*(numstr + Num.pre + 1) = '.';\n\t\t}\n\t\telse if (*orgnum != '-')\n\t\t{\n\t\t\tnumstr = (char *) palloc(strlen(orgnum) + 2);\n\t\t\t*numstr = ' ';\n\t\t\tstrcpy(numstr + 1, orgnum);\n\t\t}\n\t\telse\n\t\t{\n\t\t\tnumstr = orgnum;\n\t\t}\n\t}\n\telse\n\t{\n\t\tint\t\t\tnumstr_pre_len;\n\t\tNumeric\t\tval = value;\n\n\t\tif (IS_MULTI(&Num))\n\t\t{\n\t\t\tNumeric\t\ta = int64_to_numeric(10);\n\t\t\tNumeric\t\tb = int64_to_numeric(Num.multi);\n\n\t\t\tx = DatumGetNumeric(DirectFunctionCall2(numeric_power,\n\t\t\t\t\t\t\t\t\t\t\t\t\tNumericGetDatum(a),\n\t\t\t\t\t\t\t\t\t\t\t\t\tNumericGetDatum(b)));\n\t\t\tval = DatumGetNumeric(DirectFunctionCall2(numeric_mul,\n\t\t\t\t\t\t\t\t\t\t\t\t\t  NumericGetDatum(value),\n\t\t\t\t\t\t\t\t\t\t\t\t\t  NumericGetDatum(x)));\n\t\t\tNum.pre += Num.multi;\n\t\t}\n\n\t\tx = DatumGetNumeric(DirectFunctionCall2(numeric_round,\n\t\t\t\t\t\t\t\t\t\t\t\tNumericGetDatum(val),\n\t\t\t\t\t\t\t\t\t\t\t\tInt32GetDatum(Num.post)));\n\t\torgnum = DatumGetCString(DirectFunctionCall1(numeric_out,\n\t\t\t\t\t\t\t\t\t\t\t\t\t NumericGetDatum(x)));\n\n\t\tif (*orgnum == '-')\n\t\t{\n\t\t\tsign = '-';\n\t\t\tnumstr = orgnum + 1;\n\t\t}\n\t\telse\n\t\t{\n\t\t\tsign = '+';\n\t\t\tnumstr = orgnum;\n\t\t}\n\n\t\tif ((p = strchr(numstr, '.')))\n\t\t\tnumstr_pre_len = p - numstr;\n\t\telse\n\t\t\tnumstr_pre_len = strlen(numstr);\n\n\t\t/* needs padding? */\n\t\tif (numstr_pre_len < Num.pre)\n\t\t\tout_pre_spaces = Num.pre - numstr_pre_len;\n\t\t/* overflowed prefix digit format? */\n\t\telse if (numstr_pre_len > Num.pre)\n\t\t{\n\t\t\tnumstr = (char *) palloc(Num.pre + Num.post + 2);\n\t\t\tfill_str(numstr, '#', Num.pre + Num.post + 1);\n\t\t\t*(numstr + Num.pre) = '.';\n\t\t}\n\t}\n\n\tNUM_TOCHAR_finish;\n\tPG_RETURN_TEXT_P(result);\n}\n\n"
+    },
+    "timestamp_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "/* -------------------\n * TIMESTAMP to_char()\n * -------------------\n */\nDatum\ntimestamp_to_char(PG_FUNCTION_ARGS)\n{\n\tTimestamp\tdt = PG_GETARG_TIMESTAMP(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1),\n\t\t\t   *res;\n\tTmToChar\ttmtc;\n\tstruct pg_tm tt;\n\tstruct fmt_tm *tm;\n\tint\t\t\tthisdate;\n\n\tif (VARSIZE_ANY_EXHDR(fmt) <= 0 || TIMESTAMP_NOT_FINITE(dt))\n\t\tPG_RETURN_NULL();\n\n\tZERO_tmtc(&tmtc);\n\ttm = tmtcTm(&tmtc);\n\n\tif (timestamp2tm(dt, NULL, &tt, &tmtcFsec(&tmtc), NULL, NULL) != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\t/* calculate wday and yday, because timestamp2tm doesn't */\n\tthisdate = date2j(tt.tm_year, tt.tm_mon, tt.tm_mday);\n\ttt.tm_wday = (thisdate + 1) % 7;\n\ttt.tm_yday = thisdate - date2j(tt.tm_year, 1, 1) + 1;\n\n\tCOPY_tm(tm, &tt);\n\n\tif (!(res = datetime_to_char_body(&tmtc, fmt, false, PG_GET_COLLATION())))\n\t\tPG_RETURN_NULL();\n\n\tPG_RETURN_TEXT_P(res);\n}\n\n"
+    },
+    "timestamptz_to_char": {
+      "file": "src/backend/utils/adt/formatting.c",
+      "code": "Datum\ntimestamptz_to_char(PG_FUNCTION_ARGS)\n{\n\tTimestampTz dt = PG_GETARG_TIMESTAMP(0);\n\ttext\t   *fmt = PG_GETARG_TEXT_PP(1),\n\t\t\t   *res;\n\tTmToChar\ttmtc;\n\tint\t\t\ttz;\n\tstruct pg_tm tt;\n\tstruct fmt_tm *tm;\n\tint\t\t\tthisdate;\n\n\tif (VARSIZE_ANY_EXHDR(fmt) <= 0 || TIMESTAMP_NOT_FINITE(dt))\n\t\tPG_RETURN_NULL();\n\n\tZERO_tmtc(&tmtc);\n\ttm = tmtcTm(&tmtc);\n\n\tif (timestamp2tm(dt, &tz, &tt, &tmtcFsec(&tmtc), &tmtcTzn(&tmtc), NULL) != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamp out of range\")));\n\n\t/* calculate wday and yday, because timestamp2tm doesn't */\n\tthisdate = date2j(tt.tm_year, tt.tm_mon, tt.tm_mday);\n\ttt.tm_wday = (thisdate + 1) % 7;\n\ttt.tm_yday = thisdate - date2j(tt.tm_year, 1, 1) + 1;\n\n\tCOPY_tm(tm, &tt);\n\n\tif (!(res = datetime_to_char_body(&tmtc, fmt, false, PG_GET_COLLATION())))\n\t\tPG_RETURN_NULL();\n\n\tPG_RETURN_TEXT_P(res);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "brin",
+    "brin_bloom",
+    "brin_multi",
+    "create_table",
+    "horology",
+    "int8",
+    "interval",
+    "numeric",
+    "partition_aggregate",
+    "partition_join",
+    "partition_prune",
+    "psql_crosstab",
+    "timestamp",
+    "timestamptz",
+    "tuplesort",
+    "window"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 7190,
+  "oracle_diff_by_file": {
+    "int8": 153,
+    "numeric": 457,
+    "timestamp": 798,
+    "timestamptz": 868,
+    "interval": 10,
+    "horology": 30,
+    "create_table": 1,
+    "brin": 18,
+    "brin_bloom": 2,
+    "brin_multi": 10,
+    "psql_crosstab": 15,
+    "window": 6,
+    "partition_join": 3812,
+    "partition_prune": 11,
+    "partition_aggregate": 650,
+    "tuplesort": 349
+  }
+}

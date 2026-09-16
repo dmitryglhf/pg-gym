@@ -1,0 +1,35 @@
+{
+  "func": "date_bin",
+  "mode": "stub",
+  "patch": "prep/date_bin.patch",
+  "symbols": [
+    "timestamp_bin",
+    "timestamptz_bin"
+  ],
+  "units": {
+    "timestamp_bin": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamp_bin()\n * Bin timestamp into specified interval.\n */\nDatum\ntimestamp_bin(PG_FUNCTION_ARGS)\n{\n\tInterval   *stride = PG_GETARG_INTERVAL_P(0);\n\tTimestamp\ttimestamp = PG_GETARG_TIMESTAMP(1);\n\tTimestamp\torigin = PG_GETARG_TIMESTAMP(2);\n\tTimestamp\tresult,\n\t\t\t\tstride_usecs,\n\t\t\t\ttm_diff,\n\t\t\t\ttm_modulo,\n\t\t\t\ttm_delta;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMP(timestamp);\n\n\tif (TIMESTAMP_NOT_FINITE(origin))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"origin out of range\")));\n\n\tif (INTERVAL_NOT_FINITE(stride))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamps cannot be binned into infinite intervals\")));\n\n\tif (stride->month != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t errmsg(\"timestamps cannot be binned into intervals containing months or years\")));\n\n\tif (unlikely(pg_mul_s64_overflow(stride->day, USECS_PER_DAY, &stride_usecs)) ||\n\t\tunlikely(pg_add_s64_overflow(stride_usecs, stride->time, &stride_usecs)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tif (stride_usecs <= 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"stride must be greater than zero\")));\n\n\tif (unlikely(pg_sub_s64_overflow(timestamp, origin, &tm_diff)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\t/* These calculations cannot overflow */\n\ttm_modulo = tm_diff % stride_usecs;\n\ttm_delta = tm_diff - tm_modulo;\n\tresult = origin + tm_delta;\n\n\t/*\n\t * We want to round towards -infinity, not 0, when tm_diff is negative and\n\t * not a multiple of stride_usecs.  This adjustment *can* cause overflow,\n\t * since the result might now be out of the range origin .. timestamp.\n\t */\n\tif (tm_modulo < 0)\n\t{\n\t\tif (unlikely(pg_sub_s64_overflow(result, stride_usecs, &result)) ||\n\t\t\t!IS_VALID_TIMESTAMP(result))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\n\tPG_RETURN_TIMESTAMP(result);\n}\n\n"
+    },
+    "timestamptz_bin": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_bin()\n * Bin timestamptz into specified interval using specified origin.\n */\nDatum\ntimestamptz_bin(PG_FUNCTION_ARGS)\n{\n\tInterval   *stride = PG_GETARG_INTERVAL_P(0);\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(1);\n\tTimestampTz origin = PG_GETARG_TIMESTAMPTZ(2);\n\tTimestampTz result,\n\t\t\t\tstride_usecs,\n\t\t\t\ttm_diff,\n\t\t\t\ttm_modulo,\n\t\t\t\ttm_delta;\n\n\tif (TIMESTAMP_NOT_FINITE(timestamp))\n\t\tPG_RETURN_TIMESTAMPTZ(timestamp);\n\n\tif (TIMESTAMP_NOT_FINITE(origin))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"origin out of range\")));\n\n\tif (INTERVAL_NOT_FINITE(stride))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"timestamps cannot be binned into infinite intervals\")));\n\n\tif (stride->month != 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),\n\t\t\t\t errmsg(\"timestamps cannot be binned into intervals containing months or years\")));\n\n\tif (unlikely(pg_mul_s64_overflow(stride->day, USECS_PER_DAY, &stride_usecs)) ||\n\t\tunlikely(pg_add_s64_overflow(stride_usecs, stride->time, &stride_usecs)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tif (stride_usecs <= 0)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"stride must be greater than zero\")));\n\n\tif (unlikely(pg_sub_s64_overflow(timestamp, origin, &tm_diff)))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\t/* These calculations cannot overflow */\n\ttm_modulo = tm_diff % stride_usecs;\n\ttm_delta = tm_diff - tm_modulo;\n\tresult = origin + tm_delta;\n\n\t/*\n\t * We want to round towards -infinity, not 0, when tm_diff is negative and\n\t * not a multiple of stride_usecs.  This adjustment *can* cause overflow,\n\t * since the result might now be out of the range origin .. timestamp.\n\t */\n\tif (tm_modulo < 0)\n\t{\n\t\tif (unlikely(pg_sub_s64_overflow(result, stride_usecs, &result)) ||\n\t\t\t!IS_VALID_TIMESTAMP(result))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"timestamp out of range\")));\n\t}\n\n\tPG_RETURN_TIMESTAMPTZ(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "interval",
+    "timestamp",
+    "timestamptz"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 130,
+  "oracle_diff_by_file": {
+    "timestamp": 79,
+    "timestamptz": 47,
+    "interval": 4
+  }
+}

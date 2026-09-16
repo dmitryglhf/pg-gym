@@ -1,0 +1,17 @@
+{
+  "func": "statement_timestamp",
+  "variants": [
+    {
+      "arguments": "",
+      "returns": "timestamptz",
+      "kind": "f",
+      "volatile": "s",
+      "description": "current statement time"
+    }
+  ],
+  "description": "Current date and time (start of current statement)",
+  "examples": [
+    "statement_timestamp() -> 2019-12-23 14:39:53.662522-05"
+  ],
+  "mode": "stub"
+}

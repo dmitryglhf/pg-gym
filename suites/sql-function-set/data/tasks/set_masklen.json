@@ -1,0 +1,26 @@
+{
+  "func": "set_masklen",
+  "variants": [
+    {
+      "arguments": "inet int4",
+      "returns": "inet",
+      "kind": "f",
+      "volatile": "i",
+      "description": "change netmask of inet"
+    },
+    {
+      "arguments": "cidr int4",
+      "returns": "cidr",
+      "kind": "f",
+      "volatile": "i",
+      "description": "change netmask of cidr"
+    }
+  ],
+  "description": "Sets the netmask length for an inet value. The address part does not change.\nSets the netmask length for a cidr value. Address bits to the right of the new netmask are set to zero.",
+  "examples": [
+    "set_masklen(inet '192.168.1.5/24', 16) -> 192.168.1.5/16",
+    "set_masklen(cidr '192.168.1.0/24', 16) -> 192.168.0.0/16"
+  ],
+  "mode": "stub",
+  "category": "network"
+}

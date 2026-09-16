@@ -1,0 +1,15 @@
+{
+  "func": "timetz_out",
+  "variants": [
+    {
+      "arguments": "timetz",
+      "returns": "cstring",
+      "kind": "f",
+      "volatile": "i",
+      "description": "I/O"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

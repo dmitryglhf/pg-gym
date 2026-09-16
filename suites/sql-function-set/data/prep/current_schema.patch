@@ -1,0 +1,29 @@
+diff --git a/src/backend/utils/adt/name.c b/src/backend/utils/adt/name.c
+index 85c9db8..6389a03 100644
+--- a/src/backend/utils/adt/name.c
++++ b/src/backend/utils/adt/name.c
+@@ -272,22 +272,11 @@ session_user(PG_FUNCTION_ARGS)
+ }
+ 
+ 
+-/*
+- * SQL-functions CURRENT_SCHEMA, CURRENT_SCHEMAS
+- */
+ Datum
+ current_schema(PG_FUNCTION_ARGS)
+ {
+-	List	   *search_path = fetch_search_path(false);
+-	char	   *nspname;
+-
+-	if (search_path == NIL)
+-		PG_RETURN_NULL();
+-	nspname = get_namespace_name(linitial_oid(search_path));
+-	list_free(search_path);
+-	if (!nspname)
+-		PG_RETURN_NULL();		/* recently-deleted namespace? */
+-	PG_RETURN_DATUM(DirectFunctionCall1(namein, CStringGetDatum(nspname)));
++	elog(ERROR, "current_schema is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

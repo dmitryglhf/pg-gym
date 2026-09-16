@@ -1,0 +1,10 @@
+{
+  "name": "pg_generated_alter_column_drop",
+  "area": "generated columns, partition hierarchies",
+  "goal": "ALTER TABLE ... ALTER COLUMN ... DROP EXPRESSION, issued without ONLY on the root of a partition tree, is wrongly rejected when the tree is more than two levels deep.\n\nCreate a root partitioned table with a generated column, a partition that is itself partitioned, and a leaf below it. Dropping the expression from the root must succeed and turn the column into an ordinary column at every level. The same must work through ordinary inheritance. Applying the command to an intermediate node or with ONLY where descendants would remain generated must continue to be rejected.",
+  "func": "pg_generated_alter_column_drop",
+  "graded_by": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ]
+}

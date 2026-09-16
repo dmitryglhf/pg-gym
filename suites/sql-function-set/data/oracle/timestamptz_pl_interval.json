@@ -1,0 +1,18 @@
+{
+  "func": "timestamptz_pl_interval",
+  "mode": "stub",
+  "patch": "prep/timestamptz_pl_interval.patch",
+  "symbols": [
+    "timestamptz_pl_interval"
+  ],
+  "units": {
+    "timestamptz_pl_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/* timestamptz_pl_interval()\n * Add an interval to a timestamptz, in the session timezone.\n */\nDatum\ntimestamptz_pl_interval(PG_FUNCTION_ARGS)\n{\n\tTimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);\n\tInterval   *span = PG_GETARG_INTERVAL_P(1);\n\n\tPG_RETURN_TIMESTAMP(timestamptz_pl_interval_internal(timestamp, span, NULL));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": null
+}

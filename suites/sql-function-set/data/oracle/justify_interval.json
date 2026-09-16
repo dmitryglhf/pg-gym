@@ -1,0 +1,26 @@
+{
+  "func": "justify_interval",
+  "mode": "stub",
+  "patch": "prep/justify_interval.patch",
+  "symbols": [
+    "interval_justify_interval"
+  ],
+  "units": {
+    "interval_justify_interval": {
+      "file": "src/backend/utils/adt/timestamp.c",
+      "code": "/*\n *\tinterval_justify_interval()\n *\n *\tAdjust interval so 'month', 'day', and 'time' portions are within\n *\tcustomary bounds.  Specifically:\n *\n *\t\t0 <= abs(time) < 24 hours\n *\t\t0 <= abs(day)  < 30 days\n *\n *\tAlso, the sign bit on all three fields is made equal, so either\n *\tall three fields are negative or all are positive.\n */\nDatum\ninterval_justify_interval(PG_FUNCTION_ARGS)\n{\n\tInterval   *span = PG_GETARG_INTERVAL_P(0);\n\tInterval   *result;\n\tTimeOffset\twholeday;\n\tint32\t\twholemonth;\n\n\tresult = (Interval *) palloc(sizeof(Interval));\n\tresult->month = span->month;\n\tresult->day = span->day;\n\tresult->time = span->time;\n\n\t/* do nothing for infinite intervals */\n\tif (INTERVAL_NOT_FINITE(result))\n\t\tPG_RETURN_INTERVAL_P(result);\n\n\t/* pre-justify days if it might prevent overflow */\n\tif ((result->day > 0 && result->time > 0) ||\n\t\t(result->day < 0 && result->time < 0))\n\t{\n\t\twholemonth = result->day / DAYS_PER_MONTH;\n\t\tresult->day -= wholemonth * DAYS_PER_MONTH;\n\t\tif (pg_add_s32_overflow(result->month, wholemonth, &result->month))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t\t errmsg(\"interval out of range\")));\n\t}\n\n\t/*\n\t * Since TimeOffset is int64, abs(wholeday) can't exceed about 1.07e8.  If\n\t * we pre-justified then abs(result->day) is less than DAYS_PER_MONTH, so\n\t * this addition can't overflow.  If we didn't pre-justify, then day and\n\t * time are of different signs, so it still can't overflow.\n\t */\n\tTMODULO(result->time, wholeday, USECS_PER_DAY);\n\tresult->day += wholeday;\n\n\twholemonth = result->day / DAYS_PER_MONTH;\n\tresult->day -= wholemonth * DAYS_PER_MONTH;\n\tif (pg_add_s32_overflow(result->month, wholemonth, &result->month))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),\n\t\t\t\t errmsg(\"interval out of range\")));\n\n\tif (result->month > 0 &&\n\t\t(result->day < 0 || (result->day == 0 && result->time < 0)))\n\t{\n\t\tresult->day += DAYS_PER_MONTH;\n\t\tresult->month--;\n\t}\n\telse if (result->month < 0 &&\n\t\t\t (result->day > 0 || (result->day == 0 && result->time > 0)))\n\t{\n\t\tresult->day -= DAYS_PER_MONTH;\n\t\tresult->month++;\n\t}\n\n\tif (result->day > 0 && result->time < 0)\n\t{\n\t\tresult->time += USECS_PER_DAY;\n\t\tresult->day--;\n\t}\n\telse if (result->day < 0 && result->time > 0)\n\t{\n\t\tresult->time -= USECS_PER_DAY;\n\t\tresult->day++;\n\t}\n\n\tPG_RETURN_INTERVAL_P(result);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "interval"
+  ],
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 39,
+  "oracle_diff_by_file": {
+    "interval": 39
+  }
+}

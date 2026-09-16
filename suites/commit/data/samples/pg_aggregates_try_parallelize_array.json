@@ -1,0 +1,36 @@
+{
+  "name": "pg_aggregates_try_parallelize_array",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "43847dd5e93816ef6e37dfb6c8bb7f98f48ddc01",
+  "parent": "99c01aadf979eed412a5189c8370ec8fe4784e6f",
+  "date": "2025-03-09",
+  "subject": "Don't try to parallelize array_agg() on an anonymous record type.",
+  "area": "parallel aggregation, array_agg",
+  "licence": "PostgreSQL",
+  "goal": "A parallel aggregate can fail when array_agg collects rows of an anonymous composite type. With parallel workers disabled the query succeeds, but enabling a parallel plan can make it report `input of anonymous composite types is not implemented` instead of returning the same array.\n\nCreate a table suitable for parallel scanning and compare `array_agg(s)` over a row-valued subquery with `max_parallel_workers_per_gather` set to zero and to a positive value. Both executions must return the same value without error. Parallel aggregation of supported scalar and named composite types must remain available, and ordinary array_agg results must not change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/parser/parse_agg.c",
+      "added": 10,
+      "deleted": 1
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/aggregates.sql",
+    "src/test/regress/expected/aggregates.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "aggregates"
+    ],
+    "command": "make -C src/test/regress check TESTS=aggregates"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

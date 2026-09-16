@@ -1,0 +1,10 @@
+{
+  "name": "pg_constraints_dumping_comments_invalid",
+  "area": "pg_dump, domain constraints",
+  "goal": "pg_dump writes a domain's constraints inside the CREATE DOMAIN command, except constraints marked NOT VALID, which it writes separately so they land after the data. A comment on such a constraint is still written with the domain, so restoring the dump tries to comment on a constraint that does not exist yet and fails.\n\nTo reach it, create a domain, add a NOT VALID check constraint, comment on that constraint, then dump and restore.\n\nThe comment has to travel with the constraint it belongs to. Comments on valid domain constraints must keep being written where they are written now.",
+  "func": "pg_constraints_dumping_comments_invalid",
+  "graded_by": [
+    "src/test/regress/sql/constraints.sql",
+    "src/test/regress/expected/constraints.out"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_generated_incorrect_new_references",
+  "area": "rewrite rules, generated columns",
+  "goal": "In an INSERT or UPDATE rule, references to NEW for a stored generated column can see NULL or the old generated value rather than the value recomputed from the new base columns. The same mistake affects rule qualifications.\n\nCreate a table with `b GENERATED ALWAYS AS (a * 2)`, rules that log OLD.b and NEW.b, and a rule qualification such as `NEW.b > 100`. Inserts and updates, including updates fed by subqueries, must expose the freshly generated value through NEW; OLD must retain the prior row. A qualification must decide from that same new value. Ordinary columns and legal generated-column behavior outside rules must not change.",
+  "func": "pg_generated_incorrect_new_references",
+  "graded_by": [
+    "src/test/regress/sql/generated.sql",
+    "src/test/regress/expected/generated.out"
+  ]
+}

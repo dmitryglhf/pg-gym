@@ -1,0 +1,77 @@
+diff --git a/src/backend/utils/adt/datetime.c b/src/backend/utils/adt/datetime.c
+index 7abdc62..acd584d 100644
+--- a/src/backend/utils/adt/datetime.c
++++ b/src/backend/utils/adt/datetime.c
+@@ -5114,69 +5114,10 @@ pg_timezone_abbrevs(PG_FUNCTION_ARGS)
+ 	SRF_RETURN_NEXT(funcctx, result);
+ }
+ 
+-/*
+- * This set-returning function reads all the available full time zones
+- * and returns a set of (name, abbrev, utc_offset, is_dst).
+- */
+ Datum
+ pg_timezone_names(PG_FUNCTION_ARGS)
+ {
+-	ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
+-	pg_tzenum  *tzenum;
+-	pg_tz	   *tz;
+-	Datum		values[4];
+-	bool		nulls[4] = {0};
+-	int			tzoff;
+-	struct pg_tm tm;
+-	fsec_t		fsec;
+-	const char *tzn;
+-	Interval   *resInterval;
+-	struct pg_itm_in itm_in;
+-
+-	InitMaterializedSRF(fcinfo, 0);
+-
+-	/* initialize timezone scanning code */
+-	tzenum = pg_tzenumerate_start();
+-
+-	/* search for another zone to display */
+-	for (;;)
+-	{
+-		tz = pg_tzenumerate_next(tzenum);
+-		if (!tz)
+-			break;
+-
+-		/* Convert now() to local time in this zone */
+-		if (timestamp2tm(GetCurrentTransactionStartTimestamp(),
+-						 &tzoff, &tm, &fsec, &tzn, tz) != 0)
+-			continue;			/* ignore if conversion fails */
+-
+-		/*
+-		 * IANA's rather silly "Factory" time zone used to emit ridiculously
+-		 * long "abbreviations" such as "Local time zone must be set--see zic
+-		 * manual page" or "Local time zone must be set--use tzsetup".  While
+-		 * modern versions of tzdb emit the much saner "-00", it seems some
+-		 * benighted packagers are hacking the IANA data so that it continues
+-		 * to produce these strings.  To prevent producing a weirdly wide
+-		 * abbrev column, reject ridiculously long abbreviations.
+-		 */
+-		if (tzn && strlen(tzn) > 31)
+-			continue;
+-
+-		values[0] = CStringGetTextDatum(pg_get_timezone_name(tz));
+-		values[1] = CStringGetTextDatum(tzn ? tzn : "");
+-
+-		/* Convert tzoff to an interval; can't overflow */
+-		MemSet(&itm_in, 0, sizeof(struct pg_itm_in));
+-		itm_in.tm_usec = (int64) -tzoff * USECS_PER_SEC;
+-		resInterval = (Interval *) palloc(sizeof(Interval));
+-		(void) itmin2interval(&itm_in, resInterval);
+-		values[2] = IntervalPGetDatum(resInterval);
+-
+-		values[3] = BoolGetDatum(tm.tm_isdst > 0);
+-
+-		tuplestore_putvalues(rsinfo->setResult, rsinfo->setDesc, values, nulls);
+-	}
+-
+-	pg_tzenumerate_end(tzenum);
+-	return (Datum) 0;
++	elog(ERROR, "pg_timezone_names is not implemented");
++	PG_RETURN_NULL();
+ }
++

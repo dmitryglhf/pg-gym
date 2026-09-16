@@ -1,0 +1,36 @@
+{
+  "name": "pg_tablespace_you_own_lock",
+  "source": "postgres/postgres",
+  "branch": "REL_17_STABLE",
+  "sha": "718af10dab446c2ae73fe027a9f65be69bcf2980",
+  "parent": "aefbd6c29fa984e9ab1fd4b0b5d3e3fce4b18b03",
+  "date": "2024-11-25",
+  "subject": "Avoid \"you don't own a lock of type ExclusiveLock\" in GRANT TABLESPACE.",
+  "area": "tablespace privileges, cache initialization",
+  "licence": "PostgreSQL",
+  "goal": "The first GRANT on a tablespace in a freshly connected session can fail an assertion with `you don't own a lock of type ExclusiveLock` when executed inside a transaction before relevant caches have otherwise been initialized.\n\nReconnect, begin a transaction, run `GRANT ALL ON TABLESPACE ... TO PUBLIC`, and roll it back. The GRANT must complete without an assertion or backend failure, while all normal ownership and privilege checks remain enforced. Repeated GRANT, autocommit use and GRANT on other object types must not change.",
+  "leaks_fix": false,
+  "solution": [
+    {
+      "path": "src/backend/utils/cache/syscache.c",
+      "added": 10,
+      "deleted": 5
+    }
+  ],
+  "test_files": [
+    "src/test/regress/sql/tablespace.sql",
+    "src/test/regress/expected/tablespace.out"
+  ],
+  "oracle": {
+    "runner": "pg_regress",
+    "tests": [
+      "tablespace"
+    ],
+    "command": "make -C src/test/regress check TESTS=tablespace"
+  },
+  "difficulty": "unrated",
+  "notes": "",
+  "kind": "bugfix",
+  "publishable": true,
+  "skeleton": true
+}

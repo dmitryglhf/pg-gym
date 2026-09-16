@@ -1,0 +1,27 @@
+{
+  "func": "jsonb_object_keys",
+  "mode": "stub",
+  "patch": "prep/jsonb_object_keys.patch",
+  "symbols": [
+    "jsonb_object_keys"
+  ],
+  "units": {
+    "jsonb_object_keys": {
+      "file": "src/backend/utils/adt/jsonfuncs.c",
+      "code": "/*\n * SQL function json_object_keys\n *\n * Returns the set of keys for the object argument.\n *\n * This SRF operates in value-per-call mode. It processes the\n * object during the first call, and the keys are simply stashed\n * in an array, whose size is expanded as necessary. This is probably\n * safe enough for a list of keys of a single object, since they are\n * limited in size to NAMEDATALEN and the number of keys is unlikely to\n * be so huge that it has major memory implications.\n */\nDatum\njsonb_object_keys(PG_FUNCTION_ARGS)\n{\n\tFuncCallContext *funcctx;\n\tOkeysState *state;\n\n\tif (SRF_IS_FIRSTCALL())\n\t{\n\t\tMemoryContext oldcontext;\n\t\tJsonb\t   *jb = PG_GETARG_JSONB_P(0);\n\t\tbool\t\tskipNested = false;\n\t\tJsonbIterator *it;\n\t\tJsonbValue\tv;\n\t\tJsonbIteratorToken r;\n\n\t\tif (JB_ROOT_IS_SCALAR(jb))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"cannot call %s on a scalar\",\n\t\t\t\t\t\t\t\"jsonb_object_keys\")));\n\t\telse if (JB_ROOT_IS_ARRAY(jb))\n\t\t\tereport(ERROR,\n\t\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t\t errmsg(\"cannot call %s on an array\",\n\t\t\t\t\t\t\t\"jsonb_object_keys\")));\n\n\t\tfuncctx = SRF_FIRSTCALL_INIT();\n\t\toldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);\n\n\t\tstate = palloc(sizeof(OkeysState));\n\n\t\tstate->result_size = JB_ROOT_COUNT(jb);\n\t\tstate->result_count = 0;\n\t\tstate->sent_count = 0;\n\t\tstate->result = palloc(state->result_size * sizeof(char *));\n\n\t\tit = JsonbIteratorInit(&jb->root);\n\n\t\twhile ((r = JsonbIteratorNext(&it, &v, skipNested)) != WJB_DONE)\n\t\t{\n\t\t\tskipNested = true;\n\n\t\t\tif (r == WJB_KEY)\n\t\t\t{\n\t\t\t\tchar\t   *cstr;\n\n\t\t\t\tcstr = palloc(v.val.string.len + 1 * sizeof(char));\n\t\t\t\tmemcpy(cstr, v.val.string.val, v.val.string.len);\n\t\t\t\tcstr[v.val.string.len] = '\\0';\n\t\t\t\tstate->result[state->result_count++] = cstr;\n\t\t\t}\n\t\t}\n\n\t\tMemoryContextSwitchTo(oldcontext);\n\t\tfuncctx->user_fctx = (void *) state;\n\t}\n\n\tfuncctx = SRF_PERCALL_SETUP();\n\tstate = (OkeysState *) funcctx->user_fctx;\n\n\tif (state->sent_count < state->result_count)\n\t{\n\t\tchar\t   *nxt = state->result[state->sent_count++];\n\n\t\tSRF_RETURN_NEXT(funcctx, CStringGetTextDatum(nxt));\n\t}\n\n\tSRF_RETURN_DONE(funcctx);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "jsonb"
+  ],
+  "category": "json",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 14,
+  "oracle_diff_by_file": {
+    "jsonb": 14
+  }
+}

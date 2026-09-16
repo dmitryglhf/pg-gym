@@ -1,0 +1,24 @@
+diff --git a/src/backend/utils/adt/date.c b/src/backend/utils/adt/date.c
+index 9c854e0..37a9982 100644
+--- a/src/backend/utils/adt/date.c
++++ b/src/backend/utils/adt/date.c
+@@ -2532,17 +2532,8 @@ timetz_cmp(PG_FUNCTION_ARGS)
+ Datum
+ timetz_hash(PG_FUNCTION_ARGS)
+ {
+-	TimeTzADT  *key = PG_GETARG_TIMETZADT_P(0);
+-	uint32		thash;
+-
+-	/*
+-	 * To avoid any problems with padding bytes in the struct, we figure the
+-	 * field hashes separately and XOR them.
+-	 */
+-	thash = DatumGetUInt32(DirectFunctionCall1(hashint8,
+-											   Int64GetDatumFast(key->time)));
+-	thash ^= DatumGetUInt32(hash_uint32(key->zone));
+-	PG_RETURN_UINT32(thash);
++	elog(ERROR, "timetz_hash is not implemented");
++	PG_RETURN_NULL();
+ }
+ 
+ Datum

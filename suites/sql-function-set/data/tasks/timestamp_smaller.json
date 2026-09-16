@@ -1,0 +1,15 @@
+{
+  "func": "timestamp_smaller",
+  "variants": [
+    {
+      "arguments": "timestamp timestamp",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "smaller of two"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}

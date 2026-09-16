@@ -1,0 +1,34 @@
+{
+  "func": "npoints",
+  "mode": "stub",
+  "patch": "prep/npoints.patch",
+  "symbols": [
+    "path_npoints",
+    "poly_npoints"
+  ],
+  "units": {
+    "path_npoints": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "Datum\npath_npoints(PG_FUNCTION_ARGS)\n{\n\tPATH\t   *path = PG_GETARG_PATH_P(0);\n\n\tPG_RETURN_INT32(path->npts);\n}\n\n"
+    },
+    "poly_npoints": {
+      "file": "src/backend/utils/adt/geo_ops.c",
+      "code": "/***********************************************************************\n **\n **\t\tRoutines for 2D polygons.\n **\n ***********************************************************************/\n\nDatum\npoly_npoints(PG_FUNCTION_ARGS)\n{\n\tPOLYGON    *poly = PG_GETARG_POLYGON_P(0);\n\n\tPG_RETURN_INT32(poly->npts);\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "geometry",
+    "select_views"
+  ],
+  "category": "geometric",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 942,
+  "oracle_diff_by_file": {
+    "geometry": 42,
+    "select_views": 900
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "pg_stats_correct_relation_size",
+  "area": "planner statistics, relation size estimates",
+  "goal": "Before ANALYZE, the estimated row count can be far too high for a table whose tuples are wider than the amount of each page nominally available under a low fillfactor.\n\nCreate a table with a wide inline `char(1000)` column, fillfactor 10 and autovacuum disabled, insert 1000 rows, then compare EXPLAIN's row estimate with the actual count before analyzing. The estimate must reflect approximately the rows that can physically fit, rather than applying the fillfactor in a way that makes tuple density impossible. Normal-width tables and post-ANALYZE estimates must remain unchanged.",
+  "func": "pg_stats_correct_relation_size",
+  "graded_by": [
+    "src/test/regress/sql/stats.sql",
+    "src/test/regress/expected/stats.out"
+  ]
+}

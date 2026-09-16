@@ -1,0 +1,29 @@
+{
+  "func": "jsonb_set",
+  "mode": "stub",
+  "patch": "prep/jsonb_set.patch",
+  "symbols": [
+    "jsonb_set"
+  ],
+  "units": {
+    "jsonb_set": {
+      "file": "src/backend/utils/adt/jsonfuncs.c",
+      "code": "/*\n * SQL function jsonb_set(jsonb, text[], jsonb, boolean)\n */\nDatum\njsonb_set(PG_FUNCTION_ARGS)\n{\n\tJsonb\t   *in = PG_GETARG_JSONB_P(0);\n\tArrayType  *path = PG_GETARG_ARRAYTYPE_P(1);\n\tJsonb\t   *newjsonb = PG_GETARG_JSONB_P(2);\n\tJsonbValue\tnewval;\n\tbool\t\tcreate = PG_GETARG_BOOL(3);\n\tJsonbValue *res = NULL;\n\tDatum\t   *path_elems;\n\tbool\t   *path_nulls;\n\tint\t\t\tpath_len;\n\tJsonbIterator *it;\n\tJsonbParseState *st = NULL;\n\n\tJsonbToJsonbValue(newjsonb, &newval);\n\n\tif (ARR_NDIM(path) > 1)\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),\n\t\t\t\t errmsg(\"wrong number of array subscripts\")));\n\n\tif (JB_ROOT_IS_SCALAR(in))\n\t\tereport(ERROR,\n\t\t\t\t(errcode(ERRCODE_INVALID_PARAMETER_VALUE),\n\t\t\t\t errmsg(\"cannot set path in scalar\")));\n\n\tif (JB_ROOT_COUNT(in) == 0 && !create)\n\t\tPG_RETURN_JSONB_P(in);\n\n\tdeconstruct_array_builtin(path, TEXTOID, &path_elems, &path_nulls, &path_len);\n\n\tif (path_len == 0)\n\t\tPG_RETURN_JSONB_P(in);\n\n\tit = JsonbIteratorInit(&in->root);\n\n\tres = setPath(&it, path_elems, path_nulls, path_len, &st,\n\t\t\t\t  0, &newval, create ? JB_PATH_CREATE : JB_PATH_REPLACE);\n\n\tAssert(res != NULL);\n\n\tPG_RETURN_JSONB_P(JsonbValueToJsonb(res));\n}\n\n"
+    }
+  },
+  "catalog_entries": [],
+  "referenced_by": {},
+  "catalog_dependents": {},
+  "failing_tests": [
+    "incremental_sort",
+    "jsonb"
+  ],
+  "category": "json",
+  "usable": true,
+  "verify_status": "usable",
+  "oracle_diff_lines": 218,
+  "oracle_diff_by_file": {
+    "incremental_sort": 76,
+    "jsonb": 142
+  }
+}

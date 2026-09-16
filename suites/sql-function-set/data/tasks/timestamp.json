@@ -1,0 +1,36 @@
+{
+  "func": "timestamp",
+  "variants": [
+    {
+      "arguments": "timestamp int4",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "adjust timestamp precision"
+    },
+    {
+      "arguments": "date",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert date to timestamp"
+    },
+    {
+      "arguments": "date time",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "i",
+      "description": "convert date and time to timestamp"
+    },
+    {
+      "arguments": "timestamptz",
+      "returns": "timestamp",
+      "kind": "f",
+      "volatile": "s",
+      "description": "convert timestamp with time zone to timestamp"
+    }
+  ],
+  "description": "",
+  "examples": [],
+  "mode": "stub"
+}
