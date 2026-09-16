@@ -37,6 +37,37 @@ export const app = new App()
         }, { status: 503 });
       }
     }
+    const query = ctx.url.searchParams;
+    let legacyTarget: string | null = null;
+    if (path === "/console") {
+      legacyTarget = "/?panel=console" +
+        (query.get("job")
+          ? "&job=" + encodeURIComponent(query.get("job")!)
+          : "");
+    }
+    if (
+      path === "/settings" &&
+      ["connections", "environment"].includes(query.get("tab") || "")
+    ) {
+      legacyTarget = "/models" +
+        (query.get("tab") === "environment" ? "?section=keys" : "");
+    }
+    if (path === "/settings" && query.get("tab") === "harnesses") {
+      legacyTarget = "/benchmark#profiles";
+    }
+    if (
+      path === "/inference" &&
+      (["models", "servers"].includes(query.get("tab") || "") ||
+        query.has("artifact"))
+    ) {
+      legacyTarget = "/models" +
+        (query.get("artifact")
+          ? "?artifact=" + encodeURIComponent(query.get("artifact")!)
+          : "");
+    }
+    if (legacyTarget) {
+      return Response.redirect(new URL(legacyTarget, ctx.url), 303);
+    }
     if (path === "/run") {
       return Response.redirect(
         new URL("/benchmark" + ctx.url.search, ctx.url),

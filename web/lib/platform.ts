@@ -55,6 +55,7 @@ export type Job = {
   finished_at: number | null;
   heartbeat_at: number | null;
   worker_connected: boolean;
+  worker_id?: string | null;
   cancel_requested: boolean;
   error: string | null;
   parent_id: string | null;
@@ -157,8 +158,12 @@ export async function api<T>(
     });
   } catch {
     throw new ApiError(
-      method === "POST"
-        ? "Submission was not confirmed. Check Results before retrying; retrying this form reuses the same request key."
+      (method === "POST" &&
+          /^\/(benchmarks|models\/imports|deployments|training-runs|evaluations|conversations\/[^/]+\/turns|jobs\/[^/]+\/retries)$/
+            .test(path))
+        ? "Submission was not confirmed. Check Workspace / Runs & results before retrying; retrying this form reuses the same request key."
+        : method === "POST"
+        ? "The request outcome is unknown. Refresh the relevant list before repeating this action."
         : "The server could not be reached. Your jobs continue on the worker.",
     );
   }

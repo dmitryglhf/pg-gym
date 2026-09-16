@@ -1,453 +1,568 @@
-import { useEffect, useState } from "preact/hooks";
-import { api, field, numeric, terminal } from "@/lib/platform.ts";
-import type {
-  Artifact,
-  Connection,
-  Conversation,
-  Job,
-} from "@/lib/platform.ts";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { api, ApiError, message, terminal } from "@/lib/platform.ts";
+import type { Connection, Conversation, Job, Worker } from "@/lib/platform.ts";
+import { useResource } from "@/lib/query.ts";
+import { connectionStatus, readiness } from "@/lib/readiness.ts";
 import {
-  ArtifactSelect,
-  Empty,
-  Field,
-  Form,
-  JobTable,
-  Notice,
-  usePoll,
-} from "./PlatformUI.tsx";
-import { JobMonitor } from "./JobMonitor.tsx";
+  preparationHref,
+  readSession,
+  useDraft,
+  writeSession,
+} from "@/lib/workspace.ts";
+import { Field, Notice } from "./PlatformUI.tsx";
+import { ChatTurn } from "./inference/ChatTurn.tsx";
 
 export function InferencePanel(
-  { artifacts, connections, jobs, credentials }: {
-    artifacts: Artifact[];
+  { connections, deployments, workers }: {
     connections: Connection[];
-    jobs: Job[];
-    credentials: { id: string; name: string }[];
+    deployments: Job[];
+    workers: Worker[];
   },
 ) {
-  const environment = usePoll<{ names: string[] }>("/environment");
-  const [tab, setTab] = useState(
-    typeof location !== "undefined" &&
-      new URLSearchParams(location.search).has("artifact")
-      ? "servers"
-      : typeof location !== "undefined" &&
-          new URLSearchParams(location.search).get("tab") === "models"
-      ? "models"
-      : "chat",
+  const [id, setId] = useState(""),
+    [initialized, setInitialized] = useState(false);
+  const [config, setConfig, restored] = useDraft("chat-settings", {
+    a: "",
+    b: "",
+    system: "",
+    temperature: 0.7,
+    tokens: 2048,
+  });
+  const [prompts, setPrompts] = useDraft<Record<string, string>>(
+    "chat-prompts",
+    {},
   );
-  return (
-    <>
-      <div class="page-tabs" role="group" aria-label="Inference view">
-        {["chat", "models", "servers"].map((item) => (
-          <button
-            type="button"
-            key={item}
-            class={tab === item ? "selected" : ""}
-            onClick={() => setTab(item)}
-          >
-            {item[0].toUpperCase() + item.slice(1)}
-          </button>
-        ))}
-      </div>
-      {tab === "chat" && <Chat connections={connections} />}
-      {tab === "models" && (
-        <>
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Import from Hugging Face</h2>
-            </div>
-            <Form
-              submit="Download model"
-              onSubmit={async (data) => {
-                const job = await api<Job>("/models/imports", "POST", {
-                  repository: field(data, "repository"),
-                  revision: field(data, "revision"),
-                  credential_id: field(data, "credential_id").startsWith("env:")
-                    ? null
-                    : field(data, "credential_id") || null,
-                  credential_env:
-                    field(data, "credential_id").startsWith("env:")
-                      ? field(data, "credential_id").slice(4)
-                      : null,
-                });
-                location.assign(`/jobs/${job.id}`);
-              }}
-            >
-              <div class="fields three">
-                <Field label="Repository">
-                  <input
-                    name="repository"
-                    placeholder="Qwen/Qwen2.5-Coder-3B-Instruct"
-                    pattern="[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+"
-                    required
-                  />
-                </Field>
-                <Field
-                  label="Revision"
-                  hint="The resolved commit is recorded with the model."
-                >
-                  <input name="revision" defaultValue="main" required />
-                </Field>
-                <Field
-                  label="HF credential"
-                  hint="Select a variable saved in Settings → Environment."
-                >
-                  <select name="credential_id">
-                    <option value="">Public repository</option>
-                    {environment.data?.names.map((name) => (
-                      <option key={name} value={`env:${name}`}>
-                        {name} (environment)
-                      </option>
-                    ))}
-                    {credentials.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-            </Form>
-          </section>
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Model artifacts</h2>
-            </div>
-            {!artifacts.some((a) => ["model", "adapter"].includes(a.kind)) && (
-              <Empty>
-                Import a safetensors model or finish a training run.
-              </Empty>
-            )}
-            <div class="artifact-list">
-              {artifacts.filter((a) => ["model", "adapter"].includes(a.kind))
-                .map((a) => (
-                  <div class="artifact-row" key={a.id}>
-                    <div>
-                      <strong>{a.name}</strong>
-                      <small>{a.kind} · {a.status} · {a.id.slice(0, 12)}</small>
-                      <small>
-                        {String(
-                          a.metadata.revision || a.metadata.base_revision || "",
-                        )}
-                      </small>
-                    </div>
-                    <a class="button secondary" href={`/jobs/${a.job_id}`}>
-                      Files & lineage
-                    </a>
-                    <a
-                      class="button secondary"
-                      href={`/rl?artifact=${a.id}${
-                        a.kind === "adapter" ? "&mode=evaluate" : ""
-                      }`}
-                    >
-                      {a.kind === "model" ? "Train" : "Evaluate"}
-                    </a>
-                  </div>
-                ))}
-            </div>
-          </section>
-        </>
-      )}
-      {tab === "servers" && (
-        <>
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Serve with vLLM</h2>
-              <a href="/settings">Connect a remote server</a>
-            </div>
-            <Form
-              submit="Start server"
-              onSubmit={async (data) => {
-                const job = await api<Job>("/deployments", "POST", {
-                  name: field(data, "name"),
-                  artifact_id: field(data, "artifact_id"),
-                  max_model_len: numeric(data, "max_model_len"),
-                  gpu_memory_utilization: numeric(
-                    data,
-                    "gpu_memory_utilization",
-                  ),
-                  tool_parser: field(data, "tool_parser"),
-                });
-                location.assign(`/jobs/${job.id}`);
-              }}
-            >
-              <div class="fields two">
-                <Field label="Model / adapter">
-                  <ArtifactSelect
-                    artifacts={artifacts}
-                    initial={typeof location !== "undefined"
-                      ? new URLSearchParams(location.search).get("artifact") ||
-                        ""
-                      : ""}
-                  />
-                </Field>
-                <Field label="Server name">
-                  <input
-                    name="name"
-                    required
-                    defaultValue="Inference"
-                    maxLength={80}
-                  />
-                </Field>
-                <Field label="Context window">
-                  <input
-                    name="max_model_len"
-                    type="number"
-                    defaultValue={4096}
-                    min={512}
-                    max={131072}
-                    required
-                  />
-                </Field>
-                <Field label="GPU memory fraction">
-                  <input
-                    name="gpu_memory_utilization"
-                    type="number"
-                    defaultValue={0.85}
-                    step={0.05}
-                    min={0.1}
-                    max={0.95}
-                    required
-                  />
-                </Field>
-                <Field
-                  label="Tool parser"
-                  hint="Required for agentic benchmarking. Select the parser supported by this model."
-                >
-                  <select name="tool_parser">
-                    <option value="">Chat only</option>
-                    {["hermes", "llama3_json", "mistral", "qwen3_xml"].map((
-                      p,
-                    ) => <option key={p}>{p}</option>)}
-                  </select>
-                </Field>
-              </div>
-              <p class="muted">
-                The server holds the worker GPU until stopped. Training and
-                evaluation wait for it to become available.
-              </p>
-            </Form>
-          </section>
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Servers</h2>
-            </div>
-            <JobTable jobs={jobs.filter((j) => j.kind === "deployment")} />
-          </section>
-        </>
-      )}
-    </>
-  );
-}
-
-function Chat({ connections }: { connections: Connection[] }) {
-  const [conversation, setConversation] = useState(
-      typeof location === "undefined"
-        ? ""
-        : new URLSearchParams(location.search).get("chat") || "",
-    ),
-    [version, setVersion] = useState(0);
-  useEffect(() => {
-    const url = new URL(location.href);
-    if (conversation) url.searchParams.set("chat", conversation);
-    else url.searchParams.delete("chat");
-    history.replaceState({}, "", url);
-  }, [conversation]);
-  const list = usePoll<Conversation[]>(
-    "/conversations?refresh=" + version,
-    5000,
-  );
-  const detail = usePoll<Conversation>(
-    conversation ? `/conversations/${conversation}?refresh=${version}` : "/me",
+  const [focus, setFocus] = useState(false),
+    [showHistory, setShowHistory] = useState(false);
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [uncertain, setUncertain] = useDraft("chat-create-uncertain", false);
+  const [submitted, setSubmitted] = useState<
+    { conversation: string; job: Job; prompt: string } | null
+  >(null);
+  const lock = useRef(false),
+    composer = useRef<HTMLTextAreaElement>(null),
+    end = useRef<HTMLDivElement>(null);
+  const focusButton = useRef<HTMLButtonElement>(null);
+  const list = useResource<Conversation[]>("/conversations", 10000);
+  const detail = useResource<Conversation>(
+    id ? `/conversations/${id}` : null,
     2000,
   );
-  const [draft, setDraft] = useState("");
   useEffect(() => {
-    const value = sessionStorage.getItem("pg-task-prompt");
-    if (value) {
-      setDraft(value);
-      sessionStorage.removeItem("pg-task-prompt");
+    if (!restored || initialized) return;
+    const query = new URLSearchParams(location.search),
+      connection = query.get("connection");
+    const returning = readSession<{ id: string; prompt: string } | null>(
+      "chat-return",
+      null,
+    );
+    setId(
+      connection
+        ? ""
+        : query.get("chat") || returning?.id || readSession("chat-last-id", ""),
+    );
+    if (returning && connection) {
+      setPrompts((old) => ({ ...old, new: returning.prompt }));
     }
-  }, []);
-  const active = detail.data?.turns?.find((t) => !terminal(t.job));
+    writeSession("chat-return", null);
+    if (connection) {
+      setConfig((old) => ({
+        ...old,
+        a: connection,
+        b: old.b === connection ? "" : old.b,
+      }));
+    }
+    let task: string | null = null;
+    try {
+      task = sessionStorage.getItem("pg-task-prompt");
+    } catch { /* Optional persistence. */ }
+    if (task) {
+      setPrompts((old) => ({ ...old, new: task }));
+      try {
+        sessionStorage.removeItem("pg-task-prompt");
+      } catch { /* Optional persistence. */ }
+      setId("");
+    }
+    setInitialized(true);
+  }, [restored, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    const url = new URL(location.href);
+    url.searchParams.delete("connection");
+    url.searchParams.delete("artifact");
+    url.searchParams.delete("tab");
+    if (id) url.searchParams.set("chat", id);
+    else url.searchParams.delete("chat");
+    history.replaceState({}, "", url);
+  }, [id, initialized]);
+  useEffect(() => {
+    document.body.dataset.chatFocus = String(focus);
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && focus) {
+        setFocus(false);
+        focusButton.current?.focus();
+      }
+    };
+    const revealActivity = () => setFocus(false);
+    addEventListener("pg-open-activity", revealActivity);
+    addEventListener("keydown", escape);
+    return () => {
+      delete document.body.dataset.chatFocus;
+      removeEventListener("keydown", escape);
+      removeEventListener("pg-open-activity", revealActivity);
+    };
+  }, [focus]);
+  const conversation = detail.data?.id === id ? detail.data : null;
+  const ids = id
+    ? conversation?.config.connection_ids ||
+      (submitted?.conversation === id
+        ? [config.a, config.b].filter(Boolean)
+        : [])
+    : [config.a, config.b].filter(Boolean);
+  const turns = conversation?.turns || [];
+  const visibleTurns = submitted?.conversation === id &&
+      !turns.some((turn) => turn.job.id === submitted.job.id)
+    ? [...turns, {
+      id: submitted.job.id,
+      prompt: submitted.prompt,
+      job: submitted.job,
+    }]
+    : turns;
+  const active = visibleTurns.some((turn) => !terminal(turn.job));
+  const unavailable = ids.some((key) => {
+    const connection = connections.find((item) => item.id === key);
+    return !connection || !connectionStatus(connection, deployments).usable;
+  });
+  const worker = readiness("chat", workers, []);
+  const ready = initialized && worker.available &&
+    (id ||
+      (config.temperature >= 0 && config.temperature <= 2 &&
+        config.tokens >= 1 && config.tokens <= 32768 &&
+        Number.isInteger(config.tokens))) &&
+    ids.length > 0 && new Set(ids).size === ids.length && !unavailable &&
+    (!id || !!conversation);
+  const prompt = prompts[id || "new"] || "";
+  const changePrompt = (value: string) =>
+    setPrompts((old) => ({ ...old, [id || "new"]: value }));
+  const rememberReturn = () => writeSession("chat-return", { id, prompt });
+  function choose(next: string) {
+    if (busy) return;
+    setId(next);
+    writeSession("chat-last-id", next);
+    setError("");
+    setShowHistory(false);
+  }
+  async function send(event: SubmitEvent) {
+    event.preventDefault();
+    if (
+      lock.current || !ready || active || !prompt.trim() || (!id && uncertain)
+    ) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    let target = id;
+    try {
+      if (!target) {
+        let created: Conversation;
+        try {
+          created = await api<Conversation>("/conversations", "POST", {
+            name: prompt.trim().slice(0, 100),
+            connection_ids: ids,
+            system_prompt: config.system,
+            temperature: config.temperature,
+            max_tokens: config.tokens,
+          });
+        } catch (cause) {
+          if (
+            cause instanceof ApiError &&
+            (cause.status === 0 || cause.status >= 500)
+          ) {
+            setUncertain(true);
+            list.refresh();
+            throw new Error(
+              "Conversation creation was not confirmed. Check History before creating another conversation. Your prompt is saved.",
+            );
+          }
+          throw cause;
+        }
+        target = created.id;
+        writeSession("chat-last-id", target);
+        const createdUrl = new URL(location.href);
+        createdUrl.searchParams.set("chat", target);
+        createdUrl.searchParams.delete("connection");
+        history.replaceState({}, "", createdUrl);
+        setPrompts((old) => ({ ...old, [target]: prompt, new: "" }));
+        setId(target);
+        list.refresh();
+      }
+      const job = await api<Job>(`/conversations/${target}/turns`, "POST", {
+        prompt,
+      });
+      setSubmitted({ conversation: target, job, prompt });
+      setPrompts((old) => ({ ...old, [target]: "" }));
+      detail.refresh();
+      list.refresh();
+      end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    } catch (cause) {
+      setError(message(cause));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+      composer.current?.focus();
+    }
+  }
   return (
-    <div class="chat-layout">
-      <aside class="panel chat-sidebar">
-        <div class="panel-heading">
-          <h2>Conversations</h2>
+    <div class={`inference-workspace ${showHistory ? "with-history" : ""}`}>
+      <div class="chat-toolbar">
+        <div class="inline-actions">
+          <button
+            type="button"
+            class="button secondary"
+            aria-expanded={showHistory}
+            onClick={() => {
+              setFocus(false);
+              setShowHistory(!showHistory);
+            }}
+          >
+            History
+          </button>
+          <button
+            type="button"
+            class="button secondary"
+            disabled={busy}
+            onClick={() =>
+              choose("")}
+          >
+            New chat
+          </button>
         </div>
-        <button
-          type="button"
-          class="button secondary"
-          onClick={() => setConversation("")}
-        >
-          New chat
-        </button>
-        {list.error && <Notice error>{list.error}</Notice>}
-        <nav aria-label="Conversations">
-          {list.data?.map((c) => (
-            <button
-              type="button"
-              class={conversation === c.id ? "selected" : ""}
-              key={c.id}
-              onClick={() => setConversation(c.id)}
-            >
-              {c.name}
-            </button>
-          ))}
-        </nav>
-      </aside>
-      <section class="panel chat-main">
-        {!conversation
-          ? (
-            <>
-              <div class="panel-heading">
-                <h2>New chat</h2>
-              </div>
-              <Form
-                submit="Create conversation"
-                disabled={!connections.length}
-                onSubmit={async (data) => {
-                  const secondary = field(data, "compare");
-                  const result = await api<Conversation>(
-                    "/conversations",
-                    "POST",
-                    {
-                      name: field(data, "name"),
-                      connection_ids: [
-                        field(data, "connection"),
-                        ...(secondary ? [secondary] : []),
-                      ],
-                      system_prompt: field(data, "system_prompt"),
-                      temperature: numeric(data, "temperature"),
-                      max_tokens: numeric(data, "max_tokens"),
-                    },
-                  );
-                  setConversation(result.id);
-                  setVersion(version + 1);
-                }}
-              >
-                <div class="fields two">
-                  <Field label="Connection">
-                    <select name="connection" required>
-                      <option value="">Select a model</option>
-                      {connections.map((c) => (
-                        <option value={c.id} key={c.id}>
-                          {c.name} · {c.model}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Compare with">
-                    <select name="compare">
-                      <option value="">Single model</option>
-                      {connections.map((c) => (
-                        <option value={c.id} key={c.id}>
-                          {c.name} · {c.model}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-                <Field label="Conversation name">
-                  <input
-                    name="name"
-                    defaultValue="New chat"
-                    maxLength={100}
-                    required
-                  />
-                </Field>
-                <details class="advanced">
-                  <summary>Generation settings</summary>
-                  <Field label="System prompt">
-                    <textarea name="system_prompt" rows={3} maxLength={20000} />
-                  </Field>
+        <div class="inline-actions">
+          <a href={preparationHref("inference")} onClick={rememberReturn}>
+            Models & servers
+          </a>
+          <button
+            ref={focusButton}
+            type="button"
+            class="button secondary"
+            aria-pressed={focus}
+            onClick={() => setFocus(!focus)}
+          >
+            {focus ? "Exit full screen" : "Full screen"}
+          </button>
+        </div>
+      </div>
+      <div class="inference-body">
+        {showHistory && (
+          <aside class="panel conversation-history">
+            <h2>History</h2>
+            {list.error && <Notice error>{list.error}</Notice>}
+            <p class="muted">Most recent conversations</p>
+            <nav aria-label="Conversations">
+              {list.data?.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={busy}
+                  class={id === item.id ? "selected" : ""}
+                  aria-current={id === item.id ? "true" : undefined}
+                  onClick={() => choose(item.id)}
+                >
+                  {item.name}
+                  <small>
+                    {item.config.connection_ids.length === 2
+                      ? "A/B comparison"
+                      : "Single model"}
+                  </small>
+                </button>
+              ))}
+            </nav>
+            {!list.data?.length && <p>No conversations yet.</p>}
+          </aside>
+        )}
+        <section class="chat-canvas">
+          <div class="chat-model-bar">
+            {id
+              ? (
+                <>
+                  <h2>{conversation?.name || "Loading conversation…"}</h2>
+                  <p class="muted">
+                    {ids.map((key, index) =>
+                      `${ids.length > 1 ? (index ? "B · " : "A · ") : ""}${
+                        conversation?.config.connections[key]?.name || key
+                      }`
+                    ).join(" / ")}
+                  </p>
+                  <details>
+                    <summary>Saved generation settings</summary>
+                    <pre class="json-view">{JSON.stringify({ system_prompt: conversation?.config.system_prompt, temperature: conversation?.config.temperature, max_tokens: conversation?.config.max_tokens }, null, 2)}</pre>
+                    <p class="muted">
+                      Model selection and settings are fixed for this
+                      conversation. Use New chat to change them.
+                    </p>
+                  </details>
+                </>
+              )
+              : (
+                <>
                   <div class="fields two">
-                    <Field label="Temperature">
-                      <input
-                        name="temperature"
-                        type="number"
-                        min={0}
-                        max={2}
-                        step={0.1}
-                        defaultValue={0.7}
-                        required
-                      />
+                    <Field label="Model A">
+                      <select
+                        disabled={busy}
+                        value={config.a}
+                        onChange={(event) =>
+                          setConfig({
+                            ...config,
+                            a: event.currentTarget.value,
+                          })}
+                      >
+                        <option value="">Select a model</option>
+                        {connections.map((connection) => (
+                          <option
+                            key={connection.id}
+                            value={connection.id}
+                            disabled={!connectionStatus(connection, deployments)
+                              .usable || connection.id === config.b}
+                          >
+                            {connection.name} ·{" "}
+                            {connectionStatus(connection, deployments).label}
+                          </option>
+                        ))}
+                      </select>
                     </Field>
-                    <Field label="Output token limit">
-                      <input
-                        name="max_tokens"
-                        type="number"
-                        min={1}
-                        max={32768}
-                        defaultValue={2048}
-                        required
-                      />
+                    <Field label="Model B · optional">
+                      <select
+                        disabled={busy}
+                        value={config.b}
+                        onChange={(event) =>
+                          setConfig({
+                            ...config,
+                            b: event.currentTarget.value,
+                          })}
+                      >
+                        <option value="">Single model</option>
+                        {connections.map((connection) => (
+                          <option
+                            key={connection.id}
+                            value={connection.id}
+                            disabled={!connectionStatus(connection, deployments)
+                              .usable || connection.id === config.a}
+                          >
+                            {connection.name} ·{" "}
+                            {connectionStatus(connection, deployments).label}
+                          </option>
+                        ))}
+                      </select>
                     </Field>
                   </div>
-                </details>
-                {!connections.length && (
-                  <Notice>
-                    <a href="/settings">Add a connection</a> to start chatting.
-                  </Notice>
-                )}
-              </Form>
-            </>
-          )
-          : (
-            <>
-              <div class="panel-heading">
-                <h2>{detail.data?.name || "Conversation"}</h2>
-                <a
-                  href={`/api/v1/conversations/${conversation}`}
-                  download="conversation.json"
-                >
-                  Export JSON
-                </a>
-              </div>
-              {detail.error && <Notice error>{detail.error}</Notice>}
-              <div class="chat-turns">
-                {detail.data?.turns?.map((turn) => (
-                  <article key={turn.id} class="chat-turn">
-                    <div class="user-message">
-                      <small>You</small>
-                      <p>{turn.prompt}</p>
+                  <details class="chat-settings">
+                    <summary>Generation settings</summary>
+                    <Field label="System prompt">
+                      <textarea
+                        rows={3}
+                        maxLength={20000}
+                        value={config.system}
+                        onInput={(event) =>
+                          setConfig({
+                            ...config,
+                            system: event.currentTarget.value,
+                          })}
+                      />
+                    </Field>
+                    <div class="fields two">
+                      <Field label="Temperature">
+                        <input
+                          type="number"
+                          min={0}
+                          max={2}
+                          step={0.1}
+                          value={config.temperature}
+                          onInput={(event) =>
+                            setConfig({
+                              ...config,
+                              temperature: Number(event.currentTarget.value),
+                            })}
+                        />
+                      </Field>
+                      <Field label="Output token limit">
+                        <input
+                          type="number"
+                          min={1}
+                          max={32768}
+                          value={config.tokens}
+                          onInput={(event) =>
+                            setConfig({
+                              ...config,
+                              tokens: Number(event.currentTarget.value),
+                            })}
+                        />
+                      </Field>
                     </div>
-                    <JobMonitor
-                      id={turn.job.id}
-                      compact
-                      connectionNames={Object.fromEntries(
-                        Object.entries(detail.data?.config.connections || {})
-                          .map(([id, c]) => [id, c.name]),
-                      )}
-                    />
-                  </article>
-                ))}
+                  </details>
+                </>
+              )}
+            {ids.length === 2 && (
+              <p class="muted">
+                One prompt, separate model histories. A runs first, then B. One
+                GPU worker can host one local server; use an external endpoint
+                for the other model. Response time is not a controlled
+                performance benchmark.
+              </p>
+            )}
+            {unavailable && (
+              <Notice>
+                A selected server is unavailable. Your conversation is
+                preserved.{" "}
+                <a href={preparationHref("inference")} onClick={rememberReturn}>
+                  Prepare a model
+                </a>{" "}
+                and start a new chat with its connection.
+              </Notice>
+            )}
+            {!connections.some((item) =>
+              connectionStatus(item, deployments).usable
+            ) && !unavailable && (
+              <Notice>
+                <a href={preparationHref("inference")} onClick={rememberReturn}>
+                  Prepare your first model
+                </a>{" "}
+                to send messages. You can keep writing your draft here.
+              </Notice>
+            )}
+          </div>
+          {detail.error && <Notice error>{detail.error}</Notice>}
+          <div class="conversation-transcript">
+            {!id && (
+              <div class="chat-welcome">
+                <h2>Try a model. Compare an answer.</h2>
+                <p>Select one or two models and send a message.</p>
+                <div class="inline-actions">
+                  {[
+                    "Explain this PostgreSQL query plan",
+                    "Help me reason about an index",
+                    "Review a SQL query",
+                  ].map((text) => (
+                    <button
+                      type="button"
+                      class="button secondary"
+                      key={text}
+                      onClick={() => {
+                        changePrompt(text + ":\n\n");
+                        composer.current?.focus();
+                      }}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <Form
-                submit="Send"
-                disabled={!!active}
-                onSubmit={async (data) => {
-                  await api(`/conversations/${conversation}/turns`, "POST", {
-                    prompt: field(data, "prompt"),
-                  });
-                  setDraft("");
-                  setVersion(version + 1);
+            )}
+            {visibleTurns.map((turn) => (
+              <ChatTurn
+                key={turn.id}
+                turn={turn}
+                ids={ids}
+                connections={conversation?.config.connections ||
+                  Object.fromEntries(
+                    connections.map((item) => [item.id, item]),
+                  )}
+                onReuse={(value) => {
+                  changePrompt(value);
+                  composer.current?.focus();
                 }}
+              />
+            ))}
+            <div ref={end} />
+          </div>
+          <form class="chat-composer" onSubmit={send}>
+            {!worker.available && (
+              <Notice>
+                {worker.reason} <a href="/#workers">Inspect resources</a>
+              </Notice>
+            )}
+            {!id &&
+              !(config.temperature >= 0 && config.temperature <= 2 &&
+                config.tokens >= 1 && config.tokens <= 32768 &&
+                Number.isInteger(config.tokens)) &&
+              (
+                <Notice error>
+                  Check generation settings: temperature must be 0–2; output
+                  token limit must be an integer from 1 to 32768.
+                </Notice>
+              )}
+            {error && <Notice error>{error}</Notice>}
+            {!id && uncertain && (
+              <Notice>
+                Creation is unconfirmed.{" "}
+                <button
+                  type="button"
+                  class="text-button"
+                  onClick={() => setShowHistory(true)}
+                >
+                  Check History
+                </button>
+                <button
+                  type="button"
+                  class="text-button"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        "Create another conversation? The previous request may already have created an empty one.",
+                      )
+                    ) setUncertain(false);
+                  }}
+                >
+                  Create another anyway
+                </button>
+              </Notice>
+            )}
+            <label class="sr-only" for="chat-prompt">
+              Message for {ids.length === 2 ? "both models" : "the model"}
+            </label>
+            <textarea
+              id="chat-prompt"
+              ref={composer}
+              rows={3}
+              maxLength={100000}
+              required
+              value={prompt}
+              onInput={(event) => changePrompt(event.currentTarget.value)}
+              placeholder={ids.length === 2
+                ? "Ask both models…"
+                : "Ask anything…"}
+              onKeyDown={(event) => {
+                if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <div class="split-line">
+              <small>
+                {active
+                  ? "Generation is running. You can write your next message."
+                  : "Ctrl / ⌘ + Enter to send · Shift + Enter for a new line"}
+              </small>
+              <button
+                type="submit"
+                class="button primary"
+                disabled={busy || !!active || !ready || !prompt.trim() ||
+                  (!id && uncertain)}
               >
-                <Field label="Message">
-                  <textarea
-                    name="prompt"
-                    rows={3}
-                    required
-                    maxLength={100000}
-                    value={draft}
-                    onInput={(e) => setDraft(e.currentTarget.value)}
-                    placeholder="Ask the model…"
-                  />
-                </Field>
-              </Form>
-            </>
-          )}
-      </section>
+                {busy ? "Sending…" : ids.length === 2 ? "Send to both" : "Send"}
+              </button>
+            </div>
+            {id && (
+              <a
+                class="chat-export"
+                href={`/api/v1/conversations/${id}`}
+                download="conversation.json"
+              >
+                Export conversation
+              </a>
+            )}
+          </form>
+        </section>
+      </div>
     </div>
   );
 }

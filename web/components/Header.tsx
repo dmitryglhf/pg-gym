@@ -7,25 +7,14 @@ export function Header({ pathname }: { pathname: string }) {
       href: "/",
       label: "Workspace",
       icon: "home" as const,
-      active: pathname === "/",
+      active: pathname === "/" || pathname.startsWith("/results") ||
+        pathname.startsWith("/jobs") || pathname === "/console",
     },
     {
-      href: "/benchmark",
-      label: "Benchmark",
-      icon: "play" as const,
-      active: pathname === "/benchmark",
-    },
-    {
-      href: "/results",
-      label: "Results",
-      icon: "chart" as const,
-      active: pathname.startsWith("/results") || pathname.startsWith("/jobs"),
-    },
-    {
-      href: "/rl",
-      label: "RL",
-      icon: "training" as const,
-      active: pathname.startsWith("/rl"),
+      href: "/models",
+      label: "Models & servers",
+      icon: "layers" as const,
+      active: pathname.startsWith("/models"),
     },
     {
       href: "/inference",
@@ -34,10 +23,16 @@ export function Header({ pathname }: { pathname: string }) {
       active: pathname.startsWith("/inference"),
     },
     {
-      href: "/console",
-      label: "Console",
-      icon: "terminal" as const,
-      active: pathname === "/console",
+      href: "/benchmark",
+      label: "Benchmarks",
+      icon: "play" as const,
+      active: pathname.startsWith("/benchmark"),
+    },
+    {
+      href: "/rl",
+      label: "Training",
+      icon: "training" as const,
+      active: pathname.startsWith("/rl"),
     },
   ];
   return (

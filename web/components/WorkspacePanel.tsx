@@ -6,183 +6,182 @@ import type {
   Worker,
 } from "@/lib/platform.ts";
 import { terminal } from "@/lib/platform.ts";
+import { connectionStatus, readiness } from "@/lib/readiness.ts";
+import { openActivity, preparationHref, useDraft } from "@/lib/workspace.ts";
 import { Icon } from "./Icon.tsx";
 import { JobTable, Resources } from "./PlatformUI.tsx";
 
 export function WorkspacePanel(
-  { jobs, workers, connections, artifacts, suites }: {
+  { jobs, workers, connections, artifacts, suites, deployments }: {
     jobs: Job[];
     workers: Worker[];
     connections: Connection[];
     artifacts: Artifact[];
     suites: Suite[];
+    deployments: Job[];
   },
 ) {
-  const online = workers.filter((w) => w.connected);
-  const active = jobs.filter((job) => !terminal(job));
-  const ready = artifacts.filter((a) =>
-    a.status === "ready" && ["model", "adapter"].includes(a.kind)
+  const [goal, setGoal] = useDraft("workspace-goal", "benchmark");
+  const online = workers.filter((item) => item.connected);
+  const active = [
+    ...new Map(
+      [...jobs, ...deployments].filter((job) => !terminal(job)).map((
+        job,
+      ) => [job.id, job]),
+    ).values(),
+  ];
+  const models = artifacts.filter((item) =>
+    item.status === "ready" && item.kind === "model"
   );
-  const benchmarkReady = online.some((w) =>
-    w.capabilities.includes("benchmark")
+  const usable = connections.filter((item) =>
+    connectionStatus(item, deployments).usable
   );
+  const preparation = goal === "training"
+    ? models.length > 0
+    : usable.some((item) => goal !== "benchmark" || item.tools);
+  const capability = readiness(goal === "inference" ? "chat" : goal, workers, [
+    ...deployments,
+    ...jobs,
+  ]);
   const steps = [
     {
-      done: connections.some((c) => c.tools),
-      title: "Connect a model",
-      description: "Add a model with tool calling to run agent benchmarks.",
-      href: "/settings",
+      done: preparation,
+      title: goal === "training"
+        ? "Download base model weights"
+        : "Prepare a model connection",
+      description: goal === "training"
+        ? "Training uses weights directly; no inference server is needed."
+        : goal === "benchmark"
+        ? "Use an external API or a local server with tool calling."
+        : "Use a ready local server or connect an external API.",
+      href: preparationHref(
+        goal === "training"
+          ? "training"
+          : goal === "inference"
+          ? "inference"
+          : "benchmark",
+      ),
     },
     {
-      done: benchmarkReady,
-      title: "Prepare a benchmark worker",
+      done: capability.available && !capability.busy,
+      title: "Check execution resources",
+      description: capability.reason,
+      href: "#workers",
+    },
+    {
+      done: false,
+      title: goal === "training"
+        ? "Configure training"
+        : goal === "inference"
+        ? "Open a conversation"
+        : "Choose a benchmark task",
       description:
-        "A connected worker needs the PostgreSQL task image to run benchmarks.",
-      href: "/settings#workers",
-    },
-    {
-      done: jobs.some((j) => j.kind === "benchmark" && j.started_at !== null),
-      title: "Run your first benchmark",
-      description: "Start with one task, then evaluate a suite or split.",
-      href: "/benchmark",
+        "Continue in the task screen. Its draft is saved when you leave.",
+      href: goal === "training"
+        ? "/rl"
+        : goal === "inference"
+        ? "/inference"
+        : "/benchmark",
     },
   ];
   return (
     <div class="workspace-sections">
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>What would you like to do?</h2>
+            <p class="muted">Prepare once, then move between experiments.</p>
+          </div>
+          <div class="scope-control" role="group" aria-label="Workspace goal">
+            {[["inference", "Chat"], ["benchmark", "Benchmark"], [
+              "training",
+              "Train",
+            ]].map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                class={`button ${goal === value ? "primary" : "secondary"}`}
+                aria-pressed={goal === value}
+                onClick={() => setGoal(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div class="setup-grid">
+          {steps.map((step, index) => (
+            <a
+              key={step.title}
+              class={`setup-step ${step.done ? "complete" : ""}`}
+              href={step.href}
+            >
+              <span class="step-number">
+                {step.done ? <Icon name="check" size={16} /> : index + 1}
+              </span>
+              <div>
+                <strong>{step.title}</strong>
+                <p>{step.description}</p>
+                <small>
+                  {step.done ? "Available · manage →" : "Continue →"}
+                </small>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
       <div class="workspace-stats">
         <div class="panel">
-          <small>Active in recent jobs</small>
-          <strong>{active.length}</strong>
-          <a href="/results">
-            View jobs <Icon name="arrow" size={14} />
-          </a>
+          <small>Available connections</small>
+          <strong>{usable.length}</strong>
+          <a href="/models">Models & servers →</a>
         </div>
         <div class="panel">
-          <small>Workers online</small>
+          <small>Base models downloaded</small>
+          <strong>{models.length}</strong>
+          <a href="/models">Files & variants →</a>
+        </div>
+        <div class="panel">
+          <small>Workers connected</small>
           <strong>
             {online.length}
             <span>/ {workers.length}</span>
           </strong>
-          <a href="#workers">
-            View resources <Icon name="arrow" size={14} />
-          </a>
+          <a href="#workers">Resources →</a>
         </div>
         <div class="panel">
-          <small>Model connections</small>
-          <strong>{connections.length}</strong>
-          <a href="/settings">
-            Manage connections <Icon name="arrow" size={14} />
-          </a>
+          <small>Runnable tasks</small>
+          <strong>{suites.reduce((sum, suite) => sum + suite.tasks, 0)}</strong>
+          <a href="/benchmark">Browse tasks →</a>
         </div>
-        <div class="panel">
-          <small>Ready model artifacts</small>
-          <strong>{ready.length}</strong>
-          <a href="/inference?tab=models">
-            Browse models <Icon name="arrow" size={14} />
-          </a>
-        </div>
-      </div>
-      {!steps.every((step) => step.done) && (
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Get started</h2>
-            <small>{steps.filter((s) => s.done).length} of 3 complete</small>
-          </div>
-          <div class="setup-grid">
-            {steps.map((step, index) => (
-              <a
-                class={`setup-step ${step.done ? "complete" : ""}`}
-                href={step.href}
-                key={step.title}
-              >
-                <span class="step-number">
-                  {step.done ? <Icon name="check" size={16} /> : index + 1}
-                </span>
-                <div>
-                  <strong>{step.title}</strong>
-                  <p>{step.description}</p>
-                  <small>{step.done ? "Complete" : "Set up →"}</small>
-                </div>
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
-      {jobs.length > 0 && (
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2>In progress</h2>
-              <small>From the {jobs.length} most recent jobs</small>
-            </div>
-            <a class="button secondary" href="/console">
-              <Icon name="terminal" size={16} /> Open console
-            </a>
-          </div>
-          {active.length
-            ? <JobTable jobs={active} />
-            : (
-              <div class="workspace-empty">
-                <Icon name="pause" size={24} />
-                <div>
-                  <strong>No active jobs in this view</strong>
-                  <p>
-                    Start an experiment or explore your models. Progress will
-                    appear here.
-                  </p>
-                </div>
-              </div>
-            )}
-        </section>
-      )}
-      <div class="workspace-actions">
-        <a href="/benchmark">
-          <Icon name="play" />
-          <div>
-            <strong>Run a benchmark</strong>
-            <small>
-              {suites.reduce((n, s) => n + s.tasks, 0)} tasks across{" "}
-              {suites.length} suites
-            </small>
-          </div>
-          <Icon name="arrow" />
-        </a>
-        <a href="/rl">
-          <Icon name="training" />
-          <div>
-            <strong>Train or evaluate</strong>
-            <small>GRPO training and held-out evaluation</small>
-          </div>
-          <Icon name="arrow" />
-        </a>
-        <a href="/inference">
-          <Icon name="chat" />
-          <div>
-            <strong>Open inference</strong>
-            <small>Chat, import models and manage servers</small>
-          </div>
-          <Icon name="arrow" />
-        </a>
       </div>
       <section class="panel">
         <div class="panel-heading">
-          <h2>Recent runs</h2>
-          <a href="/results">View all →</a>
+          <div>
+            <h2>In progress</h2>
+            <small>Recent {jobs.length} runs and known deployments</small>
+          </div>
+          <button
+            type="button"
+            class="button secondary"
+            onClick={() => openActivity()}
+          >
+            <Icon name="terminal" size={16} />Open console
+          </button>
         </div>
-        {jobs.length
-          ? <JobTable jobs={jobs.slice(0, 6)} />
-          : (
-            <div class="workspace-empty">
-              <Icon name="clock" size={24} />
-              <div>
-                <strong>Your experiment history starts here</strong>
-                <p>
-                  Completed runs will include their status, results and
-                  execution logs.
-                </p>
-              </div>
-            </div>
-          )}
+        {active.length ? <JobTable jobs={active} /> : (
+          <p class="empty-state">
+            No active runs in this view. Start a chat, benchmark or training run
+            above.
+          </p>
+        )}
+      </section>
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Recent runs</h2>
+          <a href="/results">All runs & results →</a>
+        </div>
+        <JobTable jobs={jobs.slice(0, 6)} />
       </section>
       <div id="workers">
         <Resources workers={workers} />

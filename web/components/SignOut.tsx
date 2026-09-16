@@ -1,3 +1,4 @@
+import { clearWorkspaceSession } from "@/lib/workspace.ts";
 import { Icon } from "./Icon.tsx";
 import { useState } from "preact/hooks";
 import { api, message } from "@/lib/platform.ts";
@@ -18,6 +19,7 @@ export function SignOut(
           setError("");
           try {
             await api("/auth/logout", "POST");
+            clearWorkspaceSession();
             location.assign("/login");
           } catch (cause) {
             setError(message(cause));

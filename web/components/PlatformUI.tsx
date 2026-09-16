@@ -1,6 +1,6 @@
 import { cloneElement, isValidElement, toChildArray } from "preact";
 import type { ComponentChildren, JSX, VNode } from "preact";
-import { useEffect, useId, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { api, bytes, date, message, metric, terminal } from "@/lib/platform.ts";
 import type { Artifact, Job, Worker } from "@/lib/platform.ts";
 
@@ -53,9 +53,11 @@ export function Form(
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [success, setSuccess] = useState("");
+  const lock = useRef(false);
   async function send(event: JSX.TargetedEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
-    if (busy) return;
+    if (lock.current || disabled) return;
+    lock.current = true;
     const data = new FormData(event.currentTarget);
     setBusy(true);
     setError("");
@@ -65,6 +67,7 @@ export function Form(
     } catch (cause) {
       setError(message(cause));
     } finally {
+      lock.current = false;
       setBusy(false);
     }
   }
@@ -89,6 +92,11 @@ export function Status({ job }: { job: Job }) {
   const label =
     !terminal(job) && job.status !== "queued" && !job.worker_connected
       ? "Contact lost"
+      : job.kind === "deployment" && !terminal(job) &&
+          job.result?.connection_id && !job.cancel_requested
+      ? "Ready"
+      : job.cancel_requested && !terminal(job)
+      ? "Stopping"
       : job.status;
   return (
     <span
@@ -118,7 +126,10 @@ export function JobTable(
           <span>{selected.length} selected</span>
           <a
             class="button secondary"
-            href={`/results?compare=${selected.join(",")}`}
+            href={selected.length > 1
+              ? `/results?compare=${selected.join(",")}`
+              : undefined}
+            aria-disabled={selected.length < 2}
           >
             Compare
           </a>
@@ -143,7 +154,7 @@ export function JobTable(
               <th>Experiment</th>
               <th>Status</th>
               <th>Model / harness</th>
-              <th class="num">Reward</th>
+              <th class="num">Result</th>
               <th>Started</th>
             </tr>
           </thead>
@@ -156,8 +167,9 @@ export function JobTable(
                       aria-label={`Compare ${job.name}`}
                       type="checkbox"
                       checked={selected.includes(job.id)}
-                      disabled={!selected.includes(job.id) &&
-                        selected.length >= 4}
+                      disabled={!terminal(job) ||
+                        !["benchmark", "evaluation"].includes(job.kind) ||
+                        (!selected.includes(job.id) && selected.length >= 4)}
                       onChange={(e) =>
                         setSelected(
                           e.currentTarget.checked
@@ -186,7 +198,34 @@ export function JobTable(
                     {job.config.harness || job.config.protocol || ""}
                   </small>
                 </td>
-                <td class="num">{metric(job.result?.mean_reward)}</td>
+                <td class="num">
+                  {["benchmark", "evaluation"].includes(job.kind)
+                    ? (
+                      <>
+                        {metric(job.result?.mean_reward)}
+                        <small>
+                          Scored reward ·{" "}
+                          {String(job.result?.execution_errors ?? "—")}{" "}
+                          execution errors
+                        </small>
+                      </>
+                    )
+                    : job.kind === "deployment"
+                    ? (job.result?.connection_id && !terminal(job)
+                      ? "Server ready"
+                      : terminal(job)
+                      ? "Server inactive"
+                      : "Starting server")
+                    : job.kind === "model_import"
+                    ? (job.status === "succeeded"
+                      ? "Files downloaded"
+                      : "Download")
+                    : job.kind === "training"
+                    ? (job.result?.artifact_id
+                      ? "Adapter available"
+                      : "Training")
+                    : "Conversation"}
+                </td>
                 <td class="nowrap">{date(job.created_at)}</td>
               </tr>
             ))}

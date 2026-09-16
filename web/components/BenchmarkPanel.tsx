@@ -1,7 +1,12 @@
-import { useEffect, useState } from "preact/hooks";
-import { api, field, numeric } from "@/lib/platform.ts";
-import type { Connection, Job, Suite } from "@/lib/platform.ts";
-import { Field, Form, Notice, usePoll } from "./PlatformUI.tsx";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { api } from "@/lib/platform.ts";
+import type { Connection, Job, Suite, Worker } from "@/lib/platform.ts";
+import { useResource } from "@/lib/query.ts";
+import { connectionStatus, readiness } from "@/lib/readiness.ts";
+import { preparationHref, useDraft } from "@/lib/workspace.ts";
+import { Field, Form, Notice } from "./PlatformUI.tsx";
+import { OperationCard } from "./OperationCard.tsx";
+import { ProfilesPanel } from "./ProfilesPanel.tsx";
 
 export type Profile = {
   id: string;
@@ -13,225 +18,391 @@ export type Profile = {
   context_strategy: string;
 };
 export function BenchmarkPanel(
-  { suites, connections, profiles }: {
+  { suites, connections, profiles, deployments, workers, jobs, refresh }: {
     suites: Suite[];
     connections: Connection[];
     profiles: Profile[];
+    deployments: Job[];
+    workers: Worker[];
+    jobs: Job[];
+    refresh: () => void;
   },
 ) {
-  const [suite, setSuite] = useState(suites[0]?.id || ""),
-    [scope, setScope] = useState("task"),
-    [split, setSplit] = useState(""),
-    [task, setTask] = useState(""),
-    [harness, setHarness] = useState("markov"),
-    [connection, setConnection] = useState(
-      typeof location === "undefined"
-        ? ""
-        : new URLSearchParams(location.search).get("connection") || "",
-    );
-  const tasks = usePoll<{ name: string }[]>(
-    `/suites/${encodeURIComponent(suite)}/tasks${
-      split ? "?split=" + encodeURIComponent(split) : ""
-    }`,
-    60000,
-  );
+  const [draft, setDraft, restored] = useDraft("benchmark", {
+    suite: suites[0]?.id || "",
+    scope: "task",
+    copiedTasks: [] as string[],
+    split: "",
+    task: "",
+    harness: "markov",
+    connection: "",
+    profile: "",
+    name: "",
+    timeout: 1800,
+    turns: 50,
+  });
+  const [pending, setPending] = useDraft("benchmark-pending", "");
+  const [cloneError, setCloneError] = useState(""),
+    [cloning, setCloning] = useState(false);
+  const initialized = useRef(false);
   useEffect(() => {
-    if (tasks.data && !tasks.data.some((t) => t.name === task)) {
-      setTask(tasks.data[0]?.name || "");
+    if (!restored || initialized.current) return;
+    initialized.current = true;
+    const query = new URLSearchParams(location.search);
+    const connection = query.get("connection"), clone = query.get("clone");
+    if (connection) setDraft((old) => ({ ...old, connection }));
+    if (clone) {
+      setCloning(true);
+      api<Job>("/jobs/" + encodeURIComponent(clone)).then((job) => {
+        if (job.kind !== "benchmark") {
+          throw new Error("This run is not a benchmark.");
+        }
+        const c = job.config, profile = c.profile as Profile | undefined;
+        setDraft({
+          suite: c.suite || "",
+          scope: c.tasks?.length === 1 ? "task" : "copied",
+          copiedTasks: c.tasks || [],
+          split: String(c.split || ""),
+          task: c.tasks?.[0] || "",
+          harness: c.harness || "markov",
+          connection: String(c.connection_id || ""),
+          profile: "",
+          name: (job.name + " · copy").slice(0, 100),
+          timeout: profile?.timeout || Number(c.timeout || 1800),
+          turns: profile?.max_turns || Number(c.max_turns || 50),
+        });
+        setCloneError(
+          "Copied the saved task set and limits. Task contents are resolved again at submission; identities remain visible in the run. If the source used a profile, choose it to restore temperature and context strategy.",
+        );
+        query.delete("clone");
+        history.replaceState(
+          {},
+          "",
+          "/benchmark" + (query.size ? "?" + query : ""),
+        );
+      }).catch((cause) => setCloneError(String(cause))).finally(() =>
+        setCloning(false)
+      );
     }
-  }, [tasks.data, task]);
-  const preview = usePoll<{ prompt: string; task_hash: string }>(
-    task
-      ? `/suites/${encodeURIComponent(suite)}/tasks/${encodeURIComponent(task)}`
-      : "/me",
+  }, [restored]);
+  const tasks = useResource<{ name: string }[]>(
+    draft.suite
+      ? `/suites/${encodeURIComponent(draft.suite)}/tasks${
+        draft.split ? "?split=" + encodeURIComponent(draft.split) : ""
+      }`
+      : null,
     60000,
   );
-  const available = suites.find((s) => s.id === suite);
+  const preview = useResource<{ prompt: string; task_hash: string }>(
+    draft.suite && draft.task
+      ? `/suites/${encodeURIComponent(draft.suite)}/tasks/${
+        encodeURIComponent(draft.task)
+      }`
+      : null,
+    60000,
+  );
+  const available = suites.find((suite) => suite.id === draft.suite);
+  const connection = connections.find((item) => item.id === draft.connection);
+  const modelReady = connection && connection.tools &&
+    connectionStatus(connection, deployments).usable;
+  const worker = readiness("benchmark", workers, jobs);
+  const validTasks = !!tasks.data?.length &&
+    (draft.scope === "suite" ||
+      (draft.scope === "copied" &&
+        draft.copiedTasks.every((name) =>
+          tasks.data!.some((item) => item.name === name)
+        )) ||
+      tasks.data.some((task) => task.name === draft.task));
+  const profile = profiles.find((item) =>
+    item.id === draft.profile && item.harness === draft.harness
+  );
   return (
-    <div class="main-grid">
-      <section class="panel">
-        <div class="panel-heading">
-          <h2>New benchmark</h2>
-        </div>
-        <Form
-          submit="Run benchmark"
-          disabled={!connections.some((c) => c.tools) || !tasks.data?.length}
-          onSubmit={async (data) => {
-            const job = await api<Job>("/benchmarks", "POST", {
-              name: field(data, "name") || `${suite} · ${harness}`,
-              suite,
-              tasks: scope === "task" ? [task] : [],
-              split: split || null,
-              harness,
-              connection_id: field(data, "connection_id"),
-              profile_id: field(data, "profile_id") || null,
-              timeout: numeric(data, "timeout"),
-              max_turns: numeric(data, "max_turns"),
-            });
-            location.assign(`/jobs/${job.id}`);
-          }}
-        >
-          <div class="scope-control" role="group" aria-label="Run scope">
-            {[["task", "Single task"], ["suite", "Suite / split"]].map((
-              [value, label],
-            ) => (
-              <button
-                key={value}
-                type="button"
-                class={`button ${scope === value ? "primary" : "secondary"}`}
-                aria-pressed={scope === value}
-                onClick={() => setScope(value)}
-              >
-                {label}
-              </button>
-            ))}
+    <div class="workspace-sections">
+      {pending && <OperationCard id={pending} />}
+      <div class="main-grid">
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>New benchmark</h2>
+            <a href={preparationHref("benchmark")}>Prepare a model</a>
           </div>
-          <div class="fields three">
-            <Field label="Suite">
+          {cloneError && <Notice>{cloneError}</Notice>}
+          <Form
+            submit="Run benchmark"
+            disabled={!restored || cloning || !modelReady ||
+              !worker.available || !validTasks || (!!draft.profile && !profile)}
+            onSubmit={async () => {
+              const job = await api<Job>("/benchmarks", "POST", {
+                name: draft.name || `${draft.suite} · ${draft.harness}`,
+                suite: draft.suite,
+                tasks: draft.scope === "task"
+                  ? [draft.task]
+                  : draft.scope === "copied"
+                  ? draft.copiedTasks
+                  : [],
+                split: draft.split || null,
+                harness: draft.harness,
+                connection_id: draft.connection,
+                profile_id: draft.profile || null,
+                timeout: draft.timeout,
+                max_turns: draft.turns,
+              });
+              setPending(job.id);
+              refresh();
+            }}
+          >
+            <Field label="Model connection">
               <select
-                value={suite}
-                onChange={(e) => {
-                  setSuite(e.currentTarget.value);
-                  setTask("");
-                  setSplit("");
-                }}
+                required
+                value={draft.connection}
+                onChange={(event) =>
+                  setDraft({ ...draft, connection: event.currentTarget.value })}
               >
-                {suites.map((s) => (
-                  <option key={s.id} value={s.id}>{s.id}</option>
+                <option value="">Select a model with tool calling</option>
+                {connections.map((item) => (
+                  <option
+                    key={item.id}
+                    value={item.id}
+                    disabled={!item.tools ||
+                      !connectionStatus(item, deployments).usable}
+                  >
+                    {item.name} · {!item.tools
+                      ? "Chat only"
+                      : connectionStatus(item, deployments).label}
+                  </option>
                 ))}
               </select>
             </Field>
-            <Field label="Split">
-              <select
-                value={split}
-                onChange={(e) => {
-                  setSplit(e.currentTarget.value);
-                  setTask("");
-                }}
-              >
-                <option value="">All runnable tasks</option>
-                {available?.splits.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </Field>
-            <Field label="Task">
-              <select
-                value={task}
-                disabled={scope !== "task" || !tasks.data}
-                onChange={(e) => setTask(e.currentTarget.value)}
-              >
-                {tasks.data?.map((t) => <option key={t.name}>{t.name}</option>)}
-              </select>
-            </Field>
-          </div>
-          <div class="fields two">
+            {!modelReady && (
+              <Notice>
+                Benchmarking needs an available connection with tool calling.
+                {" "}
+                <a href={preparationHref("benchmark")}>Set one up</a>; this
+                draft stays saved.
+              </Notice>
+            )}
+            {draft.scope === "copied" && (
+              <Notice>
+                Original selection: {draft.copiedTasks.length}{" "}
+                tasks. Selecting another scope replaces this set.
+              </Notice>
+            )}
+            <div class="scope-control" role="group" aria-label="Run scope">
+              {[["task", "Single task"], ["suite", "Suite / split"]].map((
+                [value, label],
+              ) => (
+                <button
+                  key={value}
+                  type="button"
+                  class={`button ${
+                    draft.scope === value ? "primary" : "secondary"
+                  }`}
+                  aria-pressed={draft.scope === value}
+                  onClick={() =>
+                    setDraft({ ...draft, scope: value, copiedTasks: [] })}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div class="fields three">
+              <Field label="Suite">
+                <select
+                  required
+                  value={draft.suite}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      suite: event.currentTarget.value,
+                      task: "",
+                      split: "",
+                      scope: "task",
+                      copiedTasks: [],
+                    })}
+                >
+                  <option value="">Select a suite</option>
+                  {suites.map((suite) => (
+                    <option key={suite.id}>{suite.id}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Split">
+                <select
+                  value={draft.split}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      split: event.currentTarget.value,
+                      task: "",
+                      scope: "task",
+                      copiedTasks: [],
+                    })}
+                >
+                  <option value="">All runnable tasks</option>
+                  {available?.splits.map((split) => (
+                    <option key={split}>{split}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Task">
+                <select
+                  value={draft.task}
+                  required={draft.scope === "task"}
+                  disabled={draft.scope !== "task"}
+                  onChange={(event) =>
+                    setDraft({ ...draft, task: event.currentTarget.value })}
+                >
+                  <option value="">Select a task</option>
+                  {tasks.data?.map((task) => (
+                    <option key={task.name}>{task.name}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
             <Field label="Harness">
               <select
-                value={harness}
-                onChange={(e) => setHarness(e.currentTarget.value)}
+                value={draft.harness}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    harness: event.currentTarget.value,
+                    profile: "",
+                  })}
               >
                 <option value="markov">Markov</option>
                 <option value="opencode">OpenCode</option>
               </select>
             </Field>
-            <Field label="Model connection">
-              <select
-                name="connection_id"
-                required
-                value={connection}
-                onChange={(e) => setConnection(e.currentTarget.value)}
-              >
-                <option value="">Select a connection</option>
-                {connections.filter((c) => c.tools).map((c) => (
-                  <option value={c.id} key={c.id}>{c.name} · {c.model}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          {!connections.length && (
-            <Notice>
-              <a href="/settings">Add a model connection</a>{" "}
-              or deploy a model in Inference.
-            </Notice>
-          )}
-          <details class="advanced">
-            <summary>Configuration</summary>
-            <div class="fields two">
-              <Field label="Run name">
-                <input
-                  name="name"
-                  maxLength={100}
-                  placeholder={`${suite} · ${harness}`}
-                />
-              </Field>
-              <Field
-                label="Harness profile"
-                hint="A saved profile overrides the limits below."
-              >
-                <select name="profile_id" key={harness}>
-                  <option value="">Custom limits</option>
-                  {profiles.filter((p) => p.harness === harness).map((p) => (
-                    <option value={p.id} key={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Agent timeout (seconds)">
-                <input
-                  type="number"
-                  name="timeout"
-                  min={30}
-                  max={86400}
-                  defaultValue={1800}
-                  required
-                />
-              </Field>
-              <Field label="Maximum turns">
-                <input
-                  type="number"
-                  name="max_turns"
-                  min={1}
-                  max={1000}
-                  defaultValue={50}
-                  required
-                />
-              </Field>
-            </div>
-          </details>
-          <p class="muted selection-count">
-            {scope === "task"
-              ? "1 episode"
-              : `${tasks.data?.length || 0} episodes`} selected
-          </p>
-          {tasks.error && <Notice error>{tasks.error}</Notice>}
-        </Form>
-      </section>
-      <aside class="panel task-preview">
-        <small>{suite}</small>
-        <h2>{scope === "task" ? task : split || "All runnable tasks"}</h2>
-        {scope === "task"
-          ? (
-            <>
-              <p class="task-prompt">{preview.data?.prompt}</p>
-              <details>
-                <summary>Task identity</summary>
-                <code class="break-all">{preview.data?.task_hash}</code>
-              </details>
-            </>
-          )
-          : (
-            <p>
-              {tasks.data?.length || 0}{" "}
-              tasks will run sequentially in disposable containers.
+            <details class="advanced">
+              <summary>Run name and limits</summary>
+              <div class="fields two">
+                <Field label="Run name">
+                  <input
+                    maxLength={100}
+                    value={draft.name}
+                    onInput={(event) =>
+                      setDraft({ ...draft, name: event.currentTarget.value })}
+                    placeholder={`${draft.suite} · ${draft.harness}`}
+                  />
+                </Field>
+                <Field label="Harness profile">
+                  <select
+                    value={draft.profile}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        profile: event.currentTarget.value,
+                      })}
+                  >
+                    <option value="">Custom limits</option>
+                    {profiles.filter((item) => item.harness === draft.harness)
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+                <Field label="Agent timeout (seconds)">
+                  <input
+                    type="number"
+                    min={30}
+                    max={86400}
+                    required
+                    disabled={!!profile}
+                    value={profile?.timeout ?? draft.timeout}
+                    onInput={(event) =>
+                      setDraft({
+                        ...draft,
+                        timeout: Number(event.currentTarget.value),
+                      })}
+                  />
+                </Field>
+                <Field label="Maximum turns">
+                  <input
+                    type="number"
+                    min={1}
+                    max={1000}
+                    required
+                    disabled={!!profile}
+                    value={profile?.max_turns ?? draft.turns}
+                    onInput={(event) =>
+                      setDraft({
+                        ...draft,
+                        turns: Number(event.currentTarget.value),
+                      })}
+                  />
+                </Field>
+              </div>
+              {profile && (
+                <p class="muted">
+                  Profile controls these limits, temperature ({profile
+                    .temperature}) and context strategy ({profile
+                    .context_strategy}).
+                </p>
+              )}
+            </details>
+            <p class="muted">
+              {draft.scope === "task"
+                ? (draft.task ? 1 : 0)
+                : draft.scope === "copied"
+                ? draft.copiedTasks.length
+                : tasks.data?.length || 0} episodes selected · {worker.reason}
             </p>
-          )}
-        <div class="metadata-line">
-          <span>Protocol</span>
-          <span>Agentic benchmark</span>
-        </div>
-        <p class="muted">
-          The harness uses the selected model to edit PostgreSQL and run tools.
-          Results include execution errors separately from scored rewards.
-        </p>
-      </aside>
+            {!!draft.profile && !profile && (
+              <Notice error>
+                The saved profile is unavailable for this harness. Choose
+                another profile or custom limits.
+              </Notice>
+            )}
+            {!validTasks && (
+              <Notice>
+                Select an available suite and task selection. A copied set can
+                only run while all its tasks are still available.
+              </Notice>
+            )}
+            {tasks.error && <Notice error>{tasks.error}</Notice>}
+            {!worker.available && <a href="/#workers">Inspect workers</a>}
+          </Form>
+        </section>
+        <aside class="panel task-preview">
+          <small>{draft.suite}</small>
+          <h2>
+            {draft.scope === "task"
+              ? draft.task || "Task preview"
+              : draft.split || "All runnable tasks"}
+          </h2>
+          {draft.scope === "task"
+            ? (
+              <>
+                <p class="task-prompt">
+                  {preview.data?.prompt ||
+                    "Select a task to preview its prompt."}
+                </p>
+                {preview.error && <Notice error>{preview.error}</Notice>}
+                <details>
+                  <summary>Task identity</summary>
+                  <code class="break-all">
+                    {preview.data?.task_hash || "—"}
+                  </code>
+                </details>
+              </>
+            )
+            : (
+              <p>
+                {tasks.data?.length || 0}{" "}
+                tasks run sequentially in disposable containers.
+              </p>
+            )}
+          <p class="muted">
+            The harness asks the model to edit PostgreSQL and execute tools.
+            Execution errors are reported separately from scored rewards.
+          </p>
+        </aside>
+      </div>
+      <details class="panel" id="profiles">
+        <summary>Saved harness profiles</summary>
+        <ProfilesPanel profiles={profiles} refresh={refresh} />
+      </details>
     </div>
   );
 }

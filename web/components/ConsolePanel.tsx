@@ -101,7 +101,7 @@ export function ConsolePanel(
   );
 }
 
-function LogStream({ id }: { id: string }) {
+export function LogStream({ id }: { id: string }) {
   const [job, setJob] = useState<Job | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [error, setError] = useState("");
@@ -213,9 +213,24 @@ function LogStream({ id }: { id: string }) {
       <pre
         class="log-view console-output"
         ref={logs}
+        onScroll={(e) => {
+          if (
+            e.currentTarget.scrollHeight - e.currentTarget.scrollTop -
+                e.currentTarget.clientHeight > 50
+          ) setFollow(false);
+        }}
         tabIndex={0}
         aria-label="Execution logs"
       >{text || (events.length ? "No events match your filters." : job?.status === "queued" ? "Waiting for a capable worker. Execution logs will appear when the job starts." : "No execution events yet.")}</pre>
+      {!follow && (
+        <button
+          type="button"
+          class="text-button"
+          onClick={() => setFollow(true)}
+        >
+          Follow latest events ↓
+        </button>
+      )}
       <small class="log-caption">
         {visible.length} matching / {events.length}{" "}
         loaded events. Latest 5,000 retained in this view. Full history is

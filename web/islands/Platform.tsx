@@ -1,5 +1,3 @@
-import { useEffect, useState } from "preact/hooks";
-import { api, message, metric, terminal } from "@/lib/platform.ts";
 import type {
   Artifact,
   Connection,
@@ -7,82 +5,101 @@ import type {
   Suite,
   Worker,
 } from "@/lib/platform.ts";
+import { loadDeployments, useResource } from "@/lib/query.ts";
 import { ConsolePanel } from "@/components/ConsolePanel.tsx";
 import { WorkspacePanel } from "@/components/WorkspacePanel.tsx";
 import { BenchmarkPanel } from "@/components/BenchmarkPanel.tsx";
 import type { Profile } from "@/components/BenchmarkPanel.tsx";
 import { TrainingPanel } from "@/components/TrainingPanel.tsx";
+import { ModelsPanel } from "@/components/ModelsPanel.tsx";
 import { InferencePanel } from "@/components/InferencePanel.tsx";
 import { SettingsPanel } from "@/components/SettingsPanel.tsx";
+import { ResultsPanel } from "@/components/ResultsPanel.tsx";
 import { JobMonitor } from "@/components/JobMonitor.tsx";
-import {
-  Field,
-  JobTable,
-  Notice,
-  Resources,
-} from "@/components/PlatformUI.tsx";
+import { Notice } from "@/components/PlatformUI.tsx";
 
-type Data = {
-  suites: Suite[];
-  connections: Connection[];
-  profiles: Profile[];
-  credentials: { id: string; name: string }[];
-  artifacts: Artifact[];
-  workers: Worker[];
-  jobs: Job[];
-  next: string | null;
-};
+/** Page composition only. Each resource loads and reports failures independently. */
 export default function Platform({ page, id }: { page: string; id?: string }) {
-  const [data, setData] = useState<Data | null>(null),
-    [error, setError] = useState(""),
-    [revision, setRevision] = useState(0);
-  useEffect(() => {
-    if (id) return;
-    let stopped = false, timer: ReturnType<typeof setTimeout>;
-    async function refresh() {
-      try {
-        const [
-          suites,
-          connections,
-          profiles,
-          credentials,
-          artifacts,
-          capabilities,
-          jobs,
-        ] = await Promise.all([
-          api<Suite[]>("/suites"),
-          api<Connection[]>("/connections"),
-          api<Profile[]>("/harness-profiles"),
-          api<{ id: string; name: string }[]>("/secrets"),
-          api<Artifact[]>("/artifacts"),
-          api<{ workers: Worker[] }>("/capabilities"),
-          api<{ items: Job[]; next: string | null }>("/jobs"),
-        ]);
-        if (!stopped) {
-          setData({
-            suites,
-            connections,
-            profiles,
-            credentials,
-            artifacts,
-            workers: capabilities.workers,
-            jobs: jobs.items,
-            next: jobs.next,
-          });
-          setError("");
-        }
-      } catch (cause) {
-        if (!stopped) setError(message(cause));
-      } finally {
-        if (!stopped) timer = setTimeout(refresh, 5000);
-      }
-    }
-    refresh();
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-    };
-  }, [id, revision]);
+  const needs = (...pages: string[]) => !id && pages.includes(page);
+  const suites = useResource<Suite[]>(
+    needs("home", "benchmark", "rl") ? "/suites" : null,
+    60000,
+  );
+  const connections = useResource<Connection[]>(
+    needs("home", "models", "inference", "benchmark") ? "/connections" : null,
+  );
+  const profiles = useResource<Profile[]>(
+    needs("benchmark") ? "/harness-profiles" : null,
+    30000,
+  );
+  const artifacts = useResource<Artifact[]>(
+    needs("home", "models", "rl") ? "/artifacts" : null,
+  );
+  const capabilities = useResource<{ workers: Worker[] }>(
+    needs("home", "models", "rl", "benchmark", "inference")
+      ? "/capabilities"
+      : null,
+    5000,
+  );
+  const jobs = useResource<{ items: Job[]; next: string | null }>(
+    needs("home", "models", "rl", "benchmark", "results", "console")
+      ? "/jobs?limit=200"
+      : null,
+    5000,
+  );
+  const deployments = useResource<Job[]>(
+    needs("home", "models", "inference", "benchmark", "rl")
+      ? "/jobs?kind=deployment&limit=200"
+      : null,
+    10000,
+    loadDeployments,
+  );
+  const resources = {
+    suites,
+    connections,
+    profiles,
+    artifacts,
+    capabilities,
+    jobs,
+    deployments,
+  };
+  const refresh = () =>
+    Object.values(resources).forEach((resource) => resource.refresh());
+  const errors = Object.entries(resources).filter(([, resource]) =>
+    resource.error
+  );
+  const required: Record<string, (keyof typeof resources)[]> = {
+    home: ["jobs"],
+    models: ["artifacts", "connections"],
+    inference: ["connections"],
+    benchmark: ["suites", "connections"],
+    rl: ["suites", "artifacts"],
+    results: ["jobs"],
+    console: ["jobs"],
+    settings: [],
+  };
+  const loading = (required[page] || []).some((key) => !resources[key].data);
+  const data = {
+    suites: suites.data || [],
+    connections: connections.data || [],
+    profiles: profiles.data || [],
+    artifacts: artifacts.data || [],
+    workers: capabilities.data?.workers || [],
+    jobs: jobs.data?.items || [],
+    next: jobs.data?.next || null,
+    deployments: deployments.data || [],
+    refresh,
+  };
+  const title = ({
+    home: "Workspace",
+    benchmark: "Benchmarks",
+    results: "Workspace",
+    rl: "Training",
+    models: "Models & servers",
+    inference: "Inference",
+    settings: "Account & access",
+    console: "Console",
+  } as Record<string, string>)[page];
   if (id) {
     return (
       <main id="main-content" class="wrap platform">
@@ -90,250 +107,69 @@ export default function Platform({ page, id }: { page: string; id?: string }) {
       </main>
     );
   }
-  const title = ({
-    home: "Workspace",
-    benchmark: "Benchmark",
-    results: "Results",
-    rl: "RL",
-    inference: "Inference",
-    settings: "Settings",
-    console: "Console",
-  } as Record<string, string>)[page];
   return (
     <main id="main-content" class="wrap platform">
       <div class="page-heading">
         <h1>{title}</h1>
-        {page === "home" && (
-          <a class="button primary" href="/benchmark">New benchmark</a>
-        )}
+        <a class="mobile-account" href="/settings">Account</a>
       </div>
-      {error && (
-        <Notice error>
-          {error}
-          <button
-            type="button"
-            class="text-button"
-            onClick={() => setRevision(revision + 1)}
+      {(page === "home" || page === "results") && (
+        <nav class="workspace-tabs" aria-label="Workspace view">
+          <a href="/" aria-current={page === "home" ? "page" : undefined}>
+            Overview
+          </a>
+          <a
+            href="/results"
+            aria-current={page === "results" ? "page" : undefined}
           >
+            Runs & results
+          </a>
+        </nav>
+      )}
+      {errors.map(([name, resource]) => (
+        <Notice error key={name}>
+          {name}: {resource.error} {resource.data && (
+            <span>
+              Showing data received {resource.updated
+                ? new Date(resource.updated).toLocaleTimeString()
+                : "earlier"}.
+            </span>
+          )}
+          <button type="button" class="text-button" onClick={resource.refresh}>
             Retry
           </button>
         </Notice>
-      )}
-      {!data && !error && (
-        <p class="loading-state" role="status">Loading workspace…</p>
-      )}
-      {data && (
-        <>
-          {page === "benchmark" && (
-            <BenchmarkPanel
-              suites={data.suites}
-              connections={data.connections}
-              profiles={data.profiles}
-            />
-          )}
-          {page === "home" && <WorkspacePanel {...data} />}
-          {page === "console" && (
-            <ConsolePanel jobs={data.jobs} next={data.next} />
-          )}
-          {page === "results" && <Results jobs={data.jobs} next={data.next} />}
-          {page === "rl" && (
-            <>
-              <TrainingPanel artifacts={data.artifacts} suites={data.suites} />
-              <Resources workers={data.workers} />
-              <section class="panel">
-                <div class="panel-heading">
-                  <h2>Training & evaluation history</h2>
-                  <a href="/results">View all</a>
-                </div>
-                <JobTable
-                  jobs={data.jobs.filter((j) =>
-                    ["training", "evaluation"].includes(j.kind)
-                  )}
-                />
-              </section>
-            </>
-          )}
-          {page === "inference" && (
-            <InferencePanel
-              artifacts={data.artifacts}
-              connections={data.connections}
-              jobs={data.jobs}
-              credentials={data.credentials}
-            />
-          )}
-          {page === "settings" && (
-            <>
-              <SettingsPanel
+      ))}
+      {loading
+        ? (
+          <p class="loading-state" role="status">
+            {errors.length
+              ? "Waiting for required data. Retry the failed request above."
+              : "Loading…"}
+          </p>
+        )
+        : (
+          <>
+            {page === "home" && <WorkspacePanel {...data} />}
+            {page === "models" && <ModelsPanel {...data} />}
+            {page === "inference" && (
+              <InferencePanel
                 connections={data.connections}
-                profiles={data.profiles}
-                credentials={data.credentials}
-                refresh={() => setRevision(revision + 1)}
+                deployments={data.deployments}
+                workers={data.workers}
               />
-              <div id="workers">
-                <Resources workers={data.workers} />
-              </div>
-            </>
-          )}
-        </>
-      )}
-    </main>
-  );
-}
-
-function Results({ jobs, next }: { jobs: Job[]; next: string | null }) {
-  const [kind, setKind] = useState(""),
-    [status, setStatus] = useState(""),
-    [search, setSearch] = useState(""),
-    [older, setOlder] = useState<Job[]>([]),
-    [cursor, setCursor] = useState(next),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [compare, setCompare] = useState<Job[]>([]);
-  useEffect(() => {
-    if (!older.length) setCursor(next);
-  }, [next, older.length]);
-  useEffect(() => {
-    const ids = new URLSearchParams(location.search).get("compare")?.split(",")
-      .slice(0, 4);
-    if (ids?.length) {
-      Promise.all(ids.map((id) => api<Job>("/jobs/" + encodeURIComponent(id))))
-        .then(setCompare).catch((cause) => setError(message(cause)));
-    }
-  }, []);
-  const combined = [
-    ...jobs,
-    ...older.filter((item) => !jobs.some((j) => item.id === j.id)),
-  ];
-  const filtered = combined.filter((j) =>
-    (!kind || kind === j.kind) && (!status || status === j.status) &&
-    `${j.id} ${j.name} ${j.config.suite || ""} ${
-      j.config.connection?.model || ""
-    }`.toLowerCase().includes(search.toLowerCase())
-  );
-  const comparable = compare.length > 1 &&
-    compare.every((j) =>
-      j.config.protocol === compare[0].config.protocol &&
-      j.config.suite === compare[0].config.suite &&
-      JSON.stringify(j.config.task_hashes) ===
-        JSON.stringify(compare[0].config.task_hashes) &&
-      j.config.split === compare[0].config.split && terminal(j)
-    );
-  return (
-    <>
-      {compare.length > 0 && (
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Comparison</h2>
-            <a href="/results">Close</a>
-          </div>
-          {!comparable && (
-            <Notice>
-              These runs have different task sets, protocols, splits, or
-              unfinished results. Their aggregate rewards are not directly
-              comparable.
-            </Notice>
-          )}
-          <JobTable jobs={compare} />
-          <div class="comparison-grid">
-            {compare.map((j) => (
-              <div key={j.id}>
-                <h3>{j.name}</h3>
-                <dl>
-                  <dt>Protocol</dt>
-                  <dd>{j.config.protocol || "—"}</dd>
-                  <dt>Split</dt>
-                  <dd>{String(j.config.split || "All")}</dd>
-                  <dt>Solve rate</dt>
-                  <dd>
-                    {j.result?.solve_rate == null
-                      ? "—"
-                      : metric(j.result.solve_rate * 100) + "%"}
-                  </dd>
-                  <dt>Execution errors</dt>
-                  <dd>{String(j.result?.execution_errors ?? "—")}</dd>
-                </dl>
-                <details>
-                  <summary>Configuration</summary>
-                  <pre class="json-view">{JSON.stringify(j.config, null, 2)}</pre>
-                </details>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      <section class="panel">
-        <div class="fields three result-filters">
-          <Field label="Search">
-            <input
-              type="search"
-              placeholder="Name, model, suite or ID"
-              value={search}
-              onInput={(e) => setSearch(e.currentTarget.value)}
-            />
-          </Field>
-          <Field label="Type">
-            <select
-              value={kind}
-              onChange={(e) => setKind(e.currentTarget.value)}
-            >
-              <option value="">All types</option>
-              {[
-                "benchmark",
-                "training",
-                "evaluation",
-                "deployment",
-                "model_import",
-                "chat",
-              ].map((k) => <option key={k}>{k}</option>)}
-            </select>
-          </Field>
-          <Field label="Status">
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.currentTarget.value)}
-            >
-              <option value="">All statuses</option>
-              {[
-                "queued",
-                "preparing",
-                "running",
-                "cancelling",
-                "succeeded",
-                "failed",
-                "cancelled",
-              ].map((s) => <option key={s}>{s}</option>)}
-            </select>
-          </Field>
-        </div>
-        {error && <Notice error>{error}</Notice>}
-        <JobTable jobs={filtered} compare />
-        {cursor !== null && (
-          <div class="panel-footer">
-            <small>Filters apply to {combined.length} loaded jobs.</small>
-            <button
-              type="button"
-              class="button secondary"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const value = await api<
-                    { items: Job[]; next: string | null }
-                  >(`/jobs?before=${cursor}`);
-                  setOlder([...older, ...value.items]);
-                  setCursor(value.next);
-                } catch (cause) {
-                  setError(message(cause));
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              {busy ? "Loading…" : "Load older jobs"}
-            </button>
-          </div>
+            )}
+            {page === "benchmark" && <BenchmarkPanel {...data} />}
+            {page === "rl" && <TrainingPanel {...data} />}
+            {page === "results" && (
+              <ResultsPanel jobs={data.jobs} next={data.next} />
+            )}
+            {page === "console" && (
+              <ConsolePanel jobs={data.jobs} next={data.next} />
+            )}
+            {page === "settings" && <SettingsPanel />}
+          </>
         )}
-      </section>
-    </>
+    </main>
   );
 }

@@ -1,4 +1,9 @@
 import { useEffect, useState } from "preact/hooks";
+import {
+  clearWorkspaceSession,
+  readSession,
+  writeSession,
+} from "@/lib/workspace.ts";
 import { api, field, message } from "@/lib/platform.ts";
 
 export default function Login() {
@@ -40,6 +45,10 @@ export default function Login() {
                 });
               }
               await api("/auth/login", "POST", body);
+              if (
+                readSession("account-name", "") !== body.username
+              ) clearWorkspaceSession();
+              writeSession("account-name", body.username);
               location.assign("/");
             } catch (cause) {
               setError(message(cause));

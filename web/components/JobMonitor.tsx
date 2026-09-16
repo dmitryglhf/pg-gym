@@ -7,6 +7,7 @@ import type {
   Event,
   Job,
 } from "@/lib/platform.ts";
+import { openActivity } from "@/lib/workspace.ts";
 import { ActivityStatus, useActivityClock } from "./ActivityStatus.tsx";
 import { DiffView } from "./DiffView.tsx";
 import { Empty, Notice, Status } from "./PlatformUI.tsx";
@@ -121,7 +122,9 @@ export function JobMonitor(
       {!compact && (
         <div class="page-heading">
           <div>
-            <a class="back-link" href="/results">← Results</a>
+            <a class="back-link" href="/results">
+              ← Workspace / Runs & results
+            </a>
             <h1>{job.name}</h1>
             <span class="muted">
               {job.kind.replaceAll("_", " ")} · {id.slice(0, 12)} ·{" "}
@@ -130,6 +133,16 @@ export function JobMonitor(
           </div>
           <div class="inline-actions">
             <Status job={job} />
+            {["benchmark", "training", "evaluation"].includes(job.kind) && (
+              <a
+                class="button secondary"
+                href={`${
+                  job.kind === "benchmark" ? "/benchmark" : "/rl"
+                }?clone=${job.id}`}
+              >
+                Edit & run again
+              </a>
+            )}
             {terminal(job) && job.kind !== "chat" && (
               <button
                 type="button"
@@ -137,7 +150,7 @@ export function JobMonitor(
                 disabled={busy}
                 onClick={() => command("retries")}
               >
-                Run again
+                Queue saved configuration
               </button>
             )}
           </div>
@@ -245,7 +258,12 @@ export function JobMonitor(
         <>
           {job.result?.connection_id && !terminal(job) && (
             <div class="panel inline-actions">
-              <a class="button primary" href="/inference">Open chat</a>
+              <a
+                class="button primary"
+                href={`/inference?connection=${job.result.connection_id}`}
+              >
+                Open chat
+              </a>
               <a
                 class="button secondary"
                 href={`/benchmark?connection=${job.result.connection_id}`}
@@ -274,7 +292,13 @@ export function JobMonitor(
               </div>
               <div>
                 <small>Execution errors</small>
-                <strong>{completed.filter((e) => e.error).length}</strong>
+                <strong>
+                  {String(
+                    job.result?.execution_errors ?? completed.filter((e) =>
+                      e.error
+                    ).length,
+                  )}
+                </strong>
               </div>
             </section>
           )}
@@ -339,9 +363,13 @@ export function JobMonitor(
           <section class="panel">
             <div class="panel-heading">
               <h2>Activity & logs</h2>
-              <a href={`/console?job=${encodeURIComponent(id)}`}>
-                Open console →
-              </a>
+              <button
+                type="button"
+                class="text-button"
+                onClick={() => openActivity(id)}
+              >
+                Open shared console
+              </button>
               <label class="check-field">
                 <input
                   type="checkbox"
@@ -354,6 +382,12 @@ export function JobMonitor(
             <pre
               class="log-view"
               ref={logs}
+              onScroll={(event) => {
+                const node = event.currentTarget;
+                if (
+                  node.scrollHeight - node.scrollTop - node.clientHeight > 50
+                ) setFollow(false);
+              }}
               tabIndex={0}
               aria-label="Execution logs"
             >{events.filter((e) => !["resource", "delta"].includes(e.kind)).slice(-1000).map((e) => `${new Date(e.at * 1000).toLocaleTimeString()}  ${e.kind === "log" ? String(e.payload.text || "") : e.kind + " " + JSON.stringify(e.payload)}`).join("\n") || "No execution events yet."}</pre>
@@ -536,7 +570,7 @@ function Artifacts({ jobId }: { jobId: string }) {
           </summary>
           {a.kind === "adapter" && (
             <div class="inline-actions">
-              <a class="button secondary" href={`/inference?artifact=${a.id}`}>
+              <a class="button secondary" href={`/models?artifact=${a.id}`}>
                 Open in Inference
               </a>
               <a
