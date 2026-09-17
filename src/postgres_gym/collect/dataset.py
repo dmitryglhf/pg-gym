@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import math
@@ -172,13 +173,11 @@ def group_key(suite: str, task: str) -> str:
     """Tasks cut from one upstream commit stay on the same side of the split."""
     if (suite, task) not in _GROUPS:
         key = f"{suite}:{task}"
-        try:
+        with contextlib.suppress(Exception, SystemExit):
             settings.use_suite(suite)
             _, oracle = registry.load(suite).load(task)
             if sha := oracle.get("sha"):
                 key = f"{suite}:{sha}"
-        except Exception:  # noqa: BLE001
-            pass
         _GROUPS[(suite, task)] = key
     return _GROUPS[(suite, task)]
 

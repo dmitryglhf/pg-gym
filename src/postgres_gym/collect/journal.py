@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Self
 
 import httpx2
 
@@ -83,7 +84,7 @@ class Recorder:
         self._server: ThreadingHTTPServer | None = None
         self._thread: threading.Thread | None = None
 
-    def start(self) -> Recorder:
+    def start(self) -> Self:
         if self._server is not None:
             return self
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -130,7 +131,7 @@ class Recorder:
             self._server = None
         self._client.close()
 
-    def __enter__(self) -> Recorder:
+    def __enter__(self) -> Self:
         return self.start()
 
     def __exit__(self, *_: object) -> None:
@@ -193,11 +194,14 @@ class Recorder:
     def _refusal(self, turns: Turns) -> dict | None:
         if self.budget is None or turns.prompt_tokens <= self.budget:
             return None
+        # Worded so markov files it as a plain failed request, not as a context
+        # overflow it would try to compact its way out of.
         return {
             "kind": "budget",
-            "type": "prompt_token_budget",
+            "type": "token_budget",
             "message": (
-                f"prompt token budget exhausted ({turns.prompt_tokens} > {self.budget})"
+                f"pg-gym ends the episode: the last call carried "
+                f"{turns.prompt_tokens} tokens, the ceiling is {self.budget}"
             ),
         }
 

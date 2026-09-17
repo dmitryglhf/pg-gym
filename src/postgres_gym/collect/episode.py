@@ -21,6 +21,7 @@ TOOLS = ("edit", "read_image", "shell", "tree", "write")
 MAX_TURNS_MESSAGE = (
     "I've reached the maximum number of actions I can do without user input."
 )
+ERROR_REPLY = "Ran into this error:"
 STATES = (
     "scored_pass",
     "scored_fail",
@@ -178,6 +179,7 @@ def converse(url: str, prompt: str, harness: Harness) -> dict:
                 usage=result.usage.model_dump(),
                 text_tail=result.text[-2000:],
                 max_turns_message=MAX_TURNS_MESSAGE in result.text,
+                error_reply=ERROR_REPLY in result.text,
             )
             agent.loop.run(chat.close())
     except TimeoutError:
@@ -188,7 +190,8 @@ def converse(url: str, prompt: str, harness: Harness) -> dict:
     return outcome
 
 
-def classify(result: EpisodeResult, outcome: dict, turns: Turns, max_turns: int) -> str:
+def classify(result: EpisodeResult, outcome: dict, turns: Turns) -> str:
+    """How the episode ended; `pass` is reported separately."""
     record = result.record or {}
     meta = record.get("agent_meta") or {}
     if not result.execution.ok or not record or record.get("error"):
@@ -199,9 +202,9 @@ def classify(result: EpisodeResult, outcome: dict, turns: Turns, max_turns: int)
         return "agent_timeout"
     if turns.exhausted:
         return "budget_exhausted"
-    if outcome.get("max_turns_message") or turns.calls >= max_turns:
+    if outcome.get("max_turns_message"):
         return "max_turns"
-    if turns.errors or outcome.get("error"):
+    if turns.errors or outcome.get("error") or outcome.get("error_reply"):
         return "provider_error"
     return "scored_pass" if record.get("pass") else "scored_fail"
 
@@ -230,7 +233,7 @@ def report(
         "image_id": execution.get("image_id", ""),
         "max_turns": harness.max_turns,
         "token_budget": harness.token_budget,
-        "state": classify(result, outcome, turns, harness.max_turns),
+        "state": classify(result, outcome, turns),
         "pass": bool(record.get("pass")),
         "reward": record.get("reward"),
         "seconds": round(seconds, 1),

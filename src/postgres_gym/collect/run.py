@@ -5,11 +5,11 @@ import secrets
 import sys
 import threading
 import uuid
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 from postgres_gym import settings
 from postgres_gym.collect import episode
@@ -113,8 +113,10 @@ def collect(
 
 def freeze(run_dir: Path, frozen: dict, force: bool) -> None:
     path = run_dir / RUN_FILE
+    created = datetime.now(UTC).isoformat(timespec="seconds")
     if path.is_file():
         previous = json.loads(path.read_text(encoding="utf-8"))
+        created = previous.pop("created", created)
         if previous != frozen and not force:
             changed = sorted(
                 k
@@ -125,7 +127,7 @@ def freeze(run_dir: Path, frozen: dict, force: bool) -> None:
                 f"{path} was frozen with a different harness ({', '.join(changed)} differ); "
                 "use another --run directory or pass --force"
             )
-    frozen = {**frozen, "created": datetime.now(UTC).isoformat(timespec="seconds")}
+    frozen = {**frozen, "created": created}
     path.write_text(json.dumps(frozen, indent=2), encoding="utf-8")
 
 
@@ -176,8 +178,11 @@ def save_report(run_dir: Path, result: dict) -> Path:
 
 
 def describe(result: dict) -> str:
+    outcome = result["state"]
+    if result["pass"] and not outcome.startswith("scored"):
+        outcome += " (pass)"
     return (
-        f"{result['suite']}/{result['task']} #{result['attempt']}: {result['state']}"
+        f"{result['suite']}/{result['task']} #{result['attempt']}: {outcome}"
         f" · {result['provider_calls']} calls"
         f" · {result['max_prompt_tokens']} max prompt tokens"
         f" · {result['seconds']}s"
