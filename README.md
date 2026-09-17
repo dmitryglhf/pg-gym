@@ -2,12 +2,12 @@
 
 <img src="https://raw.githubusercontent.com/dmitryglhf/pg-gym/main/assets/slonik.svg" alt="logo" width="180"/>
 
-# `Postgres Gym`
+# `PostgresGym`
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776ab.svg)](https://python.org)
 
-A self-hosted workspace for PostgreSQL agent benchmarks, GRPO training, model evaluation and vLLM inference.
+An Interactive Environment for LLM Agents in Database-Engine Development
 
 </div>
 

@@ -1,4 +1,4 @@
-site_name: Postgres Gym
+site_name: PG-Gym Docs
 site_description: Self-hosted workspace for PostgreSQL agent benchmarks, GRPO training, evaluation and vLLM inference
 repo_url: https://github.com/dmitryglhf/pg-gym
 repo_name: dmitryglhf/pg-gym
