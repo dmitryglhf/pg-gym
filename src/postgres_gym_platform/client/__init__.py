@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
+import httpx2
 
 
 class ApiError(Exception):
@@ -18,7 +18,7 @@ class JobError(Exception):
 
 class Client:
     def __init__(self, url: str, token: str = "", timeout: float = 60):
-        self.http = httpx.Client(
+        self.http = httpx2.Client(
             base_url=url.rstrip("/"),
             headers={"Authorization": "Bearer " + token} if token else {},
             timeout=timeout,

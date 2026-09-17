@@ -1,16 +1,34 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling>=1.27,<2"]
+requires = [ "hatchling>=1.27,<2" ]
 
 [project]
 name = "postgres-gym"
 version = "0.2.0"
 description = "PostgreSQL agent benchmark and training environment"
 requires-python = ">=3.11"
-dependencies = ["rich>=15,<16", "httpx>=0.28,<0.29", "typer>=0.16,<1"]
-
-[project.scripts]
-pg-gym = "postgres_gym.cli_app:main"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+  "httpx2>=2.12,<3",
+  "rich>=15,<16",
+  "typer>=0.16,<1",
+]
+optional-dependencies.platform = [
+  "argon2-cffi>=25,<26",
+  "cryptography>=50,<51",
+  "fastapi>=0.141,<0.142",
+  "huggingface-hub>=1.31,<2",
+  "psutil>=7.2,<8",
+  "pydantic>=2.13,<3",
+  "uvicorn>=0.52,<0.53",
+]
+scripts.pg-gym = "postgres_gym.cli:main"
 
 [dependency-groups]
 dev = [
@@ -20,41 +38,44 @@ dev = [
   "ty>=0.0.78",
 ]
 training = [
-  "accelerate>=1.0",
-  "datasets>=3.0",
+  "accelerate>=1",
+  "datasets>=3",
   "safetensors>=0.5",
   "torch>=2.6",
   "transformers>=5.16,<6",
   "trl>=1.12,<2",
 ]
 training-lora = [
+  "peft==0.20",
   { include-group = "training" },
-  "peft==0.20.0",
 ]
-training-nora = [
-  { include-group = "training" },
-  "peft @ git+https://github.com/Joluck/NoRA.git#subdirectory=peft",
+training-mlx = [ "mlx-lm>=0.30" ]
+
+[tool.hatch]
+build.targets.sdist.include = [
+  "src",
+  "suites",
+  "deploy",
+  "web",
+  "tests",
+  "docs",
+  "pyproject.toml",
+  "README.md",
+  "AGENTS.md",
+  "uv.lock",
+  ".github",
+  ".dockerignore",
+  ".env.example",
+  ".gitignore",
 ]
-training-mlx = ["mlx-lm>=0.30"]
-
-[tool.uv]
-conflicts = [
-  [
-    { group = "training-lora" },
-    { group = "training-nora" },
-  ],
+build.targets.sdist.exclude = [
+  "web/node_modules",
+  "tests/node_modules",
+  "web/.deno-cache",
+  "web/_fresh",
+  "**/__pycache__",
+  "**/*.pyc"
 ]
-
-[project.optional-dependencies]
-platform = ["fastapi>=0.141,<0.142", "uvicorn>=0.52,<0.53", "argon2-cffi>=25,<26", "cryptography>=50,<51", "pydantic>=2.13,<3", "huggingface-hub>=1.31,<2", "psutil>=7.2,<8"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/postgres_gym", "src/postgres_gym_platform", "src/postgres_gym_data"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"suites" = "postgres_gym_data/suites"
-"deploy" = "postgres_gym_platform/templates/deploy"
-
-[tool.hatch.build.targets.sdist]
-include = ["src", "suites", "deploy", "web", "tests", "docs", "pyproject.toml", "README.md", "AGENTS.md", "uv.lock", ".github", ".dockerignore", ".env.example", ".gitignore"]
-exclude = ["web/node_modules", "tests/node_modules", "web/.deno-cache", "web/_fresh", "**/__pycache__", "**/*.pyc"]
+build.targets.wheel.packages = [ "src/postgres_gym", "src/postgres_gym_platform", "src/postgres_gym_data" ]
+build.targets.wheel.force-include."suites" = "postgres_gym_data/suites"
+build.targets.wheel.force-include."deploy" = "postgres_gym_platform/templates/deploy"

@@ -40,7 +40,7 @@ The browser/CLI integration harness starts its own API, web, CPU worker and prov
 
 ## Target-host acceptance
 
-1. Build API/web/worker images, initialize an instance and start it with `pg-gym platform up`. Confirm health, registration, browser login and remote CLI login over the intended HTTPS origin. Compose templates were reviewed here, but Docker Compose was not executed in this environment.
+1. Build API/web/worker images, initialize an instance and start it with `pg-gym platform start`. Confirm health, registration, browser login and remote CLI login over the intended HTTPS origin. Compose templates were reviewed here, but Docker Compose was not executed in this environment.
 2. Fetch the pinned PostgreSQL mirror and build the task image using an accessible Markov archive and its verified checksum. Run both suite checks and `pg-gym dev selftest --suite sql-function-set --task area`. Check Markov and OpenCode separately against your actual tool-capable model connection.
 3. Import a small compatible safetensors model. Verify its resolved revision and downloaded manifest. Real Hugging Face network transfers and gated repository credentials were not exercised here.
 4. Run a short GRPO job on the train split. Confirm rewards come from actual disposable PostgreSQL tasks, metrics continue updating, and the resulting adapter/checkpoint files are readable. Stop a second run during grading and confirm its task containers are removed before the worker accepts another GPU job.

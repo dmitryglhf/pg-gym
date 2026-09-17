@@ -1,3 +1,3 @@
-from postgres_gym.cli_app import main
+from postgres_gym.cli import main
 
 main()

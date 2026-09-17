@@ -31,14 +31,12 @@ A quiet trainer may be compiling, downloading, evaluating or stalled. Heartbeats
 Quiesce submissions and stop workers before a consistent full backup. The backup command uses SQLite's online backup API and includes the master key, authentication secrets and artifact files. It does not include the worker's in-flight execution directories, Docker images or downloaded PostgreSQL mirror. Preserve worker directories separately if resuming in-flight processes is required.
 
 ```sh
-export PG_GYM_DATA="$PWD/pg-gym-instance/data"
-export PG_GYM_SECRET_DIR="$PWD/pg-gym-instance/secrets"
-pg-gym storage backup ./pg-gym-backup.zip
+pg-gym platform backup ./pg-gym-backup.zip --directory ./pg-gym-instance
 ```
 
-Backups contain credentials in encrypted form together with their decryption key. Protect them as secrets. Restore with API/workers stopped and empty destination directories, using `pg-gym storage restore PATH`. Malformed paths and unexpected archive members are rejected. The restore keeps the original jobs and ownership; worker/process recovery still requires the corresponding worker storage and host. Run restore verification on a disposable instance before relying on a backup policy.
+Backups contain credentials in encrypted form together with their decryption key. Protect them as secrets. Restore with API/workers stopped and empty destination directories, using `pg-gym platform restore PATH --directory NEW_DIR`. Malformed paths and unexpected archive members are rejected. The restore keeps the original jobs and ownership; worker/process recovery still requires the corresponding worker storage and host. Run restore verification on a disposable instance before relying on a backup policy.
 
-After changing a forgotten password with `pg-gym storage reset-password USER`, all sessions and API tokens for that user are revoked. There is no email password-reset flow.
+After changing a forgotten password with `pg-gym platform reset-password USER --directory DIR`, all sessions and API tokens for that user are revoked. There is no email password-reset flow.
 
 Before updating, back up the instance, stop workers, build matching API/web/worker images from the new release, and restart. The API migrates schema versions forward and rejects a database from a newer release. Keep the old images and backup for rollback. Do not replace a newer database with older application code without restoring a compatible backup.
 

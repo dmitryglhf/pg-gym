@@ -5,7 +5,7 @@ import time
 import uuid
 from collections.abc import Iterator
 
-import httpx
+import httpx2
 
 from . import Client, JobError
 
@@ -66,7 +66,7 @@ def submit(
         raise ValueError("--idempotency-key must contain at most 200 characters")
     try:
         job = client.request("POST", path, json=body, headers={"Idempotency-Key": key})
-    except httpx.HTTPError:
+    except httpx2.HTTPError:
         print(
             "Submission unconfirmed. Repeat with --idempotency-key " + key,
             file=sys.stderr,

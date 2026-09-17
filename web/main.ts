@@ -1,6 +1,6 @@
 import { App, staticFiles } from "fresh";
 
-const base = (Deno.env.get("PG_GYM_API_URL") || "http://127.0.0.1:8001")
+const base = (Deno.env.get("PG_GYM_API_URL") || "http://127.0.0.1:9433")
   .replace(/\/$/, "");
 export const app = new App()
   .use(async (ctx) => {

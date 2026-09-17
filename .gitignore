@@ -17,3 +17,4 @@ __pycache__/
 /dist/
 /var/
 .ty_cache/
+docs/internal

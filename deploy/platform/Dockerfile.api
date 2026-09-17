@@ -16,4 +16,4 @@ RUN useradd --uid 1000 --create-home gym && mkdir -p /data /worker /secrets && c
 USER gym
 WORKDIR /data
 ENTRYPOINT ["/usr/bin/tini", "--", "pg-gym"]
-CMD ["server", "api", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["server", "api", "--host", "0.0.0.0"]

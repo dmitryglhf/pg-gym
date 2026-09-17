@@ -1,40 +1,38 @@
-import json
 import zipfile
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from typer.testing import CliRunner
 
+from postgres_gym.cli import app
 from postgres_gym_platform.api import create_app
-from postgres_gym_platform.cli import parser, run
+from postgres_gym_platform.instance import Instance, compose, storage
 
 from .conftest import connection, submit
 
+ROOT = Path(__file__).resolve().parents[2]
 
-def test_backup_restore_keeps_ownership_credentials_and_history(
-    platform, tmp_path, monkeypatch, capsys
-):
+
+def test_backup_restore_keeps_ownership_credentials_and_history(platform, tmp_path):
     client, app, users = platform
     cfg = app.state.config
     conn = connection(client, users["alice"])
     job = submit(client, users["alice"], conn["id"]).json()
-    monkeypatch.setenv("PG_GYM_DATA", str(cfg.data))
-    monkeypatch.setenv("PG_GYM_SECRET_DIR", str(cfg.secret_dir))
+    (cfg.secret_dir / "worker-token").write_text(cfg.worker_token)
+    (cfg.secret_dir / "registration-token").write_text(cfg.registration_token)
+    instance = Instance(cfg.data.parent, "pg-gym-" + "0" * 32)
     archive = tmp_path / "backup.zip"
-    assert (
-        run(
-            parser().parse_args(["storage", "backup", str(archive), "--output", "json"])
-        )
-        == 0
-    )
-    assert json.loads(capsys.readouterr().out)["path"] == str(archive)
+
+    assert storage.backup(instance, archive)["path"] == str(archive)
+
+    restored_dir = tmp_path / "restored"
+    result = storage.restore(archive, restored_dir, "http://localhost:9432", False)
+    assert result["ok"]
     restored = replace(
-        cfg, data=tmp_path / "restored-data", secret_dir=tmp_path / "restored-secrets"
+        cfg, data=restored_dir / "data", secret_dir=restored_dir / "secrets"
     )
-    monkeypatch.setenv("PG_GYM_DATA", str(restored.data))
-    monkeypatch.setenv("PG_GYM_SECRET_DIR", str(restored.secret_dir))
-    assert run(parser().parse_args(["storage", "restore", str(archive)])) == 0
     with TestClient(create_app(restored)) as after:
         assert (
             after.get(f"/api/v1/jobs/{job['id']}", headers=users["alice"]).json()["id"]
@@ -52,59 +50,60 @@ def test_backup_restore_keeps_ownership_credentials_and_history(
             after.app.state.vault.decrypt(encrypted.encode())
             == b"private-provider-test"
         )
-    with pytest.raises(ValueError, match="empty instance"):
-        run(parser().parse_args(["storage", "restore", str(archive)]))
+    with pytest.raises(ValueError, match="nonexistent instance directory"):
+        storage.restore(archive, restored_dir, "http://localhost:9432", False)
 
 
-def test_restore_rejects_traversal_before_writing(tmp_path, monkeypatch):
-    monkeypatch.setenv("PG_GYM_DATA", str(tmp_path / "data"))
-    monkeypatch.setenv("PG_GYM_SECRET_DIR", str(tmp_path / "secrets"))
+def test_restore_rejects_traversal_before_writing(tmp_path):
     archive = tmp_path / "bad.zip"
     with zipfile.ZipFile(archive, "w") as z:
         z.writestr("platform.sqlite", "database")
         z.writestr("secrets/master.key", "key")
+        z.writestr("secrets/worker-token", "token")
         z.writestr("artifacts/../../escaped", "bad")
+
     with pytest.raises(ValueError, match="Invalid backup member"):
-        run(parser().parse_args(["storage", "restore", str(archive)]))
+        storage.restore(archive, tmp_path / "restored", "http://localhost:9432", True)
+
     assert not (tmp_path / "escaped").exists()
-    assert not list((tmp_path / "data").iterdir())
+    assert not (tmp_path / "restored").exists()
 
 
 def test_cli_rejects_invalid_limits_before_submission():
+    runner = CliRunner()
     for args in (
-        ["benchmark", "run", "--min-solve-rate", "0.5"],
-        ["benchmark", "run", "--wait", "--min-solve-rate", "2"],
-        ["benchmark", "run", "--timeout", "nan"],
+        ["benchmark", "submit", "--min-solve-rate", "0.5"],
+        ["benchmark", "submit", "--wait", "--min-solve-rate", "2"],
+        ["--timeout", "nan", "benchmark", "submit"],
     ):
-        with pytest.raises(ValueError):
-            run(parser().parse_args(args))
+        assert runner.invoke(app, args).exit_code == 2, args
 
 
-def test_platform_start_initializes_builds_and_starts_without_resetting(tmp_path, monkeypatch):
-    from postgres_gym_platform import operations
-
+def test_platform_start_initializes_builds_and_starts_without_resetting(
+    tmp_path, monkeypatch
+):
     commands = []
-    monkeypatch.setattr(operations, "checked", lambda command, **kwargs: commands.append(command))
-    source = Path(__file__).resolve().parents[2]
+    monkeypatch.setattr(
+        compose, "checked", lambda command, **kwargs: commands.append(command)
+    )
     directory = tmp_path / "instance"
-    args = parser().parse_args(["platform", "start", "--source", str(source), "--directory", str(directory)])
-    assert operations.operate(args)["ok"]
+
+    assert compose.start_platform(ROOT, directory)["ok"]
     original = (directory / "secrets" / "master.key").read_bytes()
     assert sum(command[:2] == ["docker", "build"] for command in commands) == 2
     assert "--wait" in commands[-1] and "up" in commands[-1]
-    assert operations.operate(args)["ok"]
+    assert "PG_GYM_API_PORT=9433" in (directory / "platform.env").read_text()
+
+    assert compose.start_platform(ROOT, directory)["ok"]
     assert (directory / "secrets" / "master.key").read_bytes() == original
 
 
 def test_platform_start_supports_code_free_registration(tmp_path, monkeypatch):
-    from postgres_gym_platform import operations
-
-    monkeypatch.setattr(operations, "checked", lambda *args, **kwargs: None)
-    source = Path(__file__).resolve().parents[2]
+    monkeypatch.setattr(compose, "checked", lambda *args, **kwargs: None)
     directory = tmp_path / "instance"
-    args = parser().parse_args(["platform", "start", "--source", str(source), "--directory", str(directory), "--open-registration"])
-    assert operations.operate(args)["ok"]
+
+    assert compose.start_platform(ROOT, directory, open_registration=True)["ok"]
     assert "PG_GYM_OPEN_REGISTRATION=1" in (directory / "platform.env").read_text()
     assert "PG_GYM_OPEN_REGISTRATION:" in (directory / "compose.yaml").read_text()
-    result = operations.operate(args)
+    result = compose.start_platform(ROOT, directory, open_registration=True)
     assert result["ok"] and "registration_code" not in result

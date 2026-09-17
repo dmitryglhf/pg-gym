@@ -21,7 +21,7 @@ def check_cli(python, env, directory):
 
     def command(*args, stdin=None):
         result = subprocess.run(
-            [python, "-m", "postgres_gym_platform.cli", *args, "--output", "json"],
+            [python, "-m", "postgres_gym.cli", "--output", "json", *args],
             env=env,
             input=stdin,
             capture_output=True,
@@ -132,7 +132,7 @@ def main():
                 [
                     python,
                     "-m",
-                    "postgres_gym_platform.cli",
+                    "postgres_gym.cli",
                     "server",
                     "api",
                     "--port",
@@ -152,7 +152,7 @@ def main():
             )
             start(
                 "worker",
-                [python, "-m", "postgres_gym_platform.cli", "server", "worker"],
+                [python, "-m", "postgres_gym.cli", "server", "worker"],
             )
             for _ in range(60):
                 try:

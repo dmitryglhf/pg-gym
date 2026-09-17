@@ -14,8 +14,8 @@ x-worker: &worker
   networks: [control, tasks, serving]
   extra_hosts: ["host.docker.internal:host-gateway"]
   environment: &worker-env
-    PG_GYM_API_URL: http://api:8001
-    PG_GYM_TASK_API_URL: http://api:8001
+    PG_GYM_API_URL: http://api:${PG_GYM_API_PORT:-9433}
+    PG_GYM_TASK_API_URL: http://api:${PG_GYM_API_PORT:-9433}
     PG_GYM_SECRET_DIR: /secrets
     PG_GYM_WORKER_DATA: /worker
     PG_GYM_SERVING_NETWORK: pg-gym-serving
@@ -38,8 +38,8 @@ services:
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    environment: {PG_GYM_API_URL: 'http://api:8001'}
-    ports: ["${PG_GYM_BIND:-127.0.0.1}:${PG_GYM_PORT:-8000}:8000"]
+    environment: {PG_GYM_API_URL: 'http://api:${PG_GYM_API_PORT:-9433}'}
+    ports: ["${PG_GYM_BIND:-127.0.0.1}:${PG_GYM_PORT:-9432}:8000"]
     networks: [control]
     depends_on:
       api: {condition: service_healthy}
@@ -59,8 +59,9 @@ services:
     environment:
       PG_GYM_DATA: /data
       PG_GYM_SECRET_DIR: /secrets
+      PG_GYM_API_PORT: ${PG_GYM_API_PORT:-9433}
       PG_GYM_OPEN_REGISTRATION: ${PG_GYM_OPEN_REGISTRATION:-0}
-      PG_GYM_ORIGIN: ${PG_GYM_ORIGIN:-http://localhost:8000}
+      PG_GYM_ORIGIN: ${PG_GYM_ORIGIN:-http://localhost:9432}
       PG_GYM_SECURE_COOKIE: ${PG_GYM_SECURE_COOKIE:-0}
       PG_GYM_ALLOWED_HOSTS: ${PG_GYM_ALLOWED_HOSTS:-localhost,127.0.0.1,host.docker.internal}
     volumes:
@@ -69,7 +70,7 @@ services:
     networks: [control, tasks, serving]
     extra_hosts: ["host.docker.internal:host-gateway"]
     healthcheck:
-      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health', timeout=3)"]
+      test: [CMD, python, -c, "import urllib.request; import os; urllib.request.urlopen('http://localhost:' + os.environ['PG_GYM_API_PORT'] + '/api/v1/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 3

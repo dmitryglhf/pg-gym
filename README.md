@@ -18,7 +18,7 @@ pg-gym platform registration-code
 
 For a new local or trusted instance without registration codes, use `pg-gym platform start --source . --open-registration`. Anyone who can reach that instance can create an account. The default keeps registration codes enabled. Accounts own runs, connections and variables; separate projects are not implemented.
 
-Open `http://localhost:8000`, create an account using the registration code, and add a model connection in Settings. Keys are encrypted on the API server; the browser never receives saved keys. For a local provider outside Compose, use `http://host.docker.internal:PORT/v1`, not `localhost`, which refers to the API container.
+Open `http://localhost:9432`, create an account using the registration code, and add a model connection in Settings. Keys are encrypted on the API server; the browser never receives saved keys. For a local provider outside Compose, use `http://host.docker.internal:PORT/v1`, not `localhost`, which refers to the API container.
 
 The CPU worker supports remote chat and Hugging Face model imports immediately. Benchmarks also need the task image built from the pinned PostgreSQL source:
 
@@ -61,11 +61,11 @@ Install the CLI from a checkout or built wheel. Base CLI dependencies do not inc
 
 ```sh
 uv tool install .
-pg-gym context add local --url http://localhost:8000
+pg-gym context add local --url http://localhost:9432
 pg-gym auth login --username alice
 pg-gym --output json suites list
-pg-gym resources connections list
-pg-gym --output json --timeout 3600 benchmark run --suite sql-function-set --task area --harness markov --connection CONNECTION_ID --wait
+pg-gym connections list
+pg-gym --output json --wait-timeout 3600 benchmark submit sql-function-set --task area --harness markov --connection CONNECTION_ID --wait
 pg-gym jobs logs JOB_ID --follow
 pg-gym jobs cancel JOB_ID
 pg-gym --timeout 3600 models pull Qwen/Qwen2.5-Coder-3B-Instruct --wait
@@ -76,7 +76,7 @@ pg-gym --timeout 300 inference chat --connection CONNECTION_ID --prompt 'Explain
 pg-gym artifacts download ARTIFACT_ID --directory ./model
 ```
 
-`--config` supplies the complete launch payload; `--name` can override its name. Reuse `--idempotency-key` after an uncertain submission response. `--timeout` controls client request/wait time, not the remote experiment lifetime. Interrupting the client leaves the remote job running. Use `--min-solve-rate 0.5 --wait` for a CI benchmark threshold. Exit codes: 0 success, 1 job/server failure, 2 invalid input, 3 authentication/authorization, 4 transport failure, 6 unmet threshold, 124 wait timeout, 130 interrupted client.
+`--config` supplies the complete launch payload; `--name` can override its name. Reuse `--idempotency-key` after an uncertain submission response. `--timeout` bounds one request, `--wait-timeout` bounds `--wait`; neither limits the remote experiment lifetime. Interrupting the client leaves the remote job running. Use `--min-solve-rate 0.5 --wait` for a CI benchmark threshold. Expected failures are printed as one JSON line on stderr. Exit codes: 0 success, 1 job or command failure, 2 invalid input, 3 authentication, 4 transport failure, 6 unmet threshold, 124 wait timeout.
 
 External automation can call REST directly. [API guide](docs/rest-api.md), [OpenAPI JSON](docs/openapi.json), and `GET /api/v1/openapi.json` describe the contract.
 
@@ -91,7 +91,7 @@ result = gym.run(task.name, 'cli:markov')
 print(result.reward)
 ```
 
-`pg-gym benchmark run --local` calls the library directly with its environment settings. It does not create a platform-owned experiment. Remote launch uses web/CLI -> REST -> Python worker -> Gym. Both paths preserve the existing Gym contract. `postgres-gym` and the original training entry points remain available for library users; platform lifecycle commands no longer depend on justfile.
+`pg-gym benchmark run SUITE` calls the library directly with its environment settings and does not create a platform-owned experiment; `pg-gym benchmark submit` launches through REST, a Python worker and the same Gym. The root of the CLI lives in `postgres_gym.cli` and works on the base dependencies; `postgres_gym_platform.cli` adds the remote and instance command groups.
 
 ## Repository and data
 
@@ -120,4 +120,4 @@ deno task check
 deno task build
 ```
 
-For local web development, run the API on port 8001 and `deno task dev` with its origin configured to the dev server origin. Start `pg-gym server worker` separately. Use a private registration code or explicitly set `PG_GYM_OPEN_REGISTRATION=1` only for an intended open-registration instance. Browser integration instructions are in [verification](docs/verification.md).
+For local web development, run the API on port 9433 and `deno task dev` with its origin configured to the dev server origin. Start `pg-gym server worker` separately. Use a private registration code or explicitly set `PG_GYM_OPEN_REGISTRATION=1` only for an intended open-registration instance. Browser integration instructions are in [verification](docs/verification.md).

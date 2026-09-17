@@ -35,7 +35,10 @@ def main() -> None:
     args = parser.parse_args()
     mlx = importlib.import_module("mlx_lm")
     sampling = importlib.import_module("mlx_lm.sample_utils")
-    model, tokenizer = mlx.load(args.model, adapter_path=args.adapter)
+    # mlx_lm annotates load() as a Union of a 2-tuple and a 3-tuple.
+    model, tokenizer = mlx.load(  # ty: ignore[invalid-assignment]
+        args.model, adapter_path=args.adapter
+    )
     configure_template(tokenizer, args.model)
     sampler = sampling.make_sampler(temp=args.temperature)
     rows = prompt_rows(args.split)
@@ -45,19 +48,37 @@ def main() -> None:
     records = []
     for row in rows:
         text = tokenizer.apply_chat_template(
-            [{"role": "user", "content": row["prompt"]}], add_generation_prompt=True, tokenize=False
+            [{"role": "user", "content": row["prompt"]}],
+            add_generation_prompt=True,
+            tokenize=False,
         )
         completion = mlx.generate(
-            model, tokenizer, prompt=text, max_tokens=args.max_tokens, sampler=sampler, verbose=False
+            model,
+            tokenizer,
+            prompt=text,
+            max_tokens=args.max_tokens,
+            sampler=sampler,
+            verbose=False,
         )
         gym = gyms.setdefault(row["suite"], Gym(row["suite"]))
         record = rollout(gym, row["task"], completion)
         append_rollout(args.output / "rollouts.jsonl", record)
         records.append(record)
-        print(json.dumps({"task": row["task"], "applied": applied(record),
-                          "patch_chars": len(record["patch"]), "reward": record["reward"]}), flush=True)
+        print(
+            json.dumps(
+                {
+                    "task": row["task"],
+                    "applied": applied(record),
+                    "patch_chars": len(record["patch"]),
+                    "reward": record["reward"],
+                }
+            ),
+            flush=True,
+        )
     summary = summarize(records)
-    (args.output / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
+    (args.output / "summary.json").write_text(
+        json.dumps(summary, indent=1) + "\n", encoding="utf-8"
+    )
     print(json.dumps(summary), flush=True)
 
 

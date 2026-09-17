@@ -5,7 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
@@ -150,12 +150,12 @@ def test_worker_recovers_truncated_event_tail(tmp_path, monkeypatch):
 
     def transport(request):
         observed.append(request.url.path)
-        return httpx.Response(
+        return httpx2.Response(
             200, json={"status": "running", "cancel_requested": False}
         )
 
-    with httpx.Client(
-        base_url="http://test", transport=httpx.MockTransport(transport)
+    with httpx2.Client(
+        base_url="http://test", transport=httpx2.MockTransport(transport)
     ) as http:
         sync_job(http, tmp_path)
     assert (tmp_path / "acknowledged").exists()
@@ -187,12 +187,12 @@ def test_worker_keeps_reservation_until_container_cleanup(tmp_path, monkeypatch)
 
     def transport(request):
         observed.append(request.url.path)
-        return httpx.Response(
+        return httpx2.Response(
             200, json={"status": "cancelling", "cancel_requested": True}
         )
 
-    with httpx.Client(
-        base_url="http://test", transport=httpx.MockTransport(transport)
+    with httpx2.Client(
+        base_url="http://test", transport=httpx2.MockTransport(transport)
     ) as http:
         monkeypatch.setattr(
             "postgres_gym_platform.worker.cleanup_containers", lambda _: False

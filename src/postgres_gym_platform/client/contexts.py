@@ -4,7 +4,8 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from urllib.parse import urlsplit
+
+import httpx2
 
 from . import Client
 
@@ -57,12 +58,11 @@ def listing() -> dict:
 
 
 def add(name: str, url: str) -> dict:
-    parsed = urlsplit(url)
+    parsed = httpx2.URL(url)
     if (
         parsed.scheme not in {"http", "https"}
-        or not parsed.hostname
-        or parsed.username
-        or parsed.password
+        or not parsed.host
+        or parsed.userinfo
         or parsed.query
         or parsed.fragment
     ):

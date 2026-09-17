@@ -6,10 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-class CommandError(Exception):
-    """A local docker or compose command exited with a failure."""
-
-
 @dataclass(frozen=True)
 class Instance:
     """Durable identity of a local platform instance shared by compose and storage."""
@@ -54,4 +50,4 @@ class Instance:
         return cls(directory, name)
 
 
-__all__ = ["CommandError", "Instance"]
+__all__ = ["Instance"]
