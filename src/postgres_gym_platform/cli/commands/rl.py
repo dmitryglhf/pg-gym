@@ -3,9 +3,9 @@ from typing import Annotated
 
 import typer
 
+from ...client.specs import build
 from ..jobs import submit_remote
 from ..output import show
-from ..specs import build
 
 app = typer.Typer(help="Submit training and evaluation jobs.")
 

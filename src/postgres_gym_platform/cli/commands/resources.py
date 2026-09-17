@@ -3,7 +3,8 @@ from typing import Annotated
 
 import typer
 
-from .. import resources
+from ...client import resources
+from ..http import connection
 from ..output import show
 
 
@@ -13,14 +14,17 @@ def resource_group(kind: str) -> typer.Typer:
 
     @app.command("list")
     def list_resources() -> None:
-        show(resources.list_resources(kind))
+        with connection() as client:
+            show(resources.list_resources(client, kind))
 
     @app.command("create")
     def create(config: Annotated[Path, typer.Option("--config")]) -> None:
-        show(resources.create_resource(kind, config))
+        with connection() as client:
+            show(resources.create_resource(client, kind, config))
 
     @app.command("delete")
     def delete(identifier: str) -> None:
-        show(resources.delete_resource(kind, identifier))
+        with connection() as client:
+            show(resources.delete_resource(client, kind, identifier))
 
     return app

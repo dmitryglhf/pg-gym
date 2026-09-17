@@ -8,4 +8,4 @@ try:
 except ImportError:
     from click import ClickException, get_current_context
 
-__all__ = ["Abort", "Exit", "ClickException", "get_current_context"]
+__all__ = ["Abort", "ClickException", "Exit", "get_current_context"]

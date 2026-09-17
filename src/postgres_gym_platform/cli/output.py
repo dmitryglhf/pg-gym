@@ -8,4 +8,4 @@ def show(value) -> None:
     emit(value, CliContext(runtime.output, runtime.no_color))
 
 
-__all__ = ["show", "OutputMode"]
+__all__ = ["OutputMode", "show"]

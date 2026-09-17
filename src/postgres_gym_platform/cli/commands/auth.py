@@ -3,6 +3,7 @@ import sys
 from typing import Annotated
 
 import typer
+
 from postgres_gym.cli.prompts import prompt_value
 
 from .. import auth

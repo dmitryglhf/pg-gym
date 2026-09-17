@@ -1,5 +1,6 @@
 """Stable cursors shared by HTTP collection endpoints."""
 import math
+
 from fastapi import HTTPException
 
 

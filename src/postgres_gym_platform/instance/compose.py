@@ -11,14 +11,13 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .. import __version__
-from .errors import JobFailure
-from .instance import Instance
+from . import CommandError, Instance
 
 
 def checked(command: list[str], *, cwd: Path | None = None):
     result = subprocess.run(command, cwd=cwd, stdout=sys.stderr, check=False)
     if result.returncode:
-        raise JobFailure(
+        raise CommandError(
             f"Command failed with exit code {result.returncode}: {command[0]}"
         )
 
@@ -35,7 +34,6 @@ def templates() -> Path:
 def initialize_instance(
     directory: Path, origin: str, open_registration: bool = False
 ) -> dict:
-    """Create an isolated platform instance and its secrets."""
     origin_parts = urlsplit(origin)
     if (
         origin_parts.scheme not in {"http", "https"}
@@ -59,7 +57,7 @@ def initialize_instance(
     instance_name = "pg-gym-" + uuid.uuid4().hex
     template = yaml.safe_load((templates() / "platform" / "compose.yaml").read_text())
     if not isinstance(template, dict) or not isinstance(template.get("services"), dict):
-        raise ValueError("Invalid Compose template")
+        raise ValueError("Invalid Compose template")  # noqa: TRY004
     replacements = {}
     for category in ("networks", "volumes", "configs", "secrets"):
         for key, resource in template.get(category, {}).items():
@@ -224,7 +222,7 @@ def compose_platform(
             command, cwd=directory, text=True, capture_output=True, check=False
         )
         if result.returncode:
-            raise JobFailure("Compose status failed: " + result.stderr.strip())
+            raise CommandError("Compose status failed: " + result.stderr.strip())
         text = result.stdout.strip()
         try:
             services = json.loads(text) if text else []

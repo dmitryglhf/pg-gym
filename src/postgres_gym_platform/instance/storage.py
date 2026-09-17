@@ -1,4 +1,4 @@
-"""Instance-scoped storage operations; no environment-derived data directories."""
+from __future__ import annotations
 
 import shutil
 import tempfile
@@ -6,7 +6,7 @@ import time
 import zipfile
 from pathlib import Path
 
-from .instance import Instance
+from . import Instance
 
 
 def backup(instance: Instance, path: Path) -> dict:
@@ -105,7 +105,7 @@ def _restore_files(path: Path, instance: Instance) -> None:
 
 
 def restore(path: Path, directory: Path, origin: str, open_registration: bool) -> dict:
-    from .platform import initialize_instance
+    from .compose import initialize_instance
 
     directory = directory.expanduser().resolve()
     if directory.exists():

@@ -2,9 +2,10 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+
 from postgres_gym.cli.benchmark import run as run_local
 
-from .. import specs
+from ...client import specs
 from ..http import request
 from ..jobs import submit_remote
 from ..output import show

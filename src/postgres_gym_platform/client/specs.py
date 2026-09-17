@@ -1,4 +1,4 @@
-"""One payload contract shared with REST; CLI does not duplicate schema defaults."""
+from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -45,6 +45,7 @@ def validate(model: type[BaseModel], body: dict[str, Any]) -> dict[str, Any]:
 
 
 def build(kind: str, config: Path | None, **fields: Any) -> dict[str, Any]:
+    """One payload contract shared with REST, so the CLI never duplicates schema defaults."""
     explicit = {key: value for key, value in fields.items() if value is not None}
     if config is not None and explicit:
         raise ValueError(

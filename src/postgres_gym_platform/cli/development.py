@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from .platform import checked
+from ..instance.compose import build_platform_images, checked
 
 
 def stand_fetch(source):
@@ -56,6 +56,4 @@ def image(source: Path, build_args: list[str] | None = None) -> dict:
 
 
 def platform_images(source: Path, gpu: bool) -> dict:
-    from .platform import build_platform_images
-
     return build_platform_images(source, gpu)

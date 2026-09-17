@@ -3,10 +3,11 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+
 from postgres_gym.cli.prompts import prompt_value
 
-from .. import platform, storage
-from ..instance import Instance
+from ...instance import Instance, storage
+from ...instance import compose as platform
 from ..output import show
 from ..runtime import current
 

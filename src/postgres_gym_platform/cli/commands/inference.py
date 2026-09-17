@@ -4,11 +4,12 @@ from typing import Annotated
 
 import typer
 
-from .. import inference
+from ...client import inference
+from ...client.specs import build
+from ..http import connection as connect
 from ..http import request
 from ..jobs import submit_remote
 from ..output import show
-from ..specs import build
 
 app = typer.Typer(help="Deploy models and chat with inference servers.")
 
@@ -33,7 +34,8 @@ def deploy(
 
 @app.command("status")
 def status(identifier: str) -> None:
-    show(inference.status(identifier))
+    with connect() as client:
+        show(inference.deployment(client, identifier))
 
 
 @app.command("stop")
@@ -60,8 +62,18 @@ def chat(
         text = typer.prompt("Message")
     if idempotency_key and not conversation:
         raise ValueError("Reusable chat idempotency requires --conversation")
-    show(
-        inference.chat(
-            connection, conversation, text, max_tokens, temperature, idempotency_key
+    from ..runtime import current
+
+    with connect() as client:
+        show(
+            inference.chat(
+                client,
+                connection,
+                conversation,
+                text,
+                max_tokens,
+                temperature,
+                current().wait_timeout,
+                idempotency_key,
+            )
         )
-    )

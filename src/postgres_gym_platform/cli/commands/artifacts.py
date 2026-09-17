@@ -3,7 +3,7 @@ from typing import Annotated
 
 import typer
 
-from ..artifacts import download_artifact
+from ...client.artifacts import download_artifact
 from ..http import connection, listing, request
 from ..output import show
 

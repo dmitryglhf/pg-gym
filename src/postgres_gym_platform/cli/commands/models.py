@@ -3,10 +3,10 @@ from typing import Annotated
 
 import typer
 
+from ...client.specs import build
 from ..http import listing
 from ..jobs import submit_remote
 from ..output import show
-from ..specs import build
 
 app = typer.Typer(help="Import and list model artifacts.")
 

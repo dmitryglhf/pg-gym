@@ -2,7 +2,7 @@ from typing import Annotated
 
 import typer
 
-from .. import contexts
+from ...client import contexts
 from ..output import show
 
 app = typer.Typer(help="Manage paired platform addresses and credentials.")

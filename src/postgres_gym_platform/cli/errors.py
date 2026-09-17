@@ -5,10 +5,12 @@ from typing import Any
 
 import httpx
 import typer
-from postgres_gym.cli.framework import Abort, ClickException, Exit
 from typer.core import TyperGroup
 
-from ..client import ApiError
+from postgres_gym.cli.framework import Abort, ClickException, Exit
+
+from ..client import ApiError, JobError
+from ..instance import CommandError
 
 EXIT_CODES = {
     0: "success",
@@ -40,13 +42,13 @@ def handle_errors(invoke: Callable[[], Any]) -> Any:
         code, message = 4, type(exc).__name__
     except TimeoutError as exc:
         code, message = 124, str(exc)
-    except JobFailure as exc:
+    except (JobFailure, JobError, CommandError) as exc:
         code, message = 1, str(exc)
     except (ValueError, OSError, KeyError) as exc:
         code, message = 2, str(exc)
     except (KeyboardInterrupt, Abort):
         code, message = 130, "Client interrupted. Remote jobs continue."
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         code, message = 1, "Internal error: " + type(exc).__name__
     print(json.dumps({"error": {"code": code, "message": message}}), file=sys.stderr)
     raise SystemExit(code)

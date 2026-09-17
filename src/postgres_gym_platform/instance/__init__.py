@@ -1,4 +1,4 @@
-"""Durable instance identity shared by Compose and storage operations."""
+from __future__ import annotations
 
 import json
 import re
@@ -6,8 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+class CommandError(Exception):
+    """A local docker or compose command exited with a failure."""
+
+
 @dataclass(frozen=True)
 class Instance:
+    """Durable identity of a local platform instance shared by compose and storage."""
+
     directory: Path
     name: str
 
@@ -28,12 +34,13 @@ class Instance:
         return self.directory / "platform.env"
 
     @classmethod
-    def load(cls, directory: Path) -> "Instance":
+    def load(cls, directory: Path) -> Instance:
         directory = directory.expanduser().resolve()
         manifest = directory / "instance.json"
         if not manifest.is_file():
             raise ValueError(
-                "Instance identity is missing. Initialize a new directory with platform init; legacy instances require an explicit migration."
+                "Instance identity is missing. Initialize a new directory with platform init; "
+                "legacy instances require an explicit migration."
             )
         value = json.loads(manifest.read_text())
         name = value.get("name", "")
@@ -45,3 +52,6 @@ class Instance:
         ):
             raise ValueError("Instance is incomplete")
         return cls(directory, name)
+
+
+__all__ = ["CommandError", "Instance"]
