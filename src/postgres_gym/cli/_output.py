@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, TextIO
 
@@ -36,7 +37,14 @@ def dumps(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, allow_nan=False)
 
 
-def emit(ctx: typer.Context, value: Any, *, stream: TextIO | None = None) -> None:
+def emit(
+    ctx: typer.Context,
+    value: Any,
+    *,
+    stream: TextIO | None = None,
+    columns: list[str] | None = None,
+) -> None:
+    """Print `value` in the invocation's format; `columns` narrows tables only."""
     settings = runtime(ctx)
     stream = stream or sys.stdout
     if settings.output is OutputMode.json:
@@ -47,25 +55,27 @@ def emit(ctx: typer.Context, value: Any, *, stream: TextIO | None = None) -> Non
     else:
         console = Console(file=stream, no_color=settings.no_color, force_terminal=False)
         page = isinstance(value, dict) and "items" in value and "next" in value
-        console.print(table(value["items"] if page else value), markup=False)
+        console.print(table(value["items"] if page else value, columns), markup=False)
         if page and value["next"] is not None:
             console.print("Next cursor: " + str(value["next"]), markup=False)
 
 
-def cell(item: Any) -> str:
+def cell(item: Any, column: str = "") -> str:
     if isinstance(item, (dict, list)):
         return dumps(item)
+    if column.endswith("_at") and isinstance(item, (int, float)):
+        return datetime.fromtimestamp(item, UTC).strftime("%Y-%m-%d %H:%M:%S")
     return "-" if item is None else str(item)
 
 
-def table(rows: Any) -> Table:
+def table(rows: Any, columns: list[str] | None = None) -> Table:
     result = Table(show_lines=False)
     if isinstance(rows, list) and rows and all(isinstance(row, dict) for row in rows):
-        columns = list(dict.fromkeys(key for row in rows for key in row))
+        columns = columns or list(dict.fromkeys(key for row in rows for key in row))
         for column in columns:
             result.add_column(str(column), overflow="fold")
         for row in rows:
-            result.add_row(*(cell(row.get(column)) for column in columns))
+            result.add_row(*(cell(row.get(column), column) for column in columns))
     elif isinstance(rows, dict):
         result.add_column("Field")
         result.add_column("Value", overflow="fold")

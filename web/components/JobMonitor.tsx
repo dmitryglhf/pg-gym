@@ -30,6 +30,11 @@ export function JobMonitor(
   useEffect(() => {
     let stopped = false, cursor = 0, timer: ReturnType<typeof setTimeout>;
     async function read() {
+      if (document.hidden) {
+        // Events keep their cursor, so a hidden tab catches up when shown.
+        timer = setTimeout(read, 2000);
+        return;
+      }
       try {
         const [current, batch] = await Promise.all([
           api<Job>(`/jobs/${id}`),

@@ -5,12 +5,18 @@ COPY --from=uv /uv /usr/local/bin/uv
 COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git libgomp1 tini && rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/pg-gym
+ENV UV_LINK_MODE=copy
+ARG TRAINING=0
+# Dependencies before the sources: this layer survives source edits, and the
+# cache mount keeps downloaded wheels across builds.
 COPY pyproject.toml uv.lock README.md ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project --extra platform $([ "$TRAINING" = "1" ] && echo --group training-lora)
 COPY src ./src
 COPY suites ./suites
 COPY deploy ./deploy
-ARG TRAINING=0
-RUN if [ "$TRAINING" = "1" ]; then uv sync --frozen --no-dev --extra platform --group training-lora --no-editable; else uv sync --frozen --no-dev --extra platform --no-editable; fi
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-editable --extra platform $([ "$TRAINING" = "1" ] && echo --group training-lora)
 ENV PATH=/opt/pg-gym/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN useradd --uid 1000 --create-home gym && mkdir -p /data /worker /secrets && chown gym:gym /data /worker
 USER gym

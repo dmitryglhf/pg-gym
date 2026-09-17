@@ -2,6 +2,7 @@
 
 import json
 import os
+import signal
 import subprocess
 import tempfile
 import time
@@ -163,20 +164,28 @@ def main():
                             break
                 except (OSError, ValueError):
                     time.sleep(0.5)
-            result = subprocess.run(
+            # Its own process group: on a timeout the Chromium that node
+            # launched must die with it instead of lingering for days.
+            browser = subprocess.Popen(
                 ["node", "tests/browser.mjs"],
                 cwd=ROOT,
                 env=env,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True,
-                timeout=170,
-                check=False,
+                start_new_session=True,
             )
-            (output / "browser-result.txt").write_text(result.stdout + result.stderr)
-            print(result.stdout + result.stderr)
-            if result.returncode == 0:
+            try:
+                report, _ = browser.communicate(timeout=170)
+            except subprocess.TimeoutExpired:
+                os.killpg(browser.pid, signal.SIGKILL)
+                report, _ = browser.communicate()
+                report += "\nBrowser scenario killed after 170 seconds\n"
+            (output / "browser-result.txt").write_text(report)
+            print(report)
+            if browser.returncode == 0:
                 check_cli(python, env, directory)
-            return result.returncode
+            return browser.returncode
         finally:
             diagnostics = []
             for job_dir in Path(directory).glob("worker/jobs/*"):

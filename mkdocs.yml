@@ -1,0 +1,66 @@
+site_name: Postgres Gym
+site_description: Self-hosted workspace for PostgreSQL agent benchmarks, GRPO training, evaluation and vLLM inference
+repo_url: https://github.com/dmitryglhf/pg-gym
+repo_name: dmitryglhf/pg-gym
+exclude_docs: |
+  internal/
+
+theme:
+  name: material
+  logo: assets/slonik.svg
+  favicon: assets/slonik.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+
+nav:
+  - Get started: index.md
+  - The platform: platform.md
+  - The workspace: workspace.md
+  - Benchmarks: benchmarks.md
+  - Models and inference: inference.md
+  - Training: training.md
+  - Collecting trajectories: collect.md
+  - The CLI: cli.md
+  - Python library: library.md
+  - REST API: rest-api.md
+  - API reference: api.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_root_heading: true
+            show_source: false
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - toc:
+      permalink: true

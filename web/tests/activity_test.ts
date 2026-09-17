@@ -29,3 +29,16 @@ Deno.test("fresh transport does not disguise quiet model output, and stale trans
   );
   assert(ageLabel(null, 5000) === "not yet received");
 });
+
+Deno.test("a queued job is neither quiet nor stale however long it waits", () => {
+  const waiting = activityState({
+    now: 900000,
+    startedAt: 1000,
+    contactAt: 1000,
+    progressAt: 1000,
+    trackContact: true,
+    queued: true,
+  });
+  assert(!waiting.quiet && !waiting.stale);
+  assert(waiting.elapsed === 899, "queue time is still shown");
+});

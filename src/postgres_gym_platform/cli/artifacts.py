@@ -11,6 +11,7 @@ from ..client.artifacts import download_artifact
 from ._http import AllPages, Cursor, Limit, connection, listing, request
 
 app = typer.Typer(help="Inspect and download artifacts.")
+COLUMNS = ["id", "kind", "name", "status", "size", "created_at"]
 Artifact = Annotated[str, typer.Argument(help="Artifact id.")]
 
 
@@ -22,7 +23,7 @@ def list_artifacts(
     all_pages: AllPages = False,
 ) -> None:
     """List artifacts of every kind."""
-    emit(ctx, listing(ctx, "/artifacts", limit, cursor, all_pages))
+    emit(ctx, listing(ctx, "/artifacts", limit, cursor, all_pages), columns=COLUMNS)
 
 
 @app.command("show")

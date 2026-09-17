@@ -107,6 +107,44 @@ def test_docker_group_is_root_under_docker_desktop(monkeypatch):
     assert compose.docker_gid() == 0
 
 
+def test_platform_start_refreshes_files_of_an_older_release(tmp_path, monkeypatch):
+    monkeypatch.setattr(compose, "checked", lambda *args, **kwargs: None)
+    directory = tmp_path / "instance"
+    compose.start_platform(ROOT, directory)
+    stale = (directory / "compose.yaml").read_text().replace("9433", "8001")
+    (directory / "compose.yaml").write_text(stale)
+    env = directory / "platform.env"
+    env.write_text(
+        "".join(
+            line + "\n"
+            for line in env.read_text().splitlines()
+            if not line.startswith("PG_GYM_API_PORT=")
+        )
+    )
+
+    result = compose.start_platform(ROOT, directory)
+
+    assert result["refreshed"] == ["compose.yaml", "platform.env"]
+    assert "8001" not in (directory / "compose.yaml").read_text()
+    assert "PG_GYM_API_PORT=9433" in env.read_text()
+    assert "PG_GYM_ORIGIN=http://localhost:9432" in env.read_text()
+    assert "refreshed" not in compose.start_platform(ROOT, directory)
+
+
+def test_refresh_moves_macos_instances_to_the_root_docker_group(tmp_path, monkeypatch):
+    monkeypatch.setattr(compose, "checked", lambda *args, **kwargs: None)
+    monkeypatch.setattr(compose.sys, "platform", "darwin")
+    directory = tmp_path / "instance"
+    compose.start_platform(ROOT, directory)
+    env = directory / "platform.env"
+    env.write_text(
+        env.read_text().replace("PG_GYM_DOCKER_GID=0", "PG_GYM_DOCKER_GID=20")
+    )
+
+    assert compose.refresh_instance(Instance.load(directory)) == ["platform.env"]
+    assert "PG_GYM_DOCKER_GID=0\n" in env.read_text()
+
+
 def test_platform_start_supports_code_free_registration(tmp_path, monkeypatch):
     monkeypatch.setattr(compose, "checked", lambda *args, **kwargs: None)
     directory = tmp_path / "instance"

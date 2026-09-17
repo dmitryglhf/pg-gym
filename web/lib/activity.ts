@@ -38,6 +38,8 @@ export function activityState(input: {
   disconnected?: boolean;
   staleAfter?: number;
   quietAfter?: number;
+  /** Nothing has started: waiting is neither stale nor quiet. */
+  queued?: boolean;
 }) {
   const elapsed = ageSeconds(input.startedAt, input.now);
   const contactAge = ageSeconds(input.contactAt, input.now);
@@ -45,12 +47,13 @@ export function activityState(input: {
     input.progressAt ?? input.startedAt,
     input.now,
   );
-  const stale = !!input.disconnected || !!input.trackContact &&
-      (contactAge ?? elapsed ?? 0) >= (input.staleAfter ?? 30);
+  const stale = !input.queued && (!!input.disconnected ||
+    !!input.trackContact &&
+      (contactAge ?? elapsed ?? 0) >= (input.staleAfter ?? 30));
   return {
     elapsed,
     stale,
-    quiet: !stale && progressAge !== null &&
+    quiet: !input.queued && !stale && progressAge !== null &&
       progressAge >= (input.quietAfter ?? 60),
     progressAge,
   };

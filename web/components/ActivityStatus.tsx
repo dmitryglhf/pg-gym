@@ -52,6 +52,7 @@ export function ActivityStatus(props: {
     disconnected: props.disconnected,
     staleAfter: props.staleAfter,
     quietAfter: props.quietAfter,
+    queued: props.queued,
   });
   const warning = state.stale ? "Updates interrupted" : null;
   return (

@@ -21,6 +21,8 @@ export function useResource<T>(
     if (!path) return;
     let stopped = false, timer: ReturnType<typeof setTimeout>;
     async function read() {
+      // A hidden tab does not poll; the visibility listener resumes it.
+      if (document.hidden) return;
       try {
         const value = await (load ? load(path!) : api<T>(path!));
         if (!stopped) {
@@ -39,10 +41,18 @@ export function useResource<T>(
         if (!stopped) timer = setTimeout(read, interval);
       }
     }
+    const resume = () => {
+      if (!stopped && !document.hidden) {
+        clearTimeout(timer);
+        read();
+      }
+    };
+    document.addEventListener("visibilitychange", resume);
     read();
     return () => {
       stopped = true;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", resume);
     };
   }, [path, interval, revision, load]);
   return {

@@ -1,6 +1,7 @@
+<!-- assets/slonik.svg without its C2PA metadata, cropped to the elephant -->
 <svg xmlns="http://www.w3.org/2000/svg"
-  xmlns:xlink="http://www.w3.org/1999/xlink" width="51" height="51"
-  viewBox="0 -6.5 51 51">
+  xmlns:xlink="http://www.w3.org/1999/xlink" width="32" height="32"
+  viewBox="15.5 8.25 21.5 21.5">
   <path fill="#FEFEFE"
     d="M24.8737 5.85777C32.1158 5.57171 38.2191 11.2213 38.509 18.4792C38.7989 25.7372 33.1656 31.8576 25.9239 32.1526C18.676 32.4478 12.5626 26.796 12.2725 19.5317C11.9824 12.2675 17.6254 6.14408 24.8737 5.85777Z" />
   <path fill="#2B62CD"

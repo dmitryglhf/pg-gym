@@ -18,3 +18,4 @@ __pycache__/
 /var/
 .ty_cache/
 docs/internal
+/site/

@@ -20,6 +20,16 @@ from ._http import (
     submit,
 )
 
+JOB_COLUMNS = [
+    "id",
+    "kind",
+    "name",
+    "status",
+    "worker_id",
+    "created_at",
+    "finished_at",
+    "error",
+]
 app = typer.Typer(help="Inspect jobs, wait, stream logs, cancel and retry.")
 Job = Annotated[str, typer.Argument(help="Job id.")]
 
@@ -36,7 +46,11 @@ def list_jobs(
     all_pages: AllPages = False,
 ) -> None:
     """List jobs, newest first."""
-    emit(ctx, listing(ctx, "/jobs", limit, cursor, all_pages, kind=kind))
+    emit(
+        ctx,
+        listing(ctx, "/jobs", limit, cursor, all_pages, kind=kind),
+        columns=JOB_COLUMNS,
+    )
 
 
 @app.command("show")

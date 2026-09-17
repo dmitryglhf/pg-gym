@@ -117,6 +117,29 @@ def test_output_modes(cli):
     assert "Field" in as_table.stdout and "local" in as_table.stdout
 
 
+def test_tables_can_be_narrowed_to_columns_with_readable_times():
+    from datetime import UTC, datetime
+
+    from rich.console import Console
+
+    from postgres_gym.cli._output import table
+
+    rows = [
+        {
+            "id": "job-1",
+            "config": {"suite": "commit", "tasks": list(range(50))},
+            "status": "queued",
+            "created_at": datetime(2026, 9, 17, 9, 11, tzinfo=UTC).timestamp() + 0.35,
+        }
+    ]
+    console = Console(record=True, width=120, force_terminal=False)
+    console.print(table(rows, ["id", "status", "created_at"]), markup=False)
+    text = console.export_text()
+
+    assert "job-1" in text and "2026-09-17 09:11:00" in text
+    assert "config" not in text and "commit" not in text
+
+
 def test_missing_context_is_reported_as_json_on_stderr(cli):
     result = cli.invoke(app, ["jobs", "list"])
 

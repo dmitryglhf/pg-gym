@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import fnmatch
 import io
 import json
 import os
@@ -9,6 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Self
 
 import httpx2
 
@@ -138,6 +140,75 @@ def benchmark(runtime: Runtime) -> dict:
     }
 
 
+MODEL_FILES = ["*.safetensors", "*.json", "*.model", "*.txt", "*.jinja", "*.tiktoken"]
+
+
+def expected_bytes(siblings, patterns: list[str]) -> int | None:
+    """Size of the repository files an import will fetch, when the hub reports it."""
+    sizes = [
+        sibling.size
+        for sibling in siblings or []
+        if sibling.size
+        and any(fnmatch.fnmatch(sibling.rfilename, pattern) for pattern in patterns)
+    ]
+    return sum(sizes) if sizes else None
+
+
+class DownloadProgress:
+    """Logs how much of an import is on disk while the hub client stays quiet.
+
+    snapshot_download reports finished files only, so a single large weights
+    file shows no progress for many minutes; the bytes in the download
+    directory, partial files included, do.
+    """
+
+    def __init__(
+        self,
+        runtime: Runtime,
+        directory: Path,
+        total: int | None,
+        interval: float = 10.0,
+    ) -> None:
+        self.runtime = runtime
+        self.directory = directory
+        self.total = total
+        self.interval = interval
+        self.stop = threading.Event()
+        self.thread = threading.Thread(target=self.watch, daemon=True)
+        self.reported: int | None = None
+
+    def __enter__(self) -> Self:
+        self.thread.start()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.stop.set()
+        self.thread.join()
+        self.report()
+
+    def watch(self) -> None:
+        while not self.stop.wait(self.interval):
+            self.report()
+
+    def report(self) -> None:
+        done = (
+            sum(
+                path.stat().st_size
+                for path in self.directory.rglob("*")
+                if path.is_file()
+            )
+            if self.directory.is_dir()
+            else 0
+        )
+        if done == self.reported:
+            return
+        self.reported = done
+        text = f"downloaded {done / 2**20:.1f} MB"
+        if self.total:
+            text += f" of {self.total / 2**20:.1f} MB ({min(100, 100 * done // self.total)}%)"
+        self.runtime.events.emit("log", text=text)
+
+
 def model_import(runtime: Runtime) -> dict:
     from huggingface_hub import HfApi, snapshot_download
 
@@ -146,7 +217,7 @@ def model_import(runtime: Runtime) -> dict:
     token = private.get("credential")
     runtime.events.emit("phase", phase="resolving", repository=config["repository"])
     info = HfApi(token=token).model_info(
-        config["repository"], revision=config["revision"]
+        config["repository"], revision=config["revision"], files_metadata=True
     )
     if not info.sha:
         raise ValueError("Hugging Face did not return a resolved revision")
@@ -154,20 +225,16 @@ def model_import(runtime: Runtime) -> dict:
         "phase", phase="downloading", repository=config["repository"], revision=info.sha
     )
     directory = runtime.directory / "download"
-    snapshot_download(
-        config["repository"],
-        revision=info.sha,
-        token=token,
-        local_dir=directory,
-        allow_patterns=[
-            "*.safetensors",
-            "*.json",
-            "*.model",
-            "*.txt",
-            "*.jinja",
-            "*.tiktoken",
-        ],
-    )
+    with DownloadProgress(
+        runtime, directory, expected_bytes(info.siblings, MODEL_FILES)
+    ):
+        snapshot_download(
+            config["repository"],
+            revision=info.sha,
+            token=token,
+            local_dir=directory,
+            allow_patterns=MODEL_FILES,
+        )
     if not (directory / "config.json").is_file() or not list(
         directory.glob("*.safetensors")
     ):

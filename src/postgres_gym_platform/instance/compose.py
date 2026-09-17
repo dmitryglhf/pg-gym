@@ -135,6 +135,45 @@ def read_environment(directory: Path) -> dict[str, str]:
     )
 
 
+def refresh_instance(instance: Instance) -> list[str]:
+    """Bring the files a release derives for an instance up to date.
+
+    `compose.yaml` is rendered from the release template, so a newer CLI
+    rewrites it. `platform.env` keeps the operator's values and only gains the
+    keys a newer template reads; on macOS the Docker group is always root.
+    Returns the names of the files that changed.
+    """
+    import yaml
+
+    changed = []
+    template = isolated_template(instance.name)
+    if yaml.safe_load(instance.compose.read_text()) != template:
+        instance.compose.write_text(yaml.safe_dump(template, sort_keys=False))
+        changed.append("compose.yaml")
+    values = read_environment(instance.directory)
+    defaults = dict(
+        line.split("=", 1)
+        for line in environment(
+            instance.name,
+            values.get("PG_GYM_ORIGIN", DEFAULT_ORIGIN),
+            values.get("PG_GYM_OPEN_REGISTRATION") == "1",
+        ).splitlines()
+    )
+    before = instance.environment.read_text()
+    lines = before.splitlines()
+    if sys.platform == "darwin" and values.get("PG_GYM_DOCKER_GID") not in (None, "0"):
+        lines = [
+            "PG_GYM_DOCKER_GID=0" if line.startswith("PG_GYM_DOCKER_GID=") else line
+            for line in lines
+        ]
+    lines += [f"{key}={value}" for key, value in defaults.items() if key not in values]
+    after = "\n".join(lines) + "\n"
+    if after != before:
+        instance.environment.write_text(after)
+        changed.append("platform.env")
+    return changed
+
+
 def initialize_instance(
     directory: Path, url: str, open_registration: bool = False
 ) -> dict:
@@ -277,7 +316,7 @@ def start_platform(
             "For an existing instance, configure PG_GYM_OPEN_REGISTRATION in platform.env "
             "and its Compose API environment."
         )
-    Instance.load(directory)
+    refreshed = refresh_instance(Instance.load(directory))
     build_platform_images(source, gpu)
     compose_platform(directory, "up", gpu=gpu, timeout=timeout)
     result = {
@@ -285,6 +324,8 @@ def start_platform(
         "directory": str(directory),
         "url": values.get("PG_GYM_ORIGIN", url),
     }
+    if refreshed:
+        result["refreshed"] = refreshed
     if values.get("PG_GYM_OPEN_REGISTRATION") != "1":
         result["registration_code"] = (
             f"pg-gym platform registration-code --directory {directory}"

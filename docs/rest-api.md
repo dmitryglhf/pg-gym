@@ -1,62 +1,62 @@
 # REST API
 
-The public contract is versioned under `/api/v1`. The frontend proxies this prefix to the Python API on the same origin. CLI users connect to the web origin as well. Internal worker and temporary provider-gateway endpoints are intentionally absent from the public proxy.
+Everything the web application and the CLI do goes through `/api/v1` on the web origin. The frontend proxies that prefix to the Python API, so one address serves both. A running instance publishes its schema at `/api/v1/openapi.json` and interactive documentation at `/api/v1/docs`.
 
 ## Authentication
 
-`POST /auth/register` accepts `username`, `password` and `invitation`. `POST /auth/login` issues an HTTP-only session cookie and a CSRF cookie. Mutating cookie-authenticated requests require the exact configured Origin and `X-CSRF-Token`. `POST /auth/logout` revokes the current session. `GET /me` returns the signed-in account.
+The browser logs in with `POST /auth/login` and gets an HTTP-only session cookie plus a CSRF cookie. Mutating cookie requests must carry the configured Origin and an `X-CSRF-Token` header.
 
-For automation, use `POST /auth/token` with a username and password, or create an expiring named token with `POST /api-tokens`. Bearer tokens do not use CSRF cookies. All owner-bound resources return 404 to other accounts. Stored provider/HF keys are never returned. The API has login throttling and redacts validation inputs, so errors do not echo submitted secrets.
+Automation uses bearer tokens. `POST /auth/token` trades a username and password for one, and `POST /api-tokens` creates a named token with an expiry. Bearer requests skip CSRF.
+
+```sh
+curl -fsS "$PG_GYM_URL/api/v1/me" -H "Authorization: Bearer $PG_GYM_TOKEN"
+```
+
+Every owned resource answers 404 to other accounts. Stored keys are never returned, and validation errors do not echo what was submitted.
 
 ## Resources
 
 | Method and path | Purpose |
 | --- | --- |
-| `GET /health`, `GET /capabilities` | API health and actual worker capabilities/resources |
-| `GET /suites`, `GET /suites/{suite}/tasks` | Runnable catalog and optional split filtering |
-| `GET /suites/{suite}/tasks/{task}` | Public prompt and task identity |
-| `GET/POST /connections`, `PUT/DELETE /connections/{id}` | Model endpoints and encrypted keys |
-| `POST /connections/{id}/check` | Check the provider's advertised model |
-| `GET/POST /harness-profiles`, `PUT/DELETE /harness-profiles/{id}` | Markov/OpenCode configuration |
-| `GET/POST /secrets`, `PUT/DELETE /secrets/{id}` | HF credentials; values are write-only |
-| `POST /benchmarks` | Launch an agentic benchmark |
-| `POST /models/imports` | Import a pinned HF model snapshot |
-| `POST /training-runs`, `POST /evaluations` | Launch GRPO or direct model evaluation |
-| `POST /deployments`, `POST /deployments/{id}/stop` | Start/stop worker-managed vLLM |
-| `GET /jobs`, `GET /jobs/{id}` | Job state, config and results |
-| `POST /jobs/{id}/cancel`, `POST /jobs/{id}/retries` | Cancel or start a linked new attempt |
-| `GET /jobs/{id}/events` | Cursor-based JSON or SSE event stream |
-| `GET /artifacts`, `GET /artifacts/{id}` | Immutable artifact manifests and lineage |
-| `GET /artifacts/{id}/files/{path}` | Download an owned artifact file |
-| `GET/POST /conversations`, `GET /conversations/{id}` | Persistent conversations |
-| `POST /conversations/{id}/turns` | Queue a streaming response from one or two models |
+| `GET /health`, `GET /capabilities` | Health and what the workers can do |
+| `GET /suites`, `GET /suites/{suite}/tasks`, `GET /suites/{suite}/tasks/{task}` | The catalog |
+| `GET/POST /connections`, `PUT/DELETE /connections/{id}`, `POST /connections/{id}/check` | Model endpoints |
+| `GET/POST /harness-profiles`, `PUT/DELETE /harness-profiles/{id}` | Harness settings |
+| `GET/POST /secrets`, `PUT/DELETE /secrets/{id}` | Hugging Face credentials, write-only |
+| `GET/PUT /environment`, `POST /environment/reveal` | Account variables |
+| `POST /benchmarks` | Launch a benchmark |
+| `POST /models/imports` | Import a model |
+| `POST /training-runs`, `POST /evaluations` | Train or evaluate |
+| `POST /deployments`, `POST /deployments/{id}/stop` | vLLM |
+| `GET /jobs`, `GET /jobs/{id}`, `POST /jobs/{id}/cancel`, `POST /jobs/{id}/retries` | Jobs |
+| `GET /jobs/{id}/events` | Events, paged or as SSE |
+| `GET /artifacts`, `GET /artifacts/{id}`, `GET /artifacts/{id}/files/{path}` | Artifacts and downloads |
+| `GET/POST /conversations`, `GET /conversations/{id}`, `POST /conversations/{id}/turns` | Chat |
 
-See [openapi.json](openapi.json) for request field types, validation bounds, status codes and schema names. Job result payloads vary by execution kind. In a running instance the schema is available at `/api/v1/openapi.json`; interactive documentation is at `/api/v1/docs`. The schema also documents worker endpoints, which are reachable only on the private API network.
+## Submitting a job
 
-## Submission and events
-
-Every job-producing POST requires `Idempotency-Key`. Reuse the same key and payload after a transport timeout. Reusing it with another payload returns 409. The response is a durable job and HTTP 202; execution occurs in the Python worker. A connection's model/protocol configuration is captured at submission, while credentials can be rotated independently. Editing the captured configuration and then resubmitting the same key is a conflict; inspect the original job instead.
+Every POST that creates a job needs an `Idempotency-Key`. The server records the key with the submission before it answers, so after a lost response you send the same request again and get the same job back. The same key with a different body is a 409. The answer is 202 with the job, and the work happens on a worker.
 
 ```sh
 curl -fsS "$PG_GYM_URL/api/v1/benchmarks" \
   -H "Authorization: Bearer $PG_GYM_TOKEN" \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: ci-build-123-area' \
-  -d '{"suite":"sql-function-set","tasks":["area"],"harness":"markov","connection_id":"CONNECTION_ID"}'
+  -d '{"suite":"sql-function-set","tasks":["area"],"harness":"opencode","connection_id":"CONNECTION_ID"}'
 ```
 
-`GET /jobs?limit=50&before=CURSOR` returns `items` and an opaque `next` cursor. Pass it back unchanged. The cursor includes a tie-breaker, so jobs created at the same timestamp are not skipped. `kind` filters by job type. The browser's search/status filters apply to loaded rows; load older results when needed.
+The connection's model and protocol are captured at submission. Its credentials are looked up when the job runs, so a rotated key does not need a new job.
 
-`GET /jobs/{id}/events?after=N` returns ordered `items` and `next`. Send `Accept: text/event-stream` for SSE and use `Last-Event-ID` to reconnect. Phases, logs, metrics, episodes, artifact publication, token deltas and resource samples have distinct event kinds. Worker contact and event progress are separate fields; stale contact must not be rendered as confirmed progress.
+## Jobs and events
 
-States are `queued`, `preparing`, `running`, `cancelling`, `succeeded`, `failed`, `cancelled`. Errors are structured as `{ "error": { "code": "…", "message": "…" } }`, with field diagnostics for validation. JSON bodies are limited to 2 MiB, including chunked requests; worker artifact uploads stream separately. List and event endpoints are bounded. Only one unfinished turn is allowed per conversation. A/B responses run sequentially and each connection receives its own prior responses.
+`GET /jobs?limit=50&before=CURSOR` returns `items` and an opaque `next` cursor to pass back unchanged. `kind` filters by job type. A job is in one of `queued`, `preparing`, `running`, `cancelling`, `succeeded`, `failed` or `cancelled`.
 
-`agentic-benchmark.v1` and `direct-diff-evaluation.v1` are distinct evaluation protocols. Training reward, held-out patch evaluation and harness benchmark reward must not be mixed into one performance metric.
+`GET /jobs/{id}/events?after=N` returns ordered `items` and `next`. Send `Accept: text/event-stream` for server-sent events and `Last-Event-ID` to reconnect where you left off. Phases, logs, metrics, episodes, artifact publication, token deltas and resource samples are distinct event kinds. Worker contact and event progress are separate fields, so a stale heartbeat is never shown as progress.
+
+Errors are `{"error": {"code": "...", "message": "..."}}` with field diagnostics for validation. JSON bodies are limited to 2 MiB. One unfinished turn is allowed per conversation.
 
 ## Account environment
 
-`GET /api/v1/environment` returns `{revision, names}` without values. `POST /api/v1/environment/reveal` explicitly returns the authenticated account's `{revision, variables}`. `PUT /api/v1/environment` replaces the variable set with `{revision, variables}`: string values replace entries, `null` retains a saved value, and omitted names are removed. A stale revision returns 409. Names use `[A-Za-z_][A-Za-z0-9_]*`; values are encrypted at rest. Variables referenced by a connection or active job cannot be removed.
+`GET /environment` returns the variable names and a revision without values. `POST /environment/reveal` returns the values. `PUT /environment` replaces the set: a string replaces a value, `null` keeps the saved one and an omitted name is removed. A stale revision is a 409, and a variable used by a connection or an active job cannot be removed.
 
-Set `api_key_env` on a connection to select a variable instead of a literal API key. Set `credential_env` on a model import to select an HF token instead of a legacy `credential_id`. Variable references are account-scoped and resolved when used; rotating a value affects subsequent requests. Values are not included in job configurations or exported into scored-task containers. Existing direct connection keys and HF credentials remain supported by the API.
-
-`GET /api/v1/auth/options` is public and reports `registration_code_required`, allowing the login page to omit the code field for open-registration instances.
+A connection refers to a variable with `api_key_env` and a model import with `credential_env`. The value is resolved when it is used, never copied into a job or a task container.

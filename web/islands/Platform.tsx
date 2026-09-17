@@ -39,8 +39,9 @@ export default function Platform({ page, id }: { page: string; id?: string }) {
     needs("home", "models", "rl", "benchmark", "inference")
       ? "/capabilities"
       : null,
-    5000,
+    15000,
   );
+  // Job lists are the heaviest calls: fast only where jobs are the subject.
   const jobs = useResource<{ items: Job[]; next: string | null }>(
     needs(
         "home",
@@ -53,7 +54,7 @@ export default function Platform({ page, id }: { page: string; id?: string }) {
       )
       ? "/jobs?limit=200"
       : null,
-    5000,
+    needs("home", "results", "console") ? 5000 : 10000,
   );
   const deployments = useResource<Job[]>(
     needs("home", "models", "inference", "benchmark", "rl")

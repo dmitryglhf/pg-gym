@@ -85,9 +85,11 @@ export function InferencePanel(
       end.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [submitted?.job.id]);
+  // The conversation is re-read quickly only while a turn is generating.
+  const [generating, setGenerating] = useState(false);
   const detail = useResource<Conversation>(
     id ? `/conversations/${id}` : null,
-    2000,
+    generating ? 2000 : 15000,
   );
   useEffect(() => {
     if (!restored || initialized) return;
@@ -203,6 +205,7 @@ export function InferencePanel(
     }]
     : turns;
   const active = visibleTurns.some((turn) => !terminal(turn.job));
+  useEffect(() => setGenerating(active), [active]);
   const unavailable = id
     ? ids.some((key) => {
       const connection = connections.find((item) => item.id === key);

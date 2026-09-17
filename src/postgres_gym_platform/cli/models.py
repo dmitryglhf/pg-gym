@@ -16,6 +16,7 @@ from ._http import (
     listing,
     submit,
 )
+from .artifacts import COLUMNS
 
 app = typer.Typer(help="Import and list model artifacts.")
 
@@ -65,4 +66,8 @@ def list_models(
     all_pages: AllPages = False,
 ) -> None:
     """List model artifacts."""
-    emit(ctx, listing(ctx, "/artifacts", limit, cursor, all_pages, kind="model"))
+    emit(
+        ctx,
+        listing(ctx, "/artifacts", limit, cursor, all_pages, kind="model"),
+        columns=COLUMNS,
+    )

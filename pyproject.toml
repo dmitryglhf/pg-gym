@@ -37,6 +37,10 @@ dev = [
   "ruff>=0.16.5",
   "ty>=0.0.78",
 ]
+docs = [
+  "mkdocs-material>=9.7.7",
+  "mkdocstrings[python]>=1.0.6",
+]
 collect = [
   "markov-sdk; python_full_version>='3.12'",
 ]
