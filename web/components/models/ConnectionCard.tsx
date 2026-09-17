@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { api, field, message, terminal } from "@/lib/platform.ts";
+import { api, field, message, numeric, terminal } from "@/lib/platform.ts";
 import type { Connection, Job } from "@/lib/platform.ts";
 import { connectionStatus } from "@/lib/readiness.ts";
 import { openActivity, returnHref } from "@/lib/workspace.ts";
@@ -20,7 +20,9 @@ export function ConnectionCard(
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false),
-    [key, setKey] = useState(connection.api_key_env || "");
+    [key, setKey] = useState(
+      connection.api_key_env || (connection.has_key ? "__stored" : ""),
+    );
   async function act(action: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -116,7 +118,16 @@ export function ConnectionCard(
           <button
             type="button"
             class="text-button"
-            onClick={() => setEditing(!editing)}
+            onClick={() => {
+              if (!editing) {
+                setKey(
+                  connection.api_key_env ||
+                    (connection.has_key ? "__stored" : ""),
+                );
+              }
+              setEditingKey(false);
+              setEditing(!editing);
+            }}
           >
             Edit
           </button>
@@ -150,7 +161,7 @@ export function ConnectionCard(
             Open logs
           </button>
         )}
-        {!canStop && (
+        {(!connection.managed_job_id || (job && terminal(job))) && (
           <button
             type="button"
             class="text-button"
@@ -183,12 +194,10 @@ export function ConnectionCard(
               name: field(data, "name"),
               base_url: field(data, "base_url"),
               model: field(data, "model"),
-              api_key_env: key || null,
-              ...(!key && connection.has_key && !connection.api_key_env
-                ? {}
-                : { api_key: "" }),
-              context_length: connection.context_length,
-              max_tokens: connection.max_tokens,
+              api_key_env: key && key !== "__stored" ? key : null,
+              ...(key === "__stored" ? {} : { api_key: "" }),
+              context_length: numeric(data, "context_length"),
+              max_tokens: numeric(data, "max_tokens"),
               tools: data.has("tools"),
             });
             setEditing(false);
@@ -217,11 +226,12 @@ export function ConnectionCard(
             </Field>
           </div>
           <CredentialPicker
+            keepStoredKey={connection.has_key && !connection.api_key_env}
             onEditingChange={setEditingKey}
             value={key}
             onChange={setKey}
           />
-          {connection.has_key && !connection.api_key_env && !key && (
+          {key === "__stored" && (
             <p class="muted">The existing stored key is preserved.</p>
           )}
           <label class="check-field">
@@ -231,6 +241,31 @@ export function ConnectionCard(
               defaultChecked={connection.tools}
             />Supports tool calling
           </label>
+          <details class="advanced">
+            <summary>Token limits</summary>
+            <div class="fields two">
+              <Field label="Context length">
+                <input
+                  type="number"
+                  name="context_length"
+                  min={1024}
+                  max={2097152}
+                  defaultValue={connection.context_length}
+                  required
+                />
+              </Field>
+              <Field label="Maximum output tokens">
+                <input
+                  type="number"
+                  name="max_tokens"
+                  min={16}
+                  max={131072}
+                  defaultValue={connection.max_tokens}
+                  required
+                />
+              </Field>
+            </div>
+          </details>
         </Form>
       )}
     </div>

@@ -1,17 +1,26 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
 import { LogStream } from "@/components/ConsolePanel.tsx";
 import { Icon } from "@/components/Icon.tsx";
-import { api, message } from "@/lib/platform.ts";
+import { useResource } from "@/lib/query.ts";
+import { useJobHistory } from "@/lib/job-history.ts";
 import type { Job } from "@/lib/platform.ts";
 import { readSession, writeSession } from "@/lib/workspace.ts";
 
 export default function ActivityDock() {
+  const runLabel = useId();
   const [open, setOpen] = useState(false),
     [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState("");
-  const [jobs, setJobs] = useState<Job[]>([]),
-    [cursor, setCursor] = useState<string | null>(null),
-    [error, setError] = useState("");
+  const recent = useResource<{ items: Job[]; next: string | null }>(
+    open ? "/jobs?limit=200" : null,
+    5000,
+  );
+  const loaded = useJobHistory(
+    recent.data?.items || null,
+    recent.data?.next || null,
+  );
+  const { items: jobs, cursor } = loaded;
+  const error = recent.error || loaded.error;
   const closeButton = useRef<HTMLButtonElement>(null),
     trigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -36,11 +45,20 @@ export default function ActivityDock() {
   function close() {
     setOpen(false);
     writeSession("activity-open", false);
-    trigger.current?.focus();
+    const url = new URL(location.href);
+    url.searchParams.delete("panel");
+    url.searchParams.delete("job");
+    history.replaceState({}, "", url);
+    requestAnimationFrame(() => {
+      const target = trigger.current?.isConnected
+        ? trigger.current
+        : document.querySelector<HTMLButtonElement>(".activity-launcher");
+      target?.focus();
+    });
   }
   useEffect(() => {
     if (!open) return;
-    closeButton.current?.focus();
+    if (trigger.current) closeButton.current?.focus();
     function key(event: KeyboardEvent) {
       if (event.key === "Escape") close();
     }
@@ -48,21 +66,13 @@ export default function ActivityDock() {
     return () => globalThis.removeEventListener("keydown", key);
   }, [open]);
   useEffect(() => {
-    if (!open) return;
-    let stopped = false;
-    api<{ items: Job[]; next: string | null }>("/jobs").then((page) => {
-      if (!stopped) {
-        setJobs(page.items);
-        setCursor(page.next);
-        setError("");
-      }
-    }).catch((cause) => {
-      if (!stopped) setError(message(cause));
-    });
+    document.body.dataset.activityOpen = String(open);
+    document.body.dataset.activityExpanded = String(expanded);
     return () => {
-      stopped = true;
+      delete document.body.dataset.activityOpen;
+      delete document.body.dataset.activityExpanded;
     };
-  }, [open]);
+  }, [open, expanded]);
   return (
     <div
       class={`activity-dock ${open ? "is-open" : ""} ${
@@ -110,8 +120,9 @@ export default function ActivityDock() {
           </div>
           <div class="dock-controls">
             <label>
-              Run{" "}
+              <span id={runLabel}>Run</span>
               <select
+                aria-labelledby={runLabel}
                 value={selected}
                 onChange={(e) => {
                   setSelected(e.currentTarget.value);
@@ -133,24 +144,8 @@ export default function ActivityDock() {
               <button
                 type="button"
                 class="text-button"
-                onClick={async () => {
-                  try {
-                    const page = await api<
-                      { items: Job[]; next: string | null }
-                    >("/jobs?before=" + encodeURIComponent(cursor));
-                    setJobs((
-                      old,
-                    ) => [
-                      ...old,
-                      ...page.items.filter((item) =>
-                        !old.some((j) => j.id === item.id)
-                      ),
-                    ]);
-                    setCursor(page.next);
-                  } catch (cause) {
-                    setError(message(cause));
-                  }
-                }}
+                disabled={loaded.busy}
+                onClick={loaded.loadOlder}
               >
                 Older runs
               </button>

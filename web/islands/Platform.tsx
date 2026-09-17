@@ -33,7 +33,7 @@ export default function Platform({ page, id }: { page: string; id?: string }) {
     30000,
   );
   const artifacts = useResource<Artifact[]>(
-    needs("home", "models", "rl") ? "/artifacts" : null,
+    needs("home", "models", "rl", "inference") ? "/artifacts" : null,
   );
   const capabilities = useResource<{ workers: Worker[] }>(
     needs("home", "models", "rl", "benchmark", "inference")
@@ -42,7 +42,15 @@ export default function Platform({ page, id }: { page: string; id?: string }) {
     5000,
   );
   const jobs = useResource<{ items: Job[]; next: string | null }>(
-    needs("home", "models", "rl", "benchmark", "results", "console")
+    needs(
+        "home",
+        "models",
+        "rl",
+        "benchmark",
+        "results",
+        "console",
+        "inference",
+      )
       ? "/jobs?limit=200"
       : null,
     5000,
@@ -157,6 +165,10 @@ export default function Platform({ page, id }: { page: string; id?: string }) {
                 connections={data.connections}
                 deployments={data.deployments}
                 workers={data.workers}
+                artifacts={data.artifacts}
+                artifactsLoaded={artifacts.data !== null}
+                jobs={data.jobs}
+                refresh={refresh}
               />
             )}
             {page === "benchmark" && <BenchmarkPanel {...data} />}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { api, message, metric, terminal } from "@/lib/platform.ts";
 import type { Job } from "@/lib/platform.ts";
+import { useJobHistory } from "@/lib/job-history.ts";
 import { Field, JobTable, Notice } from "./PlatformUI.tsx";
 export function ResultsPanel(
   { jobs, next }: { jobs: Job[]; next: string | null },
@@ -10,14 +11,10 @@ export function ResultsPanel(
   const [kind, setKind] = useState(""),
     [status, setStatus] = useState(""),
     [search, setSearch] = useState(""),
-    [older, setOlder] = useState<Job[]>([]),
-    [cursor, setCursor] = useState(next),
-    [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [compare, setCompare] = useState<Job[]>([]);
-  useEffect(() => {
-    if (!older.length) setCursor(next);
-  }, [next, older.length]);
+  const pagination = useJobHistory(jobs, next);
+  const { items: combined, cursor, busy } = pagination;
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     setCategory(query.get("category") || "experiments");
@@ -53,10 +50,6 @@ export function ResultsPanel(
     models: ["model_import", "deployment"],
     chats: ["chat"],
   };
-  const combined = [
-    ...jobs,
-    ...older.filter((item) => !jobs.some((j) => item.id === j.id)),
-  ];
   const filtered = combined.filter((j) =>
     (!categories[category] || categories[category].includes(j.kind)) &&
     (!kind || kind === j.kind) && (!status || status === j.status) &&
@@ -169,7 +162,11 @@ export function ResultsPanel(
                 "deployment",
                 "model_import",
                 "chat",
-              ].map((k) => <option key={k}>{k}</option>)}
+              ].filter((k) =>
+                !categories[category] || categories[category].includes(k)
+              ).map((k) => (
+                <option value={k} key={k}>{k.replaceAll("_", " ")}</option>
+              ))}
             </select>
           </Field>
           <Field label="Status">
@@ -190,15 +187,37 @@ export function ResultsPanel(
             </select>
           </Field>
         </div>
-        {error && <Notice error>{error}</Notice>}
+        {(error || pagination.error) && (
+          <Notice error>{error || pagination.error}</Notice>
+        )}
         <p class="muted">
           Search and filters cover {combined.length}{" "}
           loaded runs{cursor ? "; load older runs to extend the search" : ""}.
         </p>
-        <JobTable
-          jobs={filtered}
-          compare={category === "experiments" || category === "all"}
-        />
+        {filtered.length
+          ? (
+            <JobTable
+              jobs={filtered}
+              compare={category === "experiments" || category === "all"}
+            />
+          )
+          : (
+            <div class="empty-state">
+              <p>No runs match these filters in the loaded history.</p>
+              <button
+                class="button secondary"
+                type="button"
+                onClick={() => {
+                  setCategory("all");
+                  setKind("");
+                  setStatus("");
+                  setSearch("");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
         {cursor !== null && (
           <div class="panel-footer">
             <small>Filters apply to {combined.length} loaded jobs.</small>
@@ -206,20 +225,7 @@ export function ResultsPanel(
               type="button"
               class="button secondary"
               disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const value = await api<
-                    { items: Job[]; next: string | null }
-                  >(`/jobs?limit=200&before=${encodeURIComponent(cursor)}`);
-                  setOlder([...older, ...value.items]);
-                  setCursor(value.next);
-                } catch (cause) {
-                  setError(message(cause));
-                } finally {
-                  setBusy(false);
-                }
-              }}
+              onClick={pagination.loadOlder}
             >
               {busy ? "Loading…" : "Load older jobs"}
             </button>

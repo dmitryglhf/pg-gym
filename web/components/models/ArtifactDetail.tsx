@@ -1,8 +1,9 @@
 import { useState } from "preact/hooks";
-import { api, field, numeric, terminal } from "@/lib/platform.ts";
-import type { Artifact, Job } from "@/lib/platform.ts";
+import { field, numeric, terminal } from "@/lib/platform.ts";
+import type { Artifact } from "@/lib/platform.ts";
+import { startModelServer } from "@/lib/serving.ts";
 import { readiness } from "@/lib/readiness.ts";
-import { openActivity, returnHref } from "@/lib/workspace.ts";
+import { openActivity, returnHref, useDraft } from "@/lib/workspace.ts";
 import { Field, Form, Notice } from "../PlatformUI.tsx";
 import { OperationCard } from "../OperationCard.tsx";
 import { ConnectionCard } from "./ConnectionCard.tsx";
@@ -32,8 +33,17 @@ export function ArtifactDetail({
   const variants = artifacts.filter((item) =>
     item.metadata.base_artifact_id === artifact.id
   );
-  const [purpose, setPurpose] = useState(""),
-    [queue, setQueue] = useState(false);
+  const [draft, setDraft] = useDraft("server:" + artifact.id, {
+    purpose: "",
+    tool_parser: "",
+    name: artifact.name.slice(0, 80),
+    max_model_len: "4096",
+    gpu_memory_utilization: "0.85",
+  });
+  const { purpose } = draft;
+  const edit = (name: keyof typeof draft, value: string) =>
+    setDraft((old) => ({ ...old, [name]: value }));
+  const [queueFor, setQueueFor] = useState("");
   const state = readiness("deployment", workers, [...deployments, ...jobs]);
   return (
     <>
@@ -50,10 +60,23 @@ export function ArtifactDetail({
           </span>
         </div>
         <p class="muted">
-          Files ready means the model can be used for local training or
-          evaluation. Chat requires a ready server.
+          {artifact.kind === "model"
+            ? "Use these downloaded weights in chat as-is, or train a new variant. Fine-tuning is optional."
+            : "Use this trained variant in chat, or evaluate it against the base model."}
+          {" "}
+          Chat runs through a model server.
         </p>
         <div class="inline-actions">
+          {artifact.status === "ready" && (
+            <a
+              class={`button ${
+                target === "training" ? "secondary" : "primary"
+              }`}
+              href={"/inference?model=" + encodeURIComponent(artifact.id)}
+            >
+              Open in chat
+            </a>
+          )}
           {artifact.kind === "model" && artifact.status === "ready" && (
             <a
               class={`button ${
@@ -157,10 +180,9 @@ export function ArtifactDetail({
           <Form
             submit={state.busy ? "Queue server" : "Start server"}
             disabled={artifact.status !== "ready" || !state.available ||
-              (!!state.busy && !queue)}
+              (!!state.busy && queueFor !== state.busy.id)}
             onSubmit={async (data) => {
-              const job = await api<Job>("/deployments", "POST", {
-                artifact_id: artifact.id,
+              const job = await startModelServer(artifact, {
                 name: field(data, "name"),
                 max_model_len: numeric(data, "max_model_len"),
                 gpu_memory_utilization: numeric(data, "gpu_memory_utilization"),
@@ -176,7 +198,7 @@ export function ArtifactDetail({
               <select
                 required
                 value={purpose}
-                onChange={(e) => setPurpose(e.currentTarget.value)}
+                onChange={(e) => edit("purpose", e.currentTarget.value)}
               >
                 <option value="">Choose a purpose</option>
                 <option value="chat">Chat</option>
@@ -188,7 +210,12 @@ export function ArtifactDetail({
                 label="Tool parser"
                 hint="Choose the parser supported by this model. The platform does not guess model compatibility."
               >
-                <select name="tool_parser" required>
+                <select
+                  name="tool_parser"
+                  required
+                  value={draft.tool_parser}
+                  onChange={(e) => edit("tool_parser", e.currentTarget.value)}
+                >
                   <option value="">Select supported parser</option>
                   {["hermes", "llama3_json", "mistral", "qwen3_xml"].map((
                     parser,
@@ -202,7 +229,8 @@ export function ArtifactDetail({
                 <Field label="Server name">
                   <input
                     name="name"
-                    defaultValue={artifact.name.slice(0, 80)}
+                    value={draft.name}
+                    onInput={(e) => edit("name", e.currentTarget.value)}
                     maxLength={80}
                     required
                   />
@@ -211,7 +239,9 @@ export function ArtifactDetail({
                   <input
                     type="number"
                     name="max_model_len"
-                    defaultValue={4096}
+                    value={draft.max_model_len}
+                    onInput={(e) =>
+                      edit("max_model_len", e.currentTarget.value)}
                     min={1024}
                     max={131072}
                     required
@@ -221,7 +251,9 @@ export function ArtifactDetail({
                   <input
                     type="number"
                     name="gpu_memory_utilization"
-                    defaultValue={0.85}
+                    value={draft.gpu_memory_utilization}
+                    onInput={(e) =>
+                      edit("gpu_memory_utilization", e.currentTarget.value)}
                     min={0.1}
                     max={0.95}
                     step={0.05}
@@ -244,8 +276,11 @@ export function ArtifactDetail({
                   <label class="check-field">
                     <input
                       type="checkbox"
-                      checked={queue}
-                      onChange={(e) => setQueue(e.currentTarget.checked)}
+                      checked={queueFor === state.busy.id}
+                      onChange={(e) =>
+                        setQueueFor(
+                          e.currentTarget.checked ? state.busy!.id : "",
+                        )}
                     />Queue explicitly; a running server will not stop
                     automatically
                   </label>

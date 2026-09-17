@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { api, ApiError, message, terminal } from "@/lib/platform.ts";
-import type { Connection, Conversation, Job, Worker } from "@/lib/platform.ts";
+import type {
+  Artifact,
+  Connection,
+  Conversation,
+  Job,
+  Worker,
+} from "@/lib/platform.ts";
 import { useResource } from "@/lib/query.ts";
 import { connectionStatus, readiness } from "@/lib/readiness.ts";
 import {
+  openActivity,
   preparationHref,
   readSession,
   useDraft,
@@ -11,12 +18,28 @@ import {
 } from "@/lib/workspace.ts";
 import { Field, Notice } from "./PlatformUI.tsx";
 import { ChatTurn } from "./inference/ChatTurn.tsx";
+import { Icon } from "./Icon.tsx";
+import { chatModels, modelSelection } from "@/lib/chat-models.ts";
+import { ModelPicker } from "./inference/ModelPicker.tsx";
+import { LocalModelLaunch } from "./inference/LocalModelLaunch.tsx";
 
 export function InferencePanel(
-  { connections, deployments, workers }: {
+  {
+    connections,
+    deployments,
+    workers,
+    artifacts,
+    artifactsLoaded,
+    jobs,
+    refresh,
+  }: {
     connections: Connection[];
     deployments: Job[];
     workers: Worker[];
+    artifacts: Artifact[];
+    artifactsLoaded: boolean;
+    jobs: Job[];
+    refresh: () => void;
   },
 ) {
   const [id, setId] = useState(""),
@@ -38,13 +61,30 @@ export function InferencePanel(
     [error, setError] = useState(""),
     [uncertain, setUncertain] = useDraft("chat-create-uncertain", false);
   const [submitted, setSubmitted] = useState<
-    { conversation: string; job: Job; prompt: string } | null
+    | {
+      conversation: string;
+      job: Job;
+      prompt: string;
+      connectionIds: string[];
+    }
+    | null
   >(null);
   const lock = useRef(false),
     composer = useRef<HTMLTextAreaElement>(null),
     end = useRef<HTMLDivElement>(null);
   const focusButton = useRef<HTMLButtonElement>(null);
   const list = useResource<Conversation[]>("/conversations", 10000);
+  useEffect(() => {
+    document.body.dataset.chatPage = "true";
+    return () => {
+      delete document.body.dataset.chatPage;
+    };
+  }, []);
+  useEffect(() => {
+    if (submitted?.conversation === id) {
+      end.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [submitted?.job.id]);
   const detail = useResource<Conversation>(
     id ? `/conversations/${id}` : null,
     2000,
@@ -52,25 +92,29 @@ export function InferencePanel(
   useEffect(() => {
     if (!restored || initialized) return;
     const query = new URLSearchParams(location.search),
-      connection = query.get("connection");
+      connection = query.get("connection"),
+      requested = query.get("model")
+        ? "artifact:" + query.get("model")
+        : connection;
     const returning = readSession<{ id: string; prompt: string } | null>(
       "chat-return",
       null,
     );
     setId(
-      connection
+      requested
         ? ""
         : query.get("chat") || returning?.id || readSession("chat-last-id", ""),
     );
-    if (returning && connection) {
+    if (returning && requested) {
       setPrompts((old) => ({ ...old, new: returning.prompt }));
     }
     writeSession("chat-return", null);
-    if (connection) {
+    if (requested) writeSession("chat-last-id", "");
+    if (requested) {
       setConfig((old) => ({
         ...old,
-        a: connection,
-        b: old.b === connection ? "" : old.b,
+        a: requested,
+        b: old.b === requested ? "" : old.b,
       }));
     }
     let task: string | null = null;
@@ -83,6 +127,7 @@ export function InferencePanel(
         sessionStorage.removeItem("pg-task-prompt");
       } catch { /* Optional persistence. */ }
       setId("");
+      writeSession("chat-last-id", "");
     }
     setInitialized(true);
   }, [restored, initialized]);
@@ -90,6 +135,7 @@ export function InferencePanel(
     if (!initialized) return;
     const url = new URL(location.href);
     url.searchParams.delete("connection");
+    url.searchParams.delete("model");
     url.searchParams.delete("artifact");
     url.searchParams.delete("tab");
     if (id) url.searchParams.set("chat", id);
@@ -113,13 +159,40 @@ export function InferencePanel(
       removeEventListener("pg-open-activity", revealActivity);
     };
   }, [focus]);
+  const models = chatModels(artifacts, connections, deployments);
+  const selectionA = modelSelection(config.a, models, connections, deployments);
+  const candidateB = modelSelection(config.b, models, connections, deployments);
+  const selectionB = candidateB === selectionA ? "" : candidateB;
+  useEffect(() => {
+    if (candidateB && candidateB === selectionA) {
+      setConfig((old) => ({ ...old, b: "" }));
+    }
+  }, [selectionA, candidateB]);
+  const choices = [selectionA, selectionB].filter(Boolean);
+  const selectedModels = choices.map((key) =>
+    models.find((model) => model.key === key)
+  );
+  const draftIds = selectedModels.map((model) =>
+    model?.usable ? model.connection?.id : undefined
+  ).filter((value): value is string => !!value);
+  const localSelections = selectedModels.filter((model) => !!model?.artifact);
+  const comparisonBlocked = localSelections.length === 2 &&
+    localSelections.some((model) => !model?.usable) &&
+    workers.filter((worker) =>
+        worker.connected && worker.capabilities.includes("deployment")
+      ).length < 2;
+  useEffect(() => {
+    if (
+      initialized && restored && !id && !config.a && artifactsLoaded &&
+      models.length === 1
+    ) setConfig((old) => ({ ...old, a: models[0].key }));
+  }, [initialized, restored, id, config.a, artifactsLoaded, models]);
   const conversation = detail.data?.id === id ? detail.data : null;
   const ids = id
     ? conversation?.config.connection_ids ||
-      (submitted?.conversation === id
-        ? [config.a, config.b].filter(Boolean)
-        : [])
-    : [config.a, config.b].filter(Boolean);
+      (submitted?.conversation === id ? submitted.connectionIds : [])
+    : draftIds;
+  const modelCount = id ? ids.length : choices.length;
   const turns = conversation?.turns || [];
   const visibleTurns = submitted?.conversation === id &&
       !turns.some((turn) => turn.job.id === submitted.job.id)
@@ -130,16 +203,19 @@ export function InferencePanel(
     }]
     : turns;
   const active = visibleTurns.some((turn) => !terminal(turn.job));
-  const unavailable = ids.some((key) => {
-    const connection = connections.find((item) => item.id === key);
-    return !connection || !connectionStatus(connection, deployments).usable;
-  });
+  const unavailable = id
+    ? ids.some((key) => {
+      const connection = connections.find((item) => item.id === key);
+      return !connection || !connectionStatus(connection, deployments).usable;
+    })
+    : selectedModels.some((model) => model && !model.artifact && !model.usable);
   const worker = readiness("chat", workers, []);
   const ready = initialized && worker.available &&
     (id ||
       (config.temperature >= 0 && config.temperature <= 2 &&
         config.tokens >= 1 && config.tokens <= 32768 &&
-        Number.isInteger(config.tokens))) &&
+        Number.isInteger(config.tokens) && !!selectionA &&
+        draftIds.length === choices.length)) &&
     ids.length > 0 && new Set(ids).size === ids.length && !unavailable &&
     (!id || !!conversation);
   const prompt = prompts[id || "new"] || "";
@@ -148,6 +224,10 @@ export function InferencePanel(
   const rememberReturn = () => writeSession("chat-return", { id, prompt });
   function choose(next: string) {
     if (busy) return;
+    if (uncertain && next && !id) {
+      setPrompts((old) => ({ ...old, [next]: old[next] || old.new || "" }));
+      setUncertain(false);
+    }
     setId(next);
     writeSession("chat-last-id", next);
     setError("");
@@ -199,17 +279,18 @@ export function InferencePanel(
       const job = await api<Job>(`/conversations/${target}/turns`, "POST", {
         prompt,
       });
-      setSubmitted({ conversation: target, job, prompt });
+      setSubmitted({ conversation: target, job, prompt, connectionIds: ids });
       setPrompts((old) => ({ ...old, [target]: "" }));
       detail.refresh();
       list.refresh();
-      end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     } catch (cause) {
       setError(message(cause));
     } finally {
       lock.current = false;
       setBusy(false);
-      composer.current?.focus();
+      requestAnimationFrame(() =>
+        composer.current?.focus({ preventScroll: true })
+      );
     }
   }
   return (
@@ -241,6 +322,15 @@ export function InferencePanel(
           <a href={preparationHref("inference")} onClick={rememberReturn}>
             Models & servers
           </a>
+          <button
+            class="icon-button"
+            type="button"
+            title="Activity & logs"
+            aria-label="Activity & logs"
+            onClick={() => openActivity()}
+          >
+            <Icon name="terminal" size={18} />
+          </button>
           <button
             ref={focusButton}
             type="button"
@@ -306,55 +396,60 @@ export function InferencePanel(
               : (
                 <>
                   <div class="fields two">
-                    <Field label="Model A">
-                      <select
-                        disabled={busy}
-                        value={config.a}
-                        onChange={(event) =>
-                          setConfig({
-                            ...config,
-                            a: event.currentTarget.value,
-                          })}
-                      >
-                        <option value="">Select a model</option>
-                        {connections.map((connection) => (
-                          <option
-                            key={connection.id}
-                            value={connection.id}
-                            disabled={!connectionStatus(connection, deployments)
-                              .usable || connection.id === config.b}
-                          >
-                            {connection.name} ·{" "}
-                            {connectionStatus(connection, deployments).label}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Model B · optional">
-                      <select
-                        disabled={busy}
-                        value={config.b}
-                        onChange={(event) =>
-                          setConfig({
-                            ...config,
-                            b: event.currentTarget.value,
-                          })}
-                      >
-                        <option value="">Single model</option>
-                        {connections.map((connection) => (
-                          <option
-                            key={connection.id}
-                            value={connection.id}
-                            disabled={!connectionStatus(connection, deployments)
-                              .usable || connection.id === config.a}
-                          >
-                            {connection.name} ·{" "}
-                            {connectionStatus(connection, deployments).label}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
+                    <ModelPicker
+                      label="Model A"
+                      value={selectionA}
+                      other={selectionB}
+                      models={models}
+                      disabled={busy}
+                      onChange={(value) =>
+                        setConfig((old) => ({ ...old, a: value }))}
+                    />
+                    <ModelPicker
+                      label="Model B · optional"
+                      value={selectionB}
+                      other={selectionA}
+                      models={models}
+                      disabled={busy}
+                      optional
+                      onChange={(value) =>
+                        setConfig((old) => ({ ...old, b: value }))}
+                    />
                   </div>
+                  <p class="muted model-picker-hint">
+                    Downloaded models, trained variants and API connections.
+                    Fine-tuning is optional.
+                  </p>
+                  {!artifactsLoaded && (
+                    <p role="status" class="muted">
+                      Loading local model library…
+                    </p>
+                  )}
+                  {comparisonBlocked && (
+                    <Notice>
+                      Two local models need two serving workers. For A/B on one
+                      worker, use an API connection for the other model.
+                    </Notice>
+                  )}
+                  {selectedModels.filter((model) =>
+                    !!model?.artifact && !model.usable
+                  ).map((model) => (
+                    <LocalModelLaunch
+                      key={model!.key}
+                      model={model!}
+                      workers={workers}
+                      jobs={[...deployments, ...jobs]}
+                      comparisonBlocked={comparisonBlocked}
+                      onChanged={refresh}
+                      onLeave={rememberReturn}
+                    />
+                  ))}
+                  {selectedModels.some((model) => !model) && (
+                    <Notice>
+                      The selected model is not in the library. Choose another
+                      model or check Models & servers.
+                    </Notice>
+                  )}
                   <details class="chat-settings">
                     <summary>Generation settings</summary>
                     <Field label="System prompt">
@@ -401,27 +496,27 @@ export function InferencePanel(
                   </details>
                 </>
               )}
-            {ids.length === 2 && (
+            {modelCount === 2 && (
               <p class="muted">
                 One prompt, separate model histories. A runs first, then B. One
-                GPU worker can host one local server; use an external endpoint
-                for the other model. Response time is not a controlled
-                performance benchmark.
+                GPU worker can host one local server; with one worker, use an
+                API connection for the other model. Response time is not a
+                controlled performance benchmark.
               </p>
             )}
             {unavailable && (
               <Notice>
-                A selected server is unavailable. Your conversation is
-                preserved.{" "}
+                {id
+                  ? "A selected server is unavailable. Your conversation is preserved."
+                  : "The selected server is unavailable. Choose another model or check its server."}
+                {" "}
                 <a href={preparationHref("inference")} onClick={rememberReturn}>
                   Prepare a model
                 </a>{" "}
-                and start a new chat with its connection.
+                {id && " and start a new chat with its connection."}
               </Notice>
             )}
-            {!connections.some((item) =>
-              connectionStatus(item, deployments).usable
-            ) && !unavailable && (
+            {artifactsLoaded && models.length === 0 && !id && (
               <Notice>
                 <a href={preparationHref("inference")} onClick={rememberReturn}>
                   Prepare your first model
@@ -459,7 +554,7 @@ export function InferencePanel(
             )}
             {visibleTurns.map((turn) => (
               <ChatTurn
-                key={turn.id}
+                key={turn.job.id}
                 turn={turn}
                 ids={ids}
                 connections={conversation?.config.connections ||
@@ -517,17 +612,18 @@ export function InferencePanel(
               </Notice>
             )}
             <label class="sr-only" for="chat-prompt">
-              Message for {ids.length === 2 ? "both models" : "the model"}
+              Message for {modelCount === 2 ? "both models" : "the model"}
             </label>
             <textarea
               id="chat-prompt"
               ref={composer}
+              disabled={busy}
               rows={3}
               maxLength={100000}
               required
               value={prompt}
               onInput={(event) => changePrompt(event.currentTarget.value)}
-              placeholder={ids.length === 2
+              placeholder={modelCount === 2
                 ? "Ask both models…"
                 : "Ask anything…"}
               onKeyDown={(event) => {
@@ -548,7 +644,7 @@ export function InferencePanel(
                 disabled={busy || !!active || !ready || !prompt.trim() ||
                   (!id && uncertain)}
               >
-                {busy ? "Sending…" : ids.length === 2 ? "Send to both" : "Send"}
+                {busy ? "Sending…" : modelCount === 2 ? "Send to both" : "Send"}
               </button>
             </div>
             {id && (

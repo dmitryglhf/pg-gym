@@ -87,7 +87,14 @@ export const app = new App()
         });
         await response.body?.cancel();
         if (response.status === 401) {
-          return Response.redirect(new URL("/login", ctx.url), 303);
+          return Response.redirect(
+            new URL(
+              "/login?next=" +
+                encodeURIComponent(ctx.url.pathname + ctx.url.search),
+              ctx.url,
+            ),
+            303,
+          );
         }
         if (!response.ok) {
           return new Response("Platform unavailable. Reload to retry.", {

@@ -38,23 +38,33 @@ export function WorkspacePanel(
   );
   const preparation = goal === "training"
     ? models.length > 0
+    : goal === "inference"
+    ? artifacts.some((item) =>
+      ["model", "adapter"].includes(item.kind) && item.status === "ready"
+    ) || usable.length > 0
     : usable.some((item) => goal !== "benchmark" || item.tools);
-  const capability = readiness(goal === "inference" ? "chat" : goal, workers, [
-    ...deployments,
-    ...jobs,
-  ]);
+  const capability = readiness(
+    goal === "inference" ? (usable.length ? "chat" : "deployment") : goal,
+    workers,
+    [
+      ...deployments,
+      ...jobs,
+    ],
+  );
   const steps = [
     {
       done: preparation,
       title: goal === "training"
         ? "Download base model weights"
+        : goal === "inference"
+        ? "Choose a model for chat"
         : "Prepare a model connection",
       description: goal === "training"
         ? "Training uses weights directly; no inference server is needed."
         : goal === "benchmark"
         ? "Use an external API or a local server with tool calling."
-        : "Use a ready local server or connect an external API.",
-      href: preparationHref(
+        : "Choose downloaded weights, a trained variant or an API connection. Fine-tuning is optional.",
+      href: goal === "inference" ? "/inference" : preparationHref(
         goal === "training"
           ? "training"
           : goal === "inference"

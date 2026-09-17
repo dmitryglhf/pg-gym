@@ -14,6 +14,7 @@ export function ChatTurn({ turn, ids, connections, onReuse }: {
   const [job, setJob] = useState(turn.job),
     [outputs, setOutputs] = useState<Record<string, ChatOutput>>({});
   const [side, setSide] = useState(0);
+  const [generating, setGenerating] = useState("");
   const [error, setError] = useState(""),
     [feedback, setFeedback] = useState(""),
     [busy, setBusy] = useState(false);
@@ -35,6 +36,11 @@ export function ChatTurn({ turn, ids, connections, onReuse }: {
         cursor = batch.next;
         setJob(current);
         setError("");
+        for (const event of batch.items) {
+          if (event.kind === "phase" && event.payload.phase === "generating") {
+            setGenerating(String(event.payload.connection_id));
+          }
+        }
         setOutputs((old) => {
           const next = structuredClone(old);
           for (const event of batch.items) {
@@ -64,7 +70,7 @@ export function ChatTurn({ turn, ids, connections, onReuse }: {
       stopped = true;
       clearTimeout(timer);
     };
-  }, [turn.job.id, turn.job.status]);
+  }, [turn.job.id]);
   const values = { ...outputs, ...job.result?.outputs };
   return (
     <article class="conversation-turn">
@@ -113,7 +119,7 @@ export function ChatTurn({ turn, ids, connections, onReuse }: {
                   <pre class="message-text">{output.reasoning}</pre>
                 </details>
               )}
-              <pre class="message-text">{output?.text || (terminal(job) ? "No text response saved." : index === 1 && !output ? "Waiting for model A, then model B…" : job.status === "queued" ? "Waiting for a worker…" : "Generating…")}</pre>
+              <pre class="message-text">{output?.text || (terminal(job) ? "No text response saved." : index === 1 && !output && generating !== id ? "Waiting for model A, then model B…" : job.status === "queued" ? "Waiting for a worker…" : "Generating…")}</pre>
               {!!output?.tool_calls?.length && (
                 <details>
                   <summary>Tool calls (not executed)</summary>

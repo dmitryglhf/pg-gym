@@ -256,7 +256,8 @@ export function JobMonitor(
       )}
       {!compact && (
         <>
-          {job.result?.connection_id && !terminal(job) && (
+          {job.result?.connection_id && !terminal(job) &&
+            job.worker_connected && !job.cancel_requested && (
             <div class="panel inline-actions">
               <a
                 class="button primary"
@@ -264,12 +265,14 @@ export function JobMonitor(
               >
                 Open chat
               </a>
-              <a
-                class="button secondary"
-                href={`/benchmark?connection=${job.result.connection_id}`}
-              >
-                Benchmark this model
-              </a>
+              {job.config.tool_parser && (
+                <a
+                  class="button secondary"
+                  href={`/benchmark?connection=${job.result.connection_id}`}
+                >
+                  Benchmark this model
+                </a>
+              )}
             </div>
           )}
           {(job.result?.mean_reward !== undefined || completed.length > 0) && (
@@ -571,7 +574,7 @@ function Artifacts({ jobId }: { jobId: string }) {
           {a.kind === "adapter" && (
             <div class="inline-actions">
               <a class="button secondary" href={`/models?artifact=${a.id}`}>
-                Open in Inference
+                Model & server
               </a>
               <a
                 class="button secondary"

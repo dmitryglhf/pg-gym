@@ -1,3 +1,9 @@
+import {
+  forgetRequest,
+  isSubmission,
+  requestIdentity,
+  requestKey,
+} from "./idempotency.ts";
 export type Connection = {
   id: string;
   name: string;
@@ -133,20 +139,9 @@ export async function api<T>(
     headers.set("X-CSRF-Token", decodeURIComponent(cookie.trim().slice(8)));
   }
   let storageKey = "";
-  if (method === "POST") {
-    const hash = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(path + JSON.stringify(body)),
-    );
-    storageKey = "pg-submit-" +
-      Array.from(new Uint8Array(hash), (n) => n.toString(16).padStart(2, "0"))
-        .join("");
-    let key: string = crypto.randomUUID();
-    try {
-      key = sessionStorage.getItem(storageKey) || key;
-      sessionStorage.setItem(storageKey, key);
-    } catch { /* Storage is optional for transport. */ }
-    headers.set("Idempotency-Key", key);
+  if (method === "POST" && isSubmission(path)) {
+    storageKey = requestIdentity(path, body);
+    headers.set("Idempotency-Key", requestKey(storageKey));
   }
   let response: Response;
   try {
@@ -158,19 +153,40 @@ export async function api<T>(
     });
   } catch {
     throw new ApiError(
-      (method === "POST" &&
-          /^\/(benchmarks|models\/imports|deployments|training-runs|evaluations|conversations\/[^/]+\/turns|jobs\/[^/]+\/retries)$/
-            .test(path))
+      (method === "POST" && isSubmission(path))
         ? "Submission was not confirmed. Check Workspace / Runs & results before retrying; retrying this form reuses the same request key."
         : method === "POST"
         ? "The request outcome is unknown. Refresh the relevant list before repeating this action."
         : "The server could not be reached. Your jobs continue on the worker.",
     );
   }
-  const data = await response.json().catch(() => null);
+  let data;
+  try {
+    data = response.status === 204 ? null : await response.json();
+  } catch {
+    if (response.ok) {
+      throw new ApiError(
+        "The server response was incomplete. The operation may have been accepted. Check its history before retrying; submitted jobs retain their request key.",
+      );
+    }
+    data = null;
+  }
+  if (
+    response.ok && response.status !== 204 &&
+    (data === null || typeof data !== "object")
+  ) {
+    throw new ApiError(
+      "The server returned an invalid response. Check the operation history before retrying; submitted jobs retain their request key.",
+    );
+  }
   if (!response.ok) {
     if (response.status === 401 && !path.startsWith("/auth/")) {
-      location.assign("/login");
+      location.assign(
+        "/login?next=" +
+          encodeURIComponent(
+            location.pathname + location.search + location.hash,
+          ),
+      );
     }
     const fields = data?.error?.fields?.map((
       f: { field: string; message: string },
@@ -180,11 +196,15 @@ export async function api<T>(
       response.status,
     );
   }
-  if (storageKey) {
-    try {
-      sessionStorage.removeItem(storageKey);
-    } catch { /* Storage is optional. */ }
+  if (
+    method === "POST" && (isSubmission(path) || path === "/conversations") &&
+    (!data || typeof data.id !== "string" || !data.id)
+  ) {
+    throw new ApiError(
+      "The server did not confirm an operation ID. Check its history before retrying; submitted jobs retain their request key.",
+    );
   }
+  if (storageKey) forgetRequest(storageKey);
   return data as T;
 }
 

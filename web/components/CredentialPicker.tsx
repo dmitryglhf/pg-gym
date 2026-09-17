@@ -11,11 +11,13 @@ export function CredentialPicker(
     label = "API key",
     defaultName = "MODEL_API_KEY",
     onEditingChange,
+    keepStoredKey = false,
   }: {
     value: string;
     onChange: (value: string) => void;
     label?: string;
     defaultName?: string;
+    keepStoredKey?: boolean;
     onEditingChange?: (editing: boolean) => void;
   },
 ) {
@@ -32,7 +34,11 @@ export function CredentialPicker(
       >
         <select value={value} onChange={(e) => onChange(e.currentTarget.value)}>
           <option value="">No key / public access</option>
-          {value && !environment.data?.names.includes(value) && (
+          {keepStoredKey && (
+            <option value="__stored">Keep current stored key</option>
+          )}
+          {value && value !== "__stored" &&
+            !environment.data?.names.includes(value) && (
             <option value={value}>{value}</option>
           )}
           {environment.data?.names.map((key) => <option key={key}>{key}

@@ -1,6 +1,7 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { api, field, numeric } from "@/lib/platform.ts";
 import type { Job, Worker } from "@/lib/platform.ts";
+import { useDraft } from "@/lib/workspace.ts";
 import { readiness } from "@/lib/readiness.ts";
 import { CredentialPicker } from "../CredentialPicker.tsx";
 import { Field, Form, Notice } from "../PlatformUI.tsx";
@@ -13,8 +14,36 @@ export function AddModel(
 ) {
   const [editingKey, setEditingKey] = useState(false);
   const availability = readiness("model_import", workers, []);
-  const [source, setSource] = useState("hf"),
-    [credential, setCredential] = useState("");
+  const [draft, setDraft, restored] = useDraft("add-model", {
+    source: "hf",
+    repository: "",
+    revision: "main",
+    hfCredential: "",
+    apiCredential: "",
+    name: "",
+    base_url: "",
+    model: "",
+    tools: false,
+    context_length: "32768",
+    max_tokens: "4096",
+  });
+  useEffect(() => {
+    if (!restored) return;
+    const url = new URL(location.href);
+    if (url.searchParams.get("source") !== "api") return;
+    setDraft((old) => ({ ...old, source: "api" }));
+    url.searchParams.delete("source");
+    history.replaceState({}, "", url);
+  }, [restored]);
+  const { source } = draft;
+  const credential = source === "hf" ? draft.hfCredential : draft.apiCredential;
+  const setCredential = (value: string) =>
+    setDraft((old) => ({
+      ...old,
+      [source === "hf" ? "hfCredential" : "apiCredential"]: value,
+    }));
+  const edit = (name: keyof typeof draft, value: string | boolean) =>
+    setDraft((old) => ({ ...old, [name]: value }));
   return (
     <section class="panel">
       <div class="panel-heading">
@@ -25,8 +54,8 @@ export function AddModel(
             class={`button ${source === "hf" ? "primary" : "secondary"}`}
             aria-pressed={source === "hf"}
             onClick={() => {
-              setSource("hf");
-              setCredential("");
+              if (source === "hf") return;
+              edit("source", "hf");
               setEditingKey(false);
             }}
           >
@@ -37,8 +66,8 @@ export function AddModel(
             class={`button ${source === "api" ? "primary" : "secondary"}`}
             aria-pressed={source === "api"}
             onClick={() => {
-              setSource("api");
-              setCredential("");
+              if (source === "api") return;
+              edit("source", "api");
               setEditingKey(false);
             }}
           >
@@ -78,6 +107,8 @@ export function AddModel(
             <Field label="Hugging Face repository">
               <input
                 name="repository"
+                value={draft.repository}
+                onInput={(e) => edit("repository", e.currentTarget.value)}
                 placeholder="organization/model"
                 pattern="[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+"
                 required
@@ -88,18 +119,32 @@ export function AddModel(
           : (
             <div class="fields three">
               <Field label="Display name">
-                <input name="name" required maxLength={80} />
+                <input
+                  name="name"
+                  value={draft.name}
+                  onInput={(e) => edit("name", e.currentTarget.value)}
+                  required
+                  maxLength={80}
+                />
               </Field>
               <Field label="API base URL">
                 <input
                   name="base_url"
+                  value={draft.base_url}
+                  onInput={(e) => edit("base_url", e.currentTarget.value)}
                   type="url"
                   placeholder="https://provider.example/v1"
                   required
                 />
               </Field>
               <Field label="Model identifier">
-                <input name="model" required maxLength={200} />
+                <input
+                  name="model"
+                  value={draft.model}
+                  onInput={(e) => edit("model", e.currentTarget.value)}
+                  required
+                  maxLength={200}
+                />
               </Field>
             </div>
           )}
@@ -112,8 +157,12 @@ export function AddModel(
         />
         {source === "api" && (
           <label class="check-field">
-            <input type="checkbox" name="tools" />This model supports tool
-            calling for harness benchmarks
+            <input
+              type="checkbox"
+              name="tools"
+              checked={draft.tools}
+              onChange={(e) => edit("tools", e.currentTarget.checked)}
+            />This model supports tool calling for harness benchmarks
           </label>
         )}
         <details class="advanced">
@@ -121,7 +170,11 @@ export function AddModel(
           {source === "hf"
             ? (
               <Field label="Revision">
-                <input name="revision" defaultValue="main" />
+                <input
+                  name="revision"
+                  value={draft.revision}
+                  onInput={(e) => edit("revision", e.currentTarget.value)}
+                />
               </Field>
             )
             : (
@@ -132,7 +185,9 @@ export function AddModel(
                     name="context_length"
                     min={1024}
                     max={2097152}
-                    defaultValue={32768}
+                    value={draft.context_length}
+                    onInput={(e) =>
+                      edit("context_length", e.currentTarget.value)}
                     required
                   />
                 </Field>
@@ -142,7 +197,8 @@ export function AddModel(
                     name="max_tokens"
                     min={16}
                     max={131072}
-                    defaultValue={4096}
+                    value={draft.max_tokens}
+                    onInput={(e) => edit("max_tokens", e.currentTarget.value)}
                     required
                   />
                 </Field>

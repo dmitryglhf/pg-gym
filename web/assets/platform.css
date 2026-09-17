@@ -15,7 +15,7 @@ body {
   background: #f6f7f9;
   color: var(--ink);
   font-family: Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
 }
 h1,
@@ -32,7 +32,7 @@ h1 {
   margin-bottom: 0;
 }
 h2 {
-  font-size: 19px;
+  font-size: 20px;
   letter-spacing: -.6px;
   line-height: 1.3;
   margin: 0;
@@ -50,7 +50,7 @@ small,
   color: var(--muted);
 }
 small {
-  font-size: 12px;
+  font-size: 13px;
 }
 button,
 input,
@@ -79,7 +79,7 @@ button:disabled {
 }
 .page-shell {
   min-height: 100dvh;
-  padding: 0 0 40px 118px;
+  padding: 0 0 40px var(--rail-width,132px);
 }
 .wrap.platform {
   width: calc(100% - 64px);
@@ -119,7 +119,7 @@ button:disabled {
 .tool-rail {
   position: fixed;
   inset: 16px auto 16px 16px;
-  width: 92px;
+  width: 100px;
   margin: 0;
   border: 1px solid var(--line);
   border-radius: 28px;
@@ -133,24 +133,33 @@ button:disabled {
 }
 .tool-nav {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 .tool-nav a {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 6px;
-  min-height: 76px;
-  padding: 8px 2px;
+  gap: 8px;
+  min-height: 92px;
+  min-width: 0;
+  padding: 12px 4px;
   border-radius: 22px;
   text-decoration: none;
+  text-align: center;
   font-size: 11px;
+  line-height: 1.4;
   font-weight: 650;
   color: var(--muted);
 }
 .tool-nav a:hover {
   background: var(--soft);
+}
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .tool-nav a[aria-current=page] {
   background: var(--ink);
@@ -166,10 +175,17 @@ button:disabled {
 }
 .rail-account a,
 .rail-account button {
-  min-height: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 60px;
+  padding: 8px 4px;
   background: none;
   border: 0;
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--muted);
 }
 .rail-account .notice {
@@ -252,7 +268,7 @@ button:disabled {
   gap: 8px;
   min-width: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 550;
 }
 .field small {
@@ -920,10 +936,13 @@ dd {
   }
   .tool-nav a {
     flex: 1;
-    min-height: 58px;
+    min-height: 64px;
+    min-width: 0;
+    padding: 6px 2px;
     border-radius: 17px;
-    font-size: 9px;
-    gap: 3px;
+    font-size: 10px;
+    line-height: 1.25;
+    gap: 4px;
   }
   .tool-nav svg {
     width: 20px;
@@ -938,8 +957,10 @@ dd {
   .rail-account a {
     display: flex;
     align-items: center;
-    padding: 4px;
-    font-size: 9px;
+    padding: 6px 2px;
+    font-size: 10px;
+    line-height: 1.25;
+    gap: 4px;
   }
   .rail-account button {
     display: none;

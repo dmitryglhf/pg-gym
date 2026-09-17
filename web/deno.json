@@ -23,7 +23,8 @@
     "preact": "npm:preact@^10.27.1",
     "preact/hooks": "npm:preact@^10.27.1/hooks",
     "preact/jsx-runtime": "npm:preact@^10.27.1/jsx-runtime",
-    "vite": "npm:vite@^7.1.5"
+    "vite": "npm:vite@^7.1.5",
+    "@noble/hashes/sha2.js": "npm:@noble/hashes@2.4.0/sha2.js"
   },
   "compilerOptions": {
     "jsx": "precompile",

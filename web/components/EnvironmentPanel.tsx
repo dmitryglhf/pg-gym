@@ -11,7 +11,7 @@ const MASKED_EXAMPLE =
 
 type Row = { name: string; value: string | null };
 type Metadata = { revision: number; names: string[] };
-export function EnvironmentPanel() {
+export function EnvironmentPanel({ onClose }: { onClose?: () => void }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [revision, setRevision] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -21,6 +21,24 @@ export function EnvironmentPanel() {
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [dirty, setDirty] = useState(false);
+  async function reload() {
+    if (
+      dirty &&
+      !confirm(
+        "Discard your unsaved environment changes and reload saved values?",
+      )
+    ) return;
+    setBusy(true);
+    setError("");
+    setFeedback("");
+    try {
+      install(await api<Metadata>("/environment"));
+    } catch (cause) {
+      setError(message(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
   function install(data: Metadata) {
     setRevision(data.revision);
     setRows(data.names.map((name) => ({ name, value: null })));
@@ -106,15 +124,30 @@ export function EnvironmentPanel() {
             server.
           </p>
         </div>
-        <button
-          type="button"
-          class="button secondary"
-          disabled={!loaded || busy}
-          onClick={toggle}
-        >
-          <Icon name={visible ? "eyeOff" : "eye"} size={18} />
-          {visible ? "Hide values" : "Show .env editor"}
-        </button>
+        <div class="inline-actions">
+          {onClose && (
+            <button class="text-button" type="button" onClick={onClose}>
+              Close
+            </button>
+          )}
+          <button
+            type="button"
+            class="text-button"
+            disabled={busy}
+            onClick={reload}
+          >
+            {loaded ? "Reload saved values" : "Retry loading"}
+          </button>
+          <button
+            type="button"
+            class="button secondary"
+            disabled={!loaded || busy}
+            onClick={toggle}
+          >
+            <Icon name={visible ? "eyeOff" : "eye"} size={18} />
+            {visible ? "Hide values" : "Show .env editor"}
+          </button>
+        </div>
       </div>
       {error && <Notice error>{error}</Notice>}
       {feedback && <Notice>{feedback}</Notice>}
@@ -130,6 +163,7 @@ export function EnvironmentPanel() {
           <form
             onSubmit={async (event) => {
               event.preventDefault();
+              if (busy) return;
               setBusy(true);
               setError("");
               setFeedback("");

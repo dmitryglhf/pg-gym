@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "review": "node review.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.7",
+    "playwright": "^1.55.0",
+    "preact": "^10.27.1",
+    "@noble/hashes": "2.4.0"
+  }
+}

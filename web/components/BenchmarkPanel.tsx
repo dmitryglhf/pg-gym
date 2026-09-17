@@ -51,9 +51,17 @@ export function BenchmarkPanel(
     const query = new URLSearchParams(location.search);
     const connection = query.get("connection"), clone = query.get("clone");
     if (connection) setDraft((old) => ({ ...old, connection }));
+    query.delete("connection");
+    history.replaceState(
+      {},
+      "",
+      "/benchmark" + (query.size ? "?" + query : ""),
+    );
+    let mounted = true;
     if (clone) {
       setCloning(true);
       api<Job>("/jobs/" + encodeURIComponent(clone)).then((job) => {
+        if (!mounted) return;
         if (job.kind !== "benchmark") {
           throw new Error("This run is not a benchmark.");
         }
@@ -80,10 +88,15 @@ export function BenchmarkPanel(
           "",
           "/benchmark" + (query.size ? "?" + query : ""),
         );
-      }).catch((cause) => setCloneError(String(cause))).finally(() =>
-        setCloning(false)
-      );
+      }).catch((cause) => {
+        if (mounted) setCloneError(String(cause));
+      }).finally(() => {
+        if (mounted) setCloning(false);
+      });
     }
+    return () => {
+      mounted = false;
+    };
   }, [restored]);
   const tasks = useResource<{ name: string }[]>(
     draft.suite
@@ -107,12 +120,13 @@ export function BenchmarkPanel(
     connectionStatus(connection, deployments).usable;
   const worker = readiness("benchmark", workers, jobs);
   const validTasks = !!tasks.data?.length &&
-    (draft.scope === "suite" ||
-      (draft.scope === "copied" &&
-        draft.copiedTasks.every((name) =>
-          tasks.data!.some((item) => item.name === name)
-        )) ||
-      tasks.data.some((task) => task.name === draft.task));
+    (draft.scope === "suite"
+      ? true
+      : draft.scope === "copied"
+      ? draft.copiedTasks.length > 0 && draft.copiedTasks.every((name) =>
+        tasks.data!.some((item) => item.name === name)
+      )
+      : tasks.data.some((task) => task.name === draft.task));
   const profile = profiles.find((item) =>
     item.id === draft.profile && item.harness === draft.harness
   );
@@ -128,6 +142,7 @@ export function BenchmarkPanel(
           {cloneError && <Notice>{cloneError}</Notice>}
           <Form
             submit="Run benchmark"
+            locked={cloning}
             disabled={!restored || cloning || !modelReady ||
               !worker.available || !validTasks || (!!draft.profile && !profile)}
             onSubmit={async () => {

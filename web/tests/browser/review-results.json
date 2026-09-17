@@ -1,0 +1,130 @@
+[
+  {
+    "name": "Floating monochrome navigation has one Home link and original shadows",
+    "status": "passed"
+  },
+  {
+    "name": "Benchmark model selection survives reload after arriving from preparation",
+    "status": "passed"
+  },
+  {
+    "name": "Cancel inline key editor does not lock reopened connection form; public access clears key",
+    "status": "passed"
+  },
+  {
+    "name": "Chat send disables edits until acknowledgement and keeps a stable turn",
+    "status": "passed"
+  },
+  {
+    "name": "Mobile A/B layout and floating navigation fit the viewport",
+    "status": "passed"
+  },
+  {
+    "name": "History retains loaded runs when new jobs shift the recent page",
+    "status": "passed"
+  },
+  {
+    "name": "HTTP-compatible submit does not require secure-context crypto APIs",
+    "status": "passed"
+  },
+  {
+    "name": "Model preparation and server settings survive navigation",
+    "status": "passed"
+  },
+  {
+    "name": "Closing account variables keeps unsaved secrets in memory only",
+    "status": "passed"
+  },
+  {
+    "name": "Invalid advanced input is revealed by form validation",
+    "status": "passed"
+  },
+  {
+    "name": "Malformed submit acknowledgement retains the same idempotency key",
+    "status": "passed"
+  },
+  {
+    "name": "Streaming deltas do not duplicate when a queued chat starts running",
+    "status": "passed"
+  },
+  {
+    "name": "Open console updates runs without changing the selected run",
+    "status": "passed"
+  },
+  {
+    "name": "Missing model deep link cannot silently select another model",
+    "status": "passed"
+  },
+  {
+    "name": "Login returns to the same work and malformed return URLs remain usable",
+    "status": "passed"
+  },
+  {
+    "name": "models fits a narrow viewport",
+    "status": "passed"
+  },
+  {
+    "name": "benchmark fits a narrow viewport",
+    "status": "passed"
+  },
+  {
+    "name": "training fits a narrow viewport",
+    "status": "passed"
+  },
+  {
+    "name": "history fits a narrow viewport",
+    "status": "passed"
+  },
+  {
+    "name": "Busy GPU requires explicit queuing and keeps a stop action visible",
+    "status": "passed"
+  },
+  {
+    "name": "Cloned task sets containing removed tasks cannot submit a partial benchmark",
+    "status": "passed"
+  },
+  {
+    "name": "A successful registration followed by a login outage remains in sign-in mode",
+    "status": "passed"
+  },
+  {
+    "name": "Full screen uses two stable columns and Escape restores navigation",
+    "status": "passed"
+  },
+  {
+    "name": "Older active runs keep updating after leaving the first page",
+    "status": "passed"
+  },
+  {
+    "name": "A suspended history can fill a gap larger than the recent page",
+    "status": "passed"
+  },
+  {
+    "name": "Local downloaded model remains selectable without a serving worker",
+    "status": "passed"
+  },
+  {
+    "name": "Local base model starts without training and becomes chat-ready without losing its draft",
+    "status": "passed"
+  },
+  {
+    "name": "Local startup failure offers retry and reconciles a server started in another tab",
+    "status": "passed"
+  },
+  {
+    "name": "Local ready model reuses its existing connection and old connection links",
+    "status": "passed"
+  },
+  {
+    "name": "Local model and trained variant are both selectable; one-worker A/B has an actionable limit",
+    "status": "passed"
+  },
+  {
+    "name": "Local server with a lost worker never reports that it is chat-ready",
+    "status": "passed"
+  },
+  {
+    "name": "Local model links cannot select the same model twice through an old A/B connection draft",
+    "status": "passed"
+  }
+]

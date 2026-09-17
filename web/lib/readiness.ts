@@ -6,11 +6,28 @@ export function readiness(kind: string, workers: Worker[], jobs: Job[]) {
     worker.connected && worker.capabilities.includes(kind)
   );
   if (!candidates.length) {
+    const connected = workers.filter((worker) => worker.connected);
+    const label = ({
+      deployment: "start a model server",
+      training: "train models",
+      evaluation: "evaluate local models",
+      benchmark: "run benchmarks",
+      chat: "run chat requests",
+      model_import: "download models",
+    } as Record<string, string>)[kind] || `run ${kind}`;
     return {
       available: false,
       busy: null,
       reason:
-        `No connected worker advertises ${kind}. Open Workspace to inspect resources.`,
+        kind === "deployment" && connected.length && connected.every((worker) =>
+            !worker.resources?.gpus?.length
+          )
+          ? "Connected workers report no GPU. To run this model locally, connect a worker with a GPU and serving support. You can also use an API connection."
+          : `No connected worker can ${label}. ${
+            connected.length
+              ? "Check its capabilities and setup in Workspace."
+              : "Connect a worker in Workspace to continue."
+          }`,
     };
   }
   const gpu = ["training", "evaluation", "deployment"].includes(kind);
@@ -34,7 +51,9 @@ export function readiness(kind: string, workers: Worker[], jobs: Job[]) {
       }`
       : `${candidates.length} connected worker${
         candidates.length > 1 ? "s" : ""
-      } support this operation. Scheduling checks availability.`,
+      } ${
+        candidates.length === 1 ? "supports" : "support"
+      } this operation. Scheduling checks availability.`,
   };
 }
 export function connectionStatus(connection: Connection, deployments: Job[]) {

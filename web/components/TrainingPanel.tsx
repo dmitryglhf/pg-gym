@@ -124,9 +124,14 @@ export function TrainingPanel(
           : old.split,
       }));
     }
+    query.delete("artifact");
+    query.delete("mode");
+    history.replaceState({}, "", "/rl" + (query.size ? "?" + query : ""));
+    let mounted = true;
     if (clone) {
       setCloning(true);
       api<Job>("/jobs/" + encodeURIComponent(clone)).then((job) => {
+        if (!mounted) return;
         if (!["training", "evaluation"].includes(job.kind)) {
           throw new Error("This run is not training or evaluation.");
         }
@@ -146,10 +151,15 @@ export function TrainingPanel(
         });
         query.delete("clone");
         history.replaceState({}, "", "/rl" + (query.size ? "?" + query : ""));
-      }).catch((cause) => setError(message(cause))).finally(() =>
-        setCloning(false)
-      );
+      }).catch((cause) => {
+        if (mounted) setError(message(cause));
+      }).finally(() => {
+        if (mounted) setCloning(false);
+      });
     }
+    return () => {
+      mounted = false;
+    };
   }, [restored]);
   const train = draft.mode === "train";
   const splits =
@@ -232,6 +242,7 @@ export function TrainingPanel(
           </Notice>
         )}
         <Form
+          locked={cloning}
           submit={worker.busy && queue
             ? (train ? "Queue training" : "Queue evaluation")
             : train

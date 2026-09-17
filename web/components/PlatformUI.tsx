@@ -43,11 +43,12 @@ export function Field(
   );
 }
 export function Form(
-  { onSubmit, children, submit, disabled = false }: {
+  { onSubmit, children, submit, disabled = false, locked = false }: {
     onSubmit: (data: FormData) => Promise<string | void>;
     children: ComponentChildren;
     submit: string;
     disabled?: boolean;
+    locked?: boolean;
   },
 ) {
   const [busy, setBusy] = useState(false),
@@ -56,7 +57,7 @@ export function Form(
   const lock = useRef(false);
   async function send(event: JSX.TargetedEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
-    if (lock.current || disabled) return;
+    if (lock.current || disabled || locked) return;
     lock.current = true;
     const data = new FormData(event.currentTarget);
     setBusy(true);
@@ -72,15 +73,28 @@ export function Form(
     }
   }
   return (
-    <form onSubmit={send} aria-busy={busy}>
-      <fieldset disabled={busy} class="form-body">{children}</fieldset>
+    <form
+      onSubmit={send}
+      aria-busy={busy || locked}
+      onInvalidCapture={(event) => {
+        // Native validation must be able to focus inputs inside closed advanced sections.
+        let parent = (event.target as HTMLElement).parentElement;
+        while (parent) {
+          if (parent instanceof HTMLDetailsElement) parent.open = true;
+          parent = parent.parentElement;
+        }
+      }}
+    >
+      <fieldset disabled={busy || locked} class="form-body">
+        {children}
+      </fieldset>
       {error && <Notice error>{error}</Notice>}
       {success && <Notice>{success}</Notice>}
       <div class="form-actions">
         <button
           class="button primary"
           type="submit"
-          disabled={busy || disabled}
+          disabled={busy || disabled || locked}
         >
           {busy ? "Working…" : submit}
         </button>

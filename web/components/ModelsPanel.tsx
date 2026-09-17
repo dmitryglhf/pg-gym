@@ -18,6 +18,7 @@ export function ModelsPanel(props: ModelsProps) {
   const [selected, setSelected] = useDraft("model-selection", "");
   const [adding, setAdding] = useState(false),
     [keys, setKeys] = useState(false),
+    [keysOpened, setKeysOpened] = useState(false),
     [query, setQuery] = useState("");
   const [target, setTarget] = useState<string | null>(null);
   const [pending, setPending] = useDraft("model-operation", "");
@@ -31,11 +32,12 @@ export function ModelsPanel(props: ModelsProps) {
       setSelected("connection:" + params.get("connection"));
     }
     if (params.has("add")) setAdding(true);
-    if (params.get("section") === "keys") setKeys(true);
+    if (params.get("section") === "keys") {
+      setKeys(true);
+      setKeysOpened(true);
+    }
   }, []);
-  const exists = local.some((item) => "artifact:" + item.id === selected) ||
-    remote.some((item) => "connection:" + item.id === selected);
-  const active = (exists ? selected : "") ||
+  const active = selected ||
     (local[0]
       ? "artifact:" + local[0].id
       : remote[0]
@@ -66,7 +68,10 @@ export function ModelsPanel(props: ModelsProps) {
           <button
             type="button"
             class="button secondary"
-            onClick={() => setKeys(!keys)}
+            onClick={() => {
+              setKeys(!keys);
+              setKeysOpened(true);
+            }}
             aria-expanded={keys}
           >
             Keys & variables
@@ -91,20 +96,10 @@ export function ModelsPanel(props: ModelsProps) {
           <a href={returnHref(target)}>Return to draft</a>
         </Notice>
       )}
-      {keys && (
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Account variables</h2>
-            <button
-              type="button"
-              class="text-button"
-              onClick={() => setKeys(false)}
-            >
-              Close
-            </button>
-          </div>
-          <EnvironmentPanel />
-        </section>
+      {keysOpened && (
+        <div hidden={!keys}>
+          <EnvironmentPanel onClose={() => setKeys(false)} />
+        </div>
       )}
       {adding && (
         <AddModel
@@ -149,7 +144,8 @@ export function ModelsPanel(props: ModelsProps) {
           </Field>
           <nav aria-label="Models and endpoints">
             {local.filter((item) =>
-              item.name.toLowerCase().includes(query.toLowerCase())
+              `${item.name} ${item.metadata.repository || ""}`.toLowerCase()
+                .includes(query.toLowerCase())
             ).map((item) => (
               <button
                 type="button"
@@ -190,6 +186,14 @@ export function ModelsPanel(props: ModelsProps) {
               </button>
             ))}
           </nav>
+          {query && !local.some((item) =>
+            `${item.name} ${item.metadata.repository || ""}`.toLowerCase()
+              .includes(query.toLowerCase())
+          ) && !remote.some((item) =>
+            `${item.name} ${item.model}`.toLowerCase().includes(
+              query.toLowerCase(),
+            )
+          ) && <p class="empty-state">No models match “{query}”.</p>}
           {!local.length && !remote.length && (
             <p class="empty-state">
               Your models will appear here. Add a Hugging Face model or connect
@@ -211,13 +215,32 @@ export function ModelsPanel(props: ModelsProps) {
             )
             : endpoint
             ? (
-              <ConnectionCard
-                key={endpoint.id}
-                connection={endpoint}
-                deployments={deployments}
-                target={target}
-                onChanged={refresh}
-              />
+              <section class="panel">
+                <ConnectionCard
+                  key={endpoint.id}
+                  connection={endpoint}
+                  deployments={deployments}
+                  target={target}
+                  onChanged={refresh}
+                />
+              </section>
+            )
+            : selected
+            ? (
+              <section class="panel">
+                <Notice>
+                  The selected model is not in the current list. It may have
+                  been removed or may still be loading. Select a model from the
+                  list, or refresh.
+                </Notice>
+                <button
+                  class="button secondary"
+                  type="button"
+                  onClick={refresh}
+                >
+                  Refresh models
+                </button>
+              </section>
             )
             : (
               <section class="panel feature-empty">
