@@ -98,6 +98,15 @@ def test_platform_start_initializes_builds_and_starts_without_resetting(
     assert (directory / "secrets" / "master.key").read_bytes() == original
 
 
+def test_docker_group_is_root_under_docker_desktop(monkeypatch):
+    monkeypatch.setattr(compose.sys, "platform", "darwin")
+    assert compose.docker_gid() == 0
+
+    monkeypatch.setattr(compose.sys, "platform", "linux")
+    monkeypatch.setattr(compose.Path, "exists", lambda self: False)
+    assert compose.docker_gid() == 0
+
+
 def test_platform_start_supports_code_free_registration(tmp_path, monkeypatch):
     monkeypatch.setattr(compose, "checked", lambda *args, **kwargs: None)
     directory = tmp_path / "instance"

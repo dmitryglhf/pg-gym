@@ -11,6 +11,12 @@
 
 A self-hosted workspace for PostgreSQL agent benchmarks, GRPO training, model evaluation and vLLM inference. The Python library remains the execution engine; the web application and `pg-gym` CLI use the same REST API and durable job queue. The platform targets one Linux host with local SQLite storage, trusted account holders, Docker and optional NVIDIA GPUs.
 
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/dmitryglhf/pg-gym/main/assets/inference.svg" alt="inference" width="180"/>
+
+</div>
+
 ## Install and start
 
 Install Python 3.12, uv, Docker Engine and Docker Compose v2. For GPU execution, install a compatible NVIDIA driver and NVIDIA Container Toolkit. Build from this repository; release container images are not assumed to be published.

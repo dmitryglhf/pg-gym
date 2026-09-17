@@ -110,7 +110,7 @@ export function AddModel(
                 value={draft.repository}
                 onInput={(e) => edit("repository", e.currentTarget.value)}
                 placeholder="organization/model"
-                pattern="[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+"
+                pattern="[a-zA-Z0-9_.\-]+/[a-zA-Z0-9_.\-]+"
                 required
                 autoFocus
               />

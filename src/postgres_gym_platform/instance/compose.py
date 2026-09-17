@@ -102,13 +102,24 @@ def write_secrets(directory: Path) -> None:
             output.write(value)
 
 
+def docker_gid() -> int:
+    """The group the workers join to reach the Docker socket.
+
+    Docker Desktop mounts the socket into its VM as root:root, so the group of
+    the macOS socket file means nothing inside the containers; the root group
+    is the one that works there.
+    """
+    socket_path = Path("/var/run/docker.sock")
+    if sys.platform == "darwin" or not socket_path.exists():
+        return 0
+    return socket_path.stat().st_gid
+
+
 def environment(instance_name: str, origin: str, open_registration: bool) -> str:
     uid = os.getuid() if hasattr(os, "getuid") else 1000
     gid = os.getgid() if hasattr(os, "getgid") else 1000
-    socket_path = Path("/var/run/docker.sock")
-    docker_gid = socket_path.stat().st_gid if socket_path.exists() else 0
     return (
-        f"PG_GYM_DOCKER_GID={docker_gid}\nPG_GYM_VERSION={__version__}\n"
+        f"PG_GYM_DOCKER_GID={docker_gid()}\nPG_GYM_VERSION={__version__}\n"
         f"PG_GYM_PORT={DEFAULT_PORT}\nPG_GYM_API_PORT={DEFAULT_API_PORT}\n"
         f"PG_GYM_ORIGIN={origin}\nPG_GYM_OPEN_REGISTRATION={'1' if open_registration else '0'}\n"
         f"PG_GYM_SECURE_COOKIE={'1' if origin.startswith('https://') else '0'}\n"
