@@ -41,7 +41,14 @@ class PatchAgent(Agent):
             source.write(patch)
             source.flush()
             result = subprocess.run(
-                ["git", "apply", "--reverse", "--recount", "--whitespace=nowarn", source.name],
+                [
+                    "git",
+                    "apply",
+                    "--reverse",
+                    "--recount",
+                    "--whitespace=nowarn",
+                    source.name,
+                ],
                 cwd=stand.root,
                 capture_output=True,
                 text=True,
@@ -168,11 +175,21 @@ REGISTRY: dict[str, type[Agent]] = {
 }
 
 
+def external(name: str) -> bool:
+    """Whether the agent is a model-driven harness that needs the provider key."""
+    return name.partition(":")[0] in ("cli", "acp")
+
+
 def make(name: str, **kwargs) -> Agent:
     if name in REGISTRY:
         return REGISTRY[name]()
-    if name.startswith("cli:"):
+    kind, _, profile = name.partition(":")
+    if kind == "cli":
         from postgres_gym.core.cli_agent import CliAgent
 
-        return CliAgent(profile=name.split(":", 1)[1], **kwargs)
+        return CliAgent(profile=profile, **kwargs)
+    if kind == "acp" and profile == "markov":
+        from postgres_gym.core.acp_agent import AcpAgent
+
+        return AcpAgent(**kwargs)
     raise KeyError(f"unknown agent: {name}")

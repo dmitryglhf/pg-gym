@@ -44,4 +44,8 @@ if [ "${1:-}" = "shell" ]; then
     exec gosu bench /bin/bash "$@"
 fi
 
-exec gosu bench python -m postgres_gym.cli "$@"
+if [ "${1:-}" = "worker" ]; then
+    shift
+fi
+
+exec gosu bench python -m postgres_gym.worker "$@"

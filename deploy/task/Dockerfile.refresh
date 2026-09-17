@@ -1,0 +1,19 @@
+# Refresh the pg-gym sources, harness configs and entrypoint on top of an
+# already built task image, skipping the PostgreSQL build.
+ARG TASK_BASE_IMAGE=postgres-gym-task:17.11
+FROM ${TASK_BASE_IMAGE}
+
+USER root
+COPY src /opt/postgres-gym/src
+COPY suites/sql-function-set/src /opt/postgres-gym/suites/sql-function-set/src
+COPY suites/commit/src /opt/postgres-gym/suites/commit/src
+COPY deploy/task/markov /etc/postgres-gym/markov
+COPY deploy/task/opencode /etc/postgres-gym/opencode
+COPY deploy/task/entrypoint.sh /usr/local/bin/postgres-gym-entry
+RUN chmod +x /usr/local/bin/postgres-gym-entry \
+    && find /opt/postgres-gym -name __pycache__ -prune -exec rm -rf {} + \
+    && markov --version
+
+WORKDIR /work
+ENTRYPOINT ["/usr/local/bin/postgres-gym-entry"]
+CMD ["worker"]

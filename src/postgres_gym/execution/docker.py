@@ -10,6 +10,7 @@ import uuid
 from pathlib import Path
 
 from postgres_gym import settings
+from postgres_gym.core.agents import external
 from postgres_gym.execution.base import TaskRequest, TaskResult
 
 FORWARDED_ENV = (
@@ -35,11 +36,17 @@ SECRET_ENV = (
     "LANGFUSE_SECRET_KEY",
 )
 
+
 class DockerBackend:
     name = "docker"
     scored = True
 
-    def __init__(self, image: str | None = None, context: str | None = None, network: str | None = None):
+    def __init__(
+        self,
+        image: str | None = None,
+        context: str | None = None,
+        network: str | None = None,
+    ):
         self.image = image or settings.TASK_IMAGE
         self.context = settings.DOCKER_CONTEXT if context is None else context
         self.network = settings.DOCKER_NETWORK if network is None else network
@@ -96,11 +103,13 @@ class DockerBackend:
             check=False,
         )
         if created.returncode != 0:
-            return TaskResult(created.returncode, created.stdout, created.stderr, (), self.name)
+            return TaskResult(
+                created.returncode, created.stdout, created.stderr, (), self.name
+            )
 
         container_id = created.stdout.strip()
         try:
-            if request.agent.startswith("cli:"):
+            if external(request.agent):
                 self._copy_secret_env(container_id)
             started = self._start(container_id, request.payload)
             records = self._copy_results(container_id)
@@ -114,11 +123,17 @@ class DockerBackend:
                 if isinstance(started.stderr, bytes)
                 else started.stderr or ""
             )
-            return TaskResult(started.returncode, stdout, stderr, records, self.name, container_id)
+            return TaskResult(
+                started.returncode, stdout, stderr, records, self.name, container_id
+            )
         except Exception as exc:  # noqa: BLE001
-            return TaskResult(1, "", f"{type(exc).__name__}: {exc}", (), self.name, container_id)
+            return TaskResult(
+                1, "", f"{type(exc).__name__}: {exc}", (), self.name, container_id
+            )
         finally:
-            subprocess.run(self._docker("rm", "-f", container_id), capture_output=True, check=False)
+            subprocess.run(
+                self._docker("rm", "-f", container_id), capture_output=True, check=False
+            )
 
     def create_command(self, request: TaskRequest, container_name: str) -> list[str]:
         command = self._docker(
@@ -132,9 +147,20 @@ class DockerBackend:
         )
         if identifier := os.environ.get("PG_GYM_JOB_ID"):
             command += ["--label", f"pg-gym.job={identifier}"]
-        command += ["--cpus", os.environ.get("PG_GYM_TASK_CPUS", "4"), "--memory", os.environ.get("PG_GYM_TASK_MEMORY", "8g"), "--pids-limit", "1024"]
+        command += [
+            "--cpus",
+            os.environ.get("PG_GYM_TASK_CPUS", "4"),
+            "--memory",
+            os.environ.get("PG_GYM_TASK_MEMORY", "8g"),
+            "--pids-limit",
+            "1024",
+        ]
         if self.network:
             command += ["--network", self.network]
+        for key, value in request.labels.items():
+            command += ["--label", f"{key}={value}"]
+        for port in request.ports:
+            command += ["--publish", f"127.0.0.1:0:{port}"]
         for key, value in self._environment(request).items():
             command += ["--env", f"{key}={value}"]
         command += [
@@ -169,10 +195,14 @@ class DockerBackend:
         return environment
 
     def _copy_secret_env(self, container_id: str) -> None:
-        lines = [f"{key}={os.environ[key]}" for key in SECRET_ENV if os.environ.get(key)]
+        lines = [
+            f"{key}={os.environ[key]}" for key in SECRET_ENV if os.environ.get(key)
+        ]
         with tempfile.TemporaryDirectory(prefix="postgres-gym-secret-") as directory:
             path = Path(directory) / ".env"
-            path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+            path.write_text(
+                "\n".join(lines) + ("\n" if lines else ""), encoding="utf-8"
+            )
             path.chmod(0o600)
             result = subprocess.run(
                 self._docker("cp", str(path), f"{container_id}:/work/.env"),
@@ -181,21 +211,30 @@ class DockerBackend:
                 check=False,
             )
             if result.returncode != 0:
-                raise RuntimeError((result.stderr or result.stdout).strip() or "failed to copy task secrets")
+                raise RuntimeError(
+                    (result.stderr or result.stdout).strip()
+                    or "failed to copy task secrets"
+                )
 
     def _start(self, container_id: str, payload: bytes) -> subprocess.CompletedProcess:
-        proc = subprocess.Popen(self._docker("start", "-a", "-i", container_id),
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(
+            self._docker("start", "-a", "-i", container_id),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         output = bytearray()
+
         def drain():
             assert proc.stdout is not None
             for line in iter(proc.stdout.readline, b""):
                 output.extend(line)
                 if len(output) > 4 * 1024 * 1024:
-                    del output[:-2 * 1024 * 1024]
+                    del output[: -2 * 1024 * 1024]
                 if os.environ.get("POSTGRES_GYM_EVENTS") == "1":
                     sys.stdout.write(line.decode("utf-8", "replace"))
                     sys.stdout.flush()
+
         reader = threading.Thread(target=drain, daemon=True)
         reader.start()
         try:
@@ -204,17 +243,60 @@ class DockerBackend:
             proc.stdin.close()
             code = proc.wait(timeout=settings.CONTAINER_TIMEOUT)
         except subprocess.TimeoutExpired:
-            subprocess.run(self._docker("kill", container_id), capture_output=True, check=False)
+            subprocess.run(
+                self._docker("kill", container_id), capture_output=True, check=False
+            )
             proc.wait(timeout=30)
             code = 124
         except BaseException:
-            subprocess.run(self._docker("kill", container_id), capture_output=True, check=False)
+            subprocess.run(
+                self._docker("kill", container_id), capture_output=True, check=False
+            )
             proc.kill()
             proc.wait()
             raise
         finally:
             reader.join(timeout=30)
-        return subprocess.CompletedProcess([], code, bytes(output), b"container timeout" if code == 124 else b"")
+        return subprocess.CompletedProcess(
+            [], code, bytes(output), b"container timeout" if code == 124 else b""
+        )
+
+    def containers(self, label: str) -> list[str]:
+        """Ids of running task containers carrying `label` (`key=value`)."""
+        result = subprocess.run(
+            self._docker("ps", "--quiet", "--no-trunc", "--filter", "label=" + label),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.stdout.split() if result.returncode == 0 else []
+
+    def published_port(self, container_id: str, port: int) -> int | None:
+        """The loopback port `docker create --publish 127.0.0.1:0:<port>` chose."""
+        result = subprocess.run(
+            self._docker("port", container_id, f"{port}/tcp"),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for line in result.stdout.splitlines():
+            host, _, number = line.strip().rpartition(":")
+            if host.strip("[]") in ("127.0.0.1", "0.0.0.0") and number.isdigit():
+                return int(number)
+        return None
+
+    def write(self, container_id: str, path: str, data: bytes) -> None:
+        """Create `path` inside the running container with `data`."""
+        script = 'mkdir -p "$(dirname "$1")" && cat > "$1"'
+        result = subprocess.run(
+            self._docker("exec", "-i", container_id, "sh", "-c", script, "sh", path),
+            input=data,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.decode("utf-8", "replace").strip()
+            raise RuntimeError(detail or f"could not write {path} into the container")
 
     def _copy_results(self, container_id: str) -> tuple[Path, ...]:
         with tempfile.TemporaryDirectory(prefix="postgres-gym-results-") as directory:
@@ -233,4 +315,6 @@ class DockerBackend:
                 return ()
             settings.RUNS_ROOT.mkdir(parents=True, exist_ok=True)
             shutil.copytree(target, settings.RUNS_ROOT, dirs_exist_ok=True)
-            return tuple(settings.RUNS_ROOT / path.relative_to(target) for path in files)
+            return tuple(
+                settings.RUNS_ROOT / path.relative_to(target) for path in files
+            )

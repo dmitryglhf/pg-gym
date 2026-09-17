@@ -38,7 +38,7 @@ def run_one(
     started = time.time()
 
     trace_id = lf.new_trace_id()
-    if agent_name.startswith("cli:"):
+    if agents.external(agent_name):
         agent_kwargs.setdefault(
             "extra_env",
             lf.trace_env(
@@ -130,8 +130,9 @@ def run_one(
         reports = [stand.test()]
         targeted = suite.test_names(oracle)
         statuses = getattr(reports[0], "statuses", None) or {}
-        if targeted and not all(statuses.get(name) in ("passed", "failed")
-                                for name in targeted):
+        if targeted and not all(
+            statuses.get(name) in ("passed", "failed") for name in targeted
+        ):
             reports.append(stand.test(targeted))
         report = scoring.combine_reports(reports)
         record.update(scoring.outcome(stand, report, expected))
@@ -268,7 +269,7 @@ def sweep(
 
 
 def scored_run_is_allowed(agent: str) -> None:
-    if not agent.startswith("cli:") or settings.DISPOSABLE_GIT:
+    if not agents.external(agent) or settings.DISPOSABLE_GIT:
         return
     raise SystemExit(
         "refusing to score an agent on a stand whose git directory is not "
@@ -280,7 +281,7 @@ def scored_run_is_allowed(agent: str) -> None:
 
 def require_provider_key(agent: str) -> None:
     if (
-        not agent.startswith("cli:")
+        not agents.external(agent)
         or not settings.REQUIRE_MARKOV_KEY
         or settings.PROVIDER_KEY
     ):

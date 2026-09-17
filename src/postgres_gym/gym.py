@@ -6,6 +6,7 @@ from pathlib import Path
 
 from postgres_gym import settings
 from postgres_gym.core import data, registry
+from postgres_gym.core.agents import external
 from postgres_gym.execution import TaskRequest, load_backend
 from postgres_gym.execution import payload as task_payload
 from postgres_gym.execution.base import ExecutionBackend, TaskResult
@@ -79,23 +80,27 @@ class Gym:
         judge: bool = False,
         judge_model: str | None = None,
         judge_base_url: str | None = None,
+        environment: dict[str, str] | None = None,
     ) -> EpisodeResult:
         self.task(task)
-        return self._execute(
-            task,
-            agent,
-            completion=completion,
-            level=level,
-            judge=judge,
-            judge_model=judge_model,
-            judge_base_url=judge_base_url,
+        return self.execute(
+            self.request(
+                task,
+                agent,
+                completion=completion,
+                level=level,
+                judge=judge,
+                judge_model=judge_model,
+                judge_base_url=judge_base_url,
+                environment=environment,
+            )
         )
 
     def verify(self, task: str) -> dict:
         if task not in set(self.suite.task_names()):
             raise SystemExit(f"unknown task {task!r} in suite {self.suite.id!r}")
 
-        fixed = self._execute(task, "replay")
+        fixed = self.execute(self.request(task, "replay"))
         fixed_status = _fixed_status(fixed)
         if fixed_status != "fixed":
             check = (fixed.record or {}).get("check") or {}
@@ -107,7 +112,7 @@ class Gym:
                 "fixed": _episode_summary(fixed),
             }
 
-        mutated = self._execute(task, "noop")
+        mutated = self.execute(self.request(task, "noop"))
         _, oracle = self.suite.load(task)
         status = _mutation_status(mutated, set(oracle.get("expected_tests") or []))
         check = (mutated.record or {}).get("check") or {}
@@ -120,7 +125,7 @@ class Gym:
             "mutation": _episode_summary(mutated),
         }
 
-    def _execute(
+    def request(
         self,
         task: str,
         agent: str,
@@ -130,8 +135,10 @@ class Gym:
         judge: bool = False,
         judge_model: str | None = None,
         judge_base_url: str | None = None,
-    ) -> EpisodeResult:
-        if agent.startswith("cli:") and not settings.PROVIDER_KEY:
+        environment: dict[str, str] | None = None,
+    ) -> TaskRequest:
+        """The task request `execute` runs; callers may adjust it before running."""
+        if external(agent) and not settings.PROVIDER_KEY:
             raise SystemExit("MARKOV_API_KEY or PGPRO_API_KEY is not set")
         if reason := self.backend.available():
             raise SystemExit(reason)
@@ -146,17 +153,22 @@ class Gym:
             args += ["--judge-model", judge_model]
         if judge_base_url:
             args += ["--judge-base-url", judge_base_url]
-        request = TaskRequest(
+        return TaskRequest(
             suite=self.suite.id,
             task=task,
             agent=agent,
             level=level,
-            payload=task_payload.build(self.suite, task, execution, completion, judge=judge),
+            payload=task_payload.build(
+                self.suite, task, execution, completion, judge=judge
+            ),
             extra_args=tuple(args),
+            environment=dict(environment or {}),
         )
+
+    def execute(self, request: TaskRequest) -> EpisodeResult:
         result = self.backend.run(request)
-        record = self._read_record(result.records, task, agent)
-        return EpisodeResult(self.suite.id, task, agent, result, record)
+        record = self._read_record(result.records, request.task, request.agent)
+        return EpisodeResult(self.suite.id, request.task, request.agent, result, record)
 
     @staticmethod
     def _read_record(paths: tuple[Path, ...], task: str, agent: str) -> dict | None:

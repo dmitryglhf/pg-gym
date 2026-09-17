@@ -1,8 +1,15 @@
-# Postgres Gym
+<div align="center">
 
-A self-hosted workspace for PostgreSQL agent benchmarks, GRPO training, model evaluation and vLLM inference. The Python library remains the execution engine; the web application and `pg-gym` CLI use the same REST API and durable job queue.
+<img src="https://raw.githubusercontent.com/dmitryglhf/pg-gym/main/assets/logo.svg" alt="logo" width="180"/>
 
-The platform targets one Linux host with local SQLite storage, trusted account holders, Docker and optional NVIDIA GPUs. There is no Redis, MinIO, managed cloud dependency or demonstration execution path. See [verification](docs/verification.md) for checks actually performed and remaining hardware gates. Do not interpret a successful CPU test run as certification of a GPU deployment.
+# `Postgres Gym`
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-3776ab.svg)](https://python.org)
+
+</div>
+
+A self-hosted workspace for PostgreSQL agent benchmarks, GRPO training, model evaluation and vLLM inference. The Python library remains the execution engine; the web application and `pg-gym` CLI use the same REST API and durable job queue. The platform targets one Linux host with local SQLite storage, trusted account holders, Docker and optional NVIDIA GPUs.
 
 ## Install and start
 
@@ -119,5 +126,3 @@ cd web
 deno task check
 deno task build
 ```
-
-For local web development, run the API on port 9433 and `deno task dev` with its origin configured to the dev server origin. Start `pg-gym server worker` separately. Use a private registration code or explicitly set `PG_GYM_OPEN_REGISTRATION=1` only for an intended open-registration instance. Browser integration instructions are in [verification](docs/verification.md).

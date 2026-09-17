@@ -14,6 +14,8 @@ class TaskRequest:
     payload: bytes
     extra_args: tuple[str, ...] = ()
     environment: dict[str, str] = field(default_factory=dict)
+    ports: tuple[int, ...] = ()
+    labels: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
