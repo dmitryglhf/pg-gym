@@ -1,6 +1,10 @@
 import json
+import sys
+import types
 from pathlib import Path
+from types import SimpleNamespace
 
+import httpx2
 import pytest
 
 from postgres_gym import settings
@@ -82,7 +86,72 @@ def test_harness_environment_points_markov_at_the_recorder():
     assert env["GOOSE_MAX_TURNS"] == "60"
     assert env["GOOSE_TOOL_PAIR_SUMMARIZATION"] == "false"
     assert env["GOOSE_SERVER__SECRET_KEY"] == "s3cret"
-    assert env["POSTGRES_GYM_AGENT_TIMEOUT"] == "1800"
+    assert env["POSTGRES_GYM_AGENT_TIMEOUT"] == str(
+        1800 + episode.CONTAINER_TIMEOUT_MARGIN
+    )
+
+
+def fake_markov_sdk(monkeypatch, failure: Exception) -> None:
+    """A markov_sdk whose turn breaks with `failure` before any event."""
+
+    class Stream:
+        def __iter__(self):
+            raise failure
+
+    class Chat:
+        id = "session-1"
+
+        def tools(self):
+            return [SimpleNamespace(name=name) for name in reversed(episode.TOOLS)]
+
+        def stream_sync(self, prompt):
+            return Stream()
+
+        def close(self):
+            return None
+
+    class Agent:
+        def __init__(self, *args, **kwargs):
+            self.loop = SimpleNamespace(run=lambda value: value)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def open_session_sync(self):
+            return Chat()
+
+    module = types.ModuleType("markov_sdk")
+    module.Agent = Agent
+    module.Builtin = lambda name: name
+    module.MarkovError = type("MarkovError", (Exception,), {})
+    module.MessageUsage = type("MessageUsage", (), {})
+    module.Server = SimpleNamespace(remote=lambda url, secret_key: None)
+    module.ToolCallStarted = type("ToolCallStarted", (), {})
+    monkeypatch.setitem(sys.modules, "markov_sdk", module)
+
+
+def test_converse_treats_a_late_transport_error_as_a_timeout(monkeypatch):
+    fake_markov_sdk(monkeypatch, httpx2.ReadError("connection closed"))
+    harness = episode.Harness("m", 60, 28000, 0, "s3cret")
+
+    outcome = episode.converse("http://127.0.0.1:1", "fix it", harness)
+
+    assert outcome["timed_out"] is True
+    assert "error" not in outcome
+    assert outcome["tools"] == sorted(episode.TOOLS)
+
+
+def test_converse_reports_an_early_transport_error(monkeypatch):
+    fake_markov_sdk(monkeypatch, httpx2.ReadError("connection closed"))
+    harness = episode.Harness("m", 60, 28000, 1800, "s3cret")
+
+    outcome = episode.converse("http://127.0.0.1:1", "fix it", harness)
+
+    assert outcome["timed_out"] is False
+    assert outcome["error"] == "ReadError: connection closed"
 
 
 def test_report_carries_the_harness_and_the_outcome(tmp_path: Path):
@@ -198,6 +267,44 @@ def test_collect_resumes_and_stops_after_a_pass(tmp_path: Path, monkeypatch):
     summary = run.collect(tmp_path, [SUITE], **kwargs)
     assert calls == []
     assert summary["episodes"] == 3
+
+
+def test_collect_records_a_crashed_attempt_and_goes_on(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(settings, "RUNS_ROOT", settings.RUNS_ROOT)
+    backend = FakeBackend()
+    first, second = Gym(SUITE, backend).tasks("train")[:2]
+    calls: list = []
+    passing = fake_episode(calls, lambda task, attempt: task == second or attempt == 2)
+
+    def run_episode(gym, recorder, episode_id, task, harness, *, attempt=1):
+        if task == first and attempt == 1:
+            calls.append((task, attempt))
+            raise RuntimeError("cancel failed")
+        return passing(gym, recorder, episode_id, task, harness, attempt=attempt)
+
+    monkeypatch.setattr(episode, "run_episode", run_episode)
+    lines: list[str] = []
+    summary = run.collect(
+        tmp_path,
+        [SUITE],
+        tasks=[first, second],
+        attempts=2,
+        workers=1,
+        backend=backend,
+        upstream="http://gateway",
+        log=lines.append,
+    )
+
+    assert calls == [(first, 1), (first, 2), (second, 1)]
+    crashed = json.loads((tmp_path / "reports" / SUITE / first / "1.json").read_text())
+    assert crashed["state"] == "execution_error"
+    assert crashed["pass"] is False
+    assert crashed["error"] == "RuntimeError: cancel failed"
+    assert "RuntimeError: cancel failed" in crashed["host_tail"]
+    assert crashed["task_hash"] == Gym(SUITE, backend).task(first).task_hash
+    assert summary["by_state"]["execution_error"] == 1
+    assert summary["tasks_passed"] == 2
+    assert any(f"{SUITE}/{first} #1: execution_error" in line for line in lines)
 
 
 def test_collect_refuses_a_run_frozen_with_another_harness(tmp_path: Path, monkeypatch):

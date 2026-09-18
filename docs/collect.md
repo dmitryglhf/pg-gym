@@ -27,6 +27,8 @@ A run is a directory and it is resumable. Its configuration is frozen on the fir
 
 An episode that ends because of one of these limits is recorded with that reason, so a dataset can leave it out.
 
+The container gets two more minutes than the SDK on the host, so a turn that overruns `--agent-timeout` is always cancelled from the host first. An attempt that breaks in the host process itself, for example when the SDK loses its connection, is recorded as `execution_error` with the traceback under `host_tail`, counts as an attempt and does not stop the run.
+
 ```sh
 uv run scripts/collect_teacher.py --run local/collect/teacher-2026-09-17 --summary
 ```

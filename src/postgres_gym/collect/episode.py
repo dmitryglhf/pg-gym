@@ -32,6 +32,9 @@ STATES = (
     "execution_error",
     "no_trajectory",
 )
+# The container ends a turn on its own only after the host had this long to
+# cancel it first; equal deadlines made both sides give up at the same moment.
+CONTAINER_TIMEOUT_MARGIN = 120
 
 
 @dataclass(frozen=True)
@@ -55,7 +58,9 @@ class Harness:
             "GOOSE_RANDOM_THINKING_MESSAGES": "false",
             "GOOSE_SERVER__SECRET_KEY": self.secret,
             "PGPRO_HOST": provider_host,
-            "POSTGRES_GYM_AGENT_TIMEOUT": str(self.agent_timeout),
+            "POSTGRES_GYM_AGENT_TIMEOUT": str(
+                self.agent_timeout + CONTAINER_TIMEOUT_MARGIN
+            ),
         }
 
 
@@ -186,6 +191,13 @@ def converse(url: str, prompt: str, harness: Harness) -> dict:
         outcome["timed_out"] = True
     except MarkovError as exc:
         outcome["error"] = f"{type(exc).__name__}: {exc}"
+    except httpx2.HTTPError as exc:
+        # A dropped connection this late means the container ended the turn
+        # itself; earlier than that it is the transport failing.
+        if time.time() - started >= harness.agent_timeout:
+            outcome["timed_out"] = True
+        else:
+            outcome["error"] = f"{type(exc).__name__}: {exc}"
     outcome["agent_seconds"] = round(time.time() - started, 1)
     return outcome
 
@@ -256,6 +268,55 @@ def report(
         tail = (result.execution.stderr or result.execution.stdout)[-4000:]
         entry["container_tail"] = tail
     return entry
+
+
+def crash_report(
+    gym: Gym,
+    recorder: Recorder,
+    episode_id: str,
+    task: str,
+    harness: Harness,
+    *,
+    attempt: int,
+    error: BaseException,
+    tail: str,
+    seconds: float,
+) -> dict:
+    """The report of an attempt that died in this process, not in the container.
+
+    Same keys as `report`, so summaries and the dataset builder treat it like
+    any other failed attempt; `host_tail` keeps the traceback.
+    """
+    turns = recorder.turns(episode_id)
+    trajectory = recorder.path(episode_id)
+    return {
+        "episode_id": episode_id,
+        "suite": gym.suite.id,
+        "task": task,
+        "task_hash": gym.task(task).task_hash,
+        "attempt": attempt,
+        "model": harness.model,
+        "image_id": "",
+        "max_turns": harness.max_turns,
+        "token_budget": harness.token_budget,
+        "state": "execution_error",
+        "pass": False,
+        "reward": None,
+        "seconds": round(seconds, 1),
+        "agent_seconds": None,
+        "provider_calls": turns.calls,
+        "provider_errors": turns.errors,
+        "tool_calls": None,
+        "max_prompt_tokens": turns.max_prompt_tokens,
+        "usage": None,
+        "stop_reason": None,
+        "session_id": None,
+        "tools": None,
+        "trajectory_file": trajectory.name if trajectory.is_file() else None,
+        "record_file": None,
+        "error": f"{type(error).__name__}: {error}"[:2000],
+        "host_tail": tail[-4000:],
+    }
 
 
 def _wait_for(

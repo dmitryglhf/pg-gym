@@ -4,6 +4,8 @@ import json
 import secrets
 import sys
 import threading
+import time
+import traceback
 import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -93,9 +95,24 @@ def collect(
                 for attempt in range(
                     done_attempts(run_dir, suite, name) + 1, attempts + 1
                 ):
-                    result = episode.run_episode(
-                        gym, recorder, new_episode_id(), name, harness, attempt=attempt
-                    )
+                    episode_id = new_episode_id()
+                    started = time.time()
+                    try:
+                        result = episode.run_episode(
+                            gym, recorder, episode_id, name, harness, attempt=attempt
+                        )
+                    except Exception as exc:  # noqa: BLE001 - one broken episode must not end the run
+                        result = episode.crash_report(
+                            gym,
+                            recorder,
+                            episode_id,
+                            name,
+                            harness,
+                            attempt=attempt,
+                            error=exc,
+                            tail=traceback.format_exc(),
+                            seconds=time.time() - started,
+                        )
                     with lock:
                         save_report(run_dir, result)
                         log(describe(result))
