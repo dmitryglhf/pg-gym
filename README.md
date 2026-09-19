@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/dmitryglhf/pg-gym/main/assets/slonik.svg" alt="logo" width="180"/>
+<img src="https://raw.githubusercontent.com/dmitryglhf/pg-gym/main/assets/slonik.svg" alt="logo" width="280"/>
 
 # `PostgresGym`
 
